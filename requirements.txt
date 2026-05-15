@@ -1,0 +1,10 @@
+# Core
+numpy
+scipy
+matplotlib
+jupyter
+
+# Will add quantum and ML frameworks as we decide on direction
+# qiskit
+# pennylane
+# torch
