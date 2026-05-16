@@ -4,15 +4,22 @@
 
 ---
 
-## 2026-05-15
+## 2026-05-16
 
-### Project setup
+### Base paper identified
 
-Moved from test repo to dedicated repo `anuarsantoyo/qm-ml`. Created GitHub account `pukky-struki` for collaborative workflow. Branch protection on `main` is active — changes go through PRs.
+We're basing the project on **arXiv:2501.07951** — "Retrieving Lost Atomic Information: Monte Carlo-based Parameter Reconstruction of an Optical Quantum System" by Orphal-Kobin et al.
 
-### Questions I have right now
-- What's the best entry point for QML?
-- What hardware is available (simulators vs real quantum processors)?
-- Which frameworks should we use? (Qiskit? PennyLane? Cirq?)
+**Key ideas from the paper:**
+- Low signal-to-noise → standard methods (median) fail
+- MC simulations reconstruct linewidth parameters from undersampled photoluminescence data
+- ML models tested as an alternative for parameter estimation
+- Applied to NV center optical characterization in diamond
 
-*Next: find a good review paper to start.*
+**Our goal:** Continue this work — generalize, improve, explore new directions.
+
+### Next steps
+1. Read the paper thoroughly
+2. Understand the MC simulation pipeline
+3. Understand the ML architecture used
+4. Identify concrete extensions to pursue
