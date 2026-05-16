@@ -1,23 +1,29 @@
 # Quantum ML Project 🧪🔬🤖
 
-Exploring the intersection of quantum computing and machine learning.
+**Continuation of:** [Monte Carlo-based Parameter Reconstruction of an Optical Quantum System](https://arxiv.org/abs/2501.07951)
+
+## Project Goal
+
+Extend and improve the Monte Carlo + ML approach for parameter reconstruction from low signal-to-noise optical quantum system data. The original paper applies this to photoluminescence excitation spectroscopy of NV centers in diamond — we aim to generalize, optimize, and explore new directions.
 
 ## Current Status 🚀
-Just getting started — research phase.
+Research phase — understanding the paper and building on it.
 
 ## To Do
 
 ### Reading
-- [ ] Find and read foundational QML papers
-- [ ] Understand quantum computing basics (qubits, gates, circuits)
-- [ ] Understand ML basics (models, training, optimization)
+- [x] **[2501.07951](docs/papers/2501.07951.pdf)** — Monte Carlo-based Parameter Reconstruction of an Optical Quantum System
+- [ ] Understand the Monte Carlo method used in detail
+- [ ] Understand the ML approach and how it compares
+- [ ] Read key references from the paper
 
 ### Concepts to explore
-- [x] Test the GitHub workflow from VS Code
-- [ ] (will grow as we read)
+- [ ] MC parameter estimation vs median / standard methods
+- [ ] ML architectures for low-SNR parameter prediction
+- [ ] Generalizing beyond NV centers to other quantum systems
 
 ### Ideas to try
-- [ ] (will grow as we learn)
+- [ ] (will grow as we understand the paper)
 
 ## Project Structure
 
@@ -33,3 +39,4 @@ Just getting started — research phase.
 ## Completed ✅
 - [x] Set up repo with branch protection
 - [x] GitHub workflow tested end-to-end
+- [x] Downloaded the base paper to docs/papers/
