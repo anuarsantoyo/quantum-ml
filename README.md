@@ -13,6 +13,7 @@ Just getting started — research phase.
 - [ ] Understand ML basics (models, training, optimization)
 
 ### Concepts to explore
+- [x] Test the GitHub workflow from VS Code
 - [ ] (will grow as we read)
 
 ### Ideas to try
@@ -30,4 +31,5 @@ Just getting started — research phase.
 ```
 
 ## Completed ✅
-*(move items here when done)*
+- [x] Set up repo with branch protection
+- [x] GitHub workflow tested end-to-end
