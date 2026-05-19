@@ -32,6 +32,26 @@ gmail account: pukky.struki@gmail.com
 github account: pukky-struki
 
 ### Worked on the structure of the project.
-Did some research on different project structures for porjects based on research and coding. (pukky, please write the structure we decided here) 
+Did some research on different project structures for projects based on research and coding.
+
+We decided on a lean **research-first** structure:
+
+```
+qm-ml/
+├── README.md          # Dashboard — overview, tasks, checklist
+├── JOURNAL.md         # Running log — ideas, decisions, notes
+├── docs/papers/       # PDFs of papers we read
+├── notebooks/         # Jupyter notebooks for exploration & prototyping
+├── requirements.txt
+└── .gitignore
+```
+
+The idea: keep it simple during the research phase. When we move to writing actual library code, we'll expand with:
+
+```
+src/          # Production code (quantum/, models/, utils/)
+tests/        # Unit tests
+data/         # Datasets (gitignored)
+```
 
 
