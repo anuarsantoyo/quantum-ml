@@ -7,23 +7,20 @@
 Extend and improve the Monte Carlo + ML approach for parameter reconstruction from low signal-to-noise optical quantum system data. The original paper applies this to photoluminescence excitation spectroscopy of NV centers in diamond — we aim to generalize, optimize, and explore new directions.
 
 ## Current Status 🚀
-Setup and integration testing complete — now understanding the paper and building on it.
+Background reasearch on the theorical concepts. Getting familiar with the topic
 
 ## To Do
-
-### Reading
-- [x] **[2501.07951](docs/papers/2501.07951.pdf)** — Monte Carlo-based Parameter Reconstruction of an Optical Quantum System
+- [x] Create setup and include AI Agent in the workflow.
+- [x] Read the paper **[2501.07951](docs/papers/2501.07951.pdf)** — Monte Carlo-based Parameter Reconstruction of an Optical Quantum System in detail
 - [ ] Understand the Monte Carlo method used in detail
 - [ ] Understand the ML approach and how it compares
-- [ ] Read key references from the paper
-
-### Concepts to explore
-- [ ] MC parameter estimation vs median / standard methods
-- [ ] ML architectures for low-SNR parameter prediction
-- [ ] Generalizing beyond NV centers to other quantum systems
-
-### Ideas to try
-- [ ] (will grow as we understand the paper)
+- [ ] Revisit kewords mentioned in the meeting:
+    - 2 Level Quantum system with stochastic noise "Spectral shaped based on noise process"
+    - Description of PLE NV (how does the measurement work in detail)
+    - Big Goal: Parameter Estimation specifically line with in low signal regime
+    - Fischer Infomation
+    - Parameter uncertainty.
+    
 
 ## Project Structure
 
@@ -36,10 +33,3 @@ Setup and integration testing complete — now understanding the paper and build
 └── .gitignore
 ```
 
-## Completed ✅
-- [x] Set up repo with branch protection
-- [x] GitHub workflow tested end-to-end
-- [x] AI integration tested from VS Code ✅
-- [x] AI integration tested from OpenLCAW side ✅
-- [x] Dev environment ready — tools, dependencies, and git workflow confirmed
-- [x] Downloaded the base paper to docs/papers/
