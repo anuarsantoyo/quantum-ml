@@ -70,13 +70,31 @@ Here is a summary of the Monte Carlo Method in General
 Here is a Summary of one Monte Carlo Simulation
 ![alt text](docs/journal/MCSimulation.png)
 
-### Idea:
 
+### Ideas:
+
+#### Optimizing $\sigma$
 Try optimizing for more parameters, I understand that in the experiment they do a grid search for $\gamma$ and $\bar{n}$ (as they are only 2) but in the process of understanding the montecarlo simulation I though we can also try to optimize other parameters that are fixed like $\sigma = 6$ or $\lambda = 2$, for more parameters grid search might be better substituted by hyperopt or similar. I will first have a deeper understanding on each step of the MCM to see if this makes sense
+
+#### Hybrid approach
+I still believe that we could create a hybbrid model where we exploit our knowledge of the physics behind the process. Maybe creating a different type of MonteCarlo simulation, maybe creating something using the real data and optimizing few parameters form the hybrid model.
 
 ### Todo
 
 I have a much better understanding but would like to go deeper on the choice of a cauchy distribution and what physical meaning does $\gamma$ has in the whole story and in realtion to the Cauchy distribution.
+
+
+### Notebook
+
+I created a notebook where I command Pukky to test my idea of using hyper opt. This is more a test for pukkies capabilites and to have a start.
+
+### Questions for Gregor
+
+1. Can I get access to the real data
+2. Why sigma 6? Is there more parameters that we could optimize?
+3. Is the idea in general sinfull?
+
+
 
 
 
