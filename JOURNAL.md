@@ -55,3 +55,28 @@ data/         # Datasets (gitignored)
 ```
 
 
+
+
+## 22.05.2026
+
+### Understanding paper
+
+I started reading the papaer in detail, I am getting a much better idea of the whole problem and the approach to solve it.
+
+Here is a summary of the Monte Carlo Method in General
+![alt text](docs/journal/MCM.png)
+
+
+Here is a Summary of one Monte Carlo Simulation
+![alt text](docs/journal/MCSimulation.png)
+
+### Idea:
+
+Try optimizing for more parameters, I understand that in the experiment they do a grid search for $\gamma$ and $\bar{n}$ (as they are only 2) but in the process of understanding the montecarlo simulation I though we can also try to optimize other parameters that are fixed like $\sigma = 6$ or $\lambda = 2$, for more parameters grid search might be better substituted by hyperopt or similar. I will first have a deeper understanding on each step of the MCM to see if this makes sense
+
+### Todo
+
+I have a much better understanding but would like to go deeper on the choice of a cauchy distribution and what physical meaning does $\gamma$ has in the whole story and in realtion to the Cauchy distribution.
+
+
+
