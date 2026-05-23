@@ -206,6 +206,8 @@ where $k_{\text{ion}}$ and $k_{\text{rec}}$ are power‑dependent. For NV⁻ in 
 
 - Read the complexer models more in detail
 
+- Rethink TODO noting, if I should migrate the todos to the Readme file or just keep everything here
+
 
 
 
