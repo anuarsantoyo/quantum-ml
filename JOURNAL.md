@@ -1,4 +1,4 @@
-# Project Journal
+you # Project Journal
 
 *Development of the project step by step, from ideas, tasks and conclusions*
 
@@ -81,7 +81,7 @@ I still believe that we could create a hybbrid model where we exploit our knowle
 
 ## TODO
 
-- ~~I have a much better understanding but would like to go deeper on the choice of a cauchy distribution and what physical meaning does $\gamma$ has in the whole story and in realtion to the Cauchy distribution.~~
+- [X] I have a much better understanding but would like to go deeper on the choice of a cauchy distribution and what physical meaning does $\gamma$ has in the whole story and in realtion to the Cauchy distribution.
 
 
 ## Notebook
@@ -202,11 +202,11 @@ where $k_{\text{ion}}$ and $k_{\text{rec}}$ are power‑dependent. For NV⁻ in 
 
 ## TODO
 
-- Debugg Hyperopt-n-sigma-gamma.ipynb to be sure that the AI generated code works as expected (first test showed no errors but deeper analysis is needed)
+- [ ] Debugg Hyperopt-n-sigma-gamma.ipynb to be sure that the AI generated code works as expected (first test showed no errors but deeper analysis is needed)
 
-- Read the complexer models more in detail
+- [ ] Read the complexer models more in detail
 
-- Rethink TODO noting, if I should migrate the todos to the Readme file or just keep everything here
+- [ ] Rethink TODO noting, if I should migrate the todos to the Readme file or just keep everything here
 
 
 
