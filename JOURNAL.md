@@ -209,5 +209,16 @@ where $k_{\text{ion}}$ and $k_{\text{rec}}$ are power‑dependent. For NV⁻ in 
 - [ ] Rethink TODO noting, if I should migrate the todos to the Readme file or just keep everything here
 
 
+# 25.05.2026
+
+## Idea: Monte Carlo with PyTorch and loss function
+
+The current approach generated several MC simulations and using grid search tries to find the best original parameters $\bar{n}$ and $\gamma$. What if instead of doing Grid Search, we could us PyTorch to have these parameters as model parameters that get optimized with the loss function calculated through the $\chi^2$ comparison of many MC simulations. So we dont optimize in one run, we do a batch of for example 2000 MC simulations and optimize. I will have to refresh loss function and optimization with stochasitc procesees. 
+
+## TODO:
+
+- [ ] Refresh how loss-optimization of stochastic procesees work for PyTorch MC idea.
+
+
 
 
