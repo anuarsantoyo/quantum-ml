@@ -217,8 +217,48 @@ The current approach generated several MC simulations and using grid search trie
 
 ## TODO:
 
-- [ ] Refresh how loss-optimization of stochastic procesees work for PyTorch MC idea.
+- [x] Refresh how loss-optimization of stochastic procesees work for PyTorch MC idea.
+
+## MC-PyT solution 1: Reparametrization
+Differentiable Parameter Optimization for Simulation Pipelines
+
+### Problem
+We need to optimize two parameters (e.g., µ and σ of a normal distribution) whose samples feed into a complex simulation. The simulation outputs a histogram that we compare to a target distribution using a chi‑squared test. Grid search over discrete parameter values is inefficient.
+
+### Key Idea
+Make the entire pipeline **differentiable** so we can use gradient descent instead of grid search.
+
+### How It Works (One Training Step)
+
+1. **Fix random noise** – Draw ε₁,…,εₙ from N(0,1) once and keep them fixed.
+2. **Reparameterized samples** – For current µ, σ:  
+   `xᵢ = µ + σ·εᵢ`  (differentiable w.r.t. µ, σ)
+3. **Run the complex process** – Compute `yᵢ = f(xᵢ)` for each sample.  
+   (We assume `f` is differentiable or replaced by a smooth surrogate.)
+4. **Smooth density estimation** – Replace the hard histogram with a **Kernel Density Estimate (KDE)**:
+   `p̂(y) = average over i of K(y - yᵢ)`
+5. **Differentiable loss** – Replace the chi‑squared test with a smooth divergence between `p̂` and the target distribution (e.g., MMD, KL, or Sinkhorn).
+6. **Gradient descent** – Compute `∂Loss/∂µ` and `∂Loss/∂σ` via automatic differentiation.  
+   Update: `µ ← µ - α·∂Loss/∂µ`, `σ ← σ - α·∂Loss/∂σ`.
+
+### Why This Works
+- The reparameterization trick turns random sampling into a deterministic, differentiable function.
+- KDE replaces non‑differentiable binning with a smooth density.
+- Smooth divergences replace the discrete chi‑squared statistic.
+
+### What We Gain
+- Continuous, gradient‑based optimization (no grid).
+- Scales well to many parameters.
+- Smooth loss landscape.
+
+### Practical Notes
+- Use a fixed set of noise samples εᵢ throughout training for low‑variance gradients.
+- Typical sample size: n = 100–1000 per step.
+- If the complex process is not differentiable, train a neural network surrogate.
+
+### Summary
+By reparameterizing the random sampling, smoothing the density estimate, and using a differentiable divergence, we transform a discrete simulation‑based calibration problem into a continuous optimization problem solvable with gradient descent.
 
 
-
-
+## TODO:
+- [ ] Solution proposed was for a simple example, check how to apply it to our montecarlo simulation
