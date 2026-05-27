@@ -11,66 +11,70 @@ Extend and improve the Monte Carlo + ML approach for parameter reconstruction fr
 
 ---
 
+## Current Status
+
+After meeting with Gregor and Carla (27.05):
+- ✅ Understanding of the MC simulation was correct
+- ✅ Hyperopt approach → interesting but not novel enough, **deprioritized**
+- ✅ **Differentiable MC** → the promising direction, exploit ML for backpropagation through the MC simulation
+- 📌 Parameter uncertainty / Fisher Information is a key next step
+- 📌 Repo to be shared with the group
+
+---
+
 ## Project Structure
 
 ```
 qm-ml/
-├── README.md          # Dashboard — overview, ideas, TODOs, questions
+├── README.md          # Dashboard — overview, ideas, TODOs
 ├── JOURNAL.md         # Running log — ideas, decisions, notes
 ├── docs/papers/       # PDFs of papers we read
-├── notebooks/         # Jupyter notebooks for exploration & prototyping
+├── docs/journal/      # Images, sketches for the journal
+├── notebooks/         # Jupyter notebooks (archived prototypes in archive/)
 ├── requirements.txt
 └── .gitignore
 ```
-
-*When coding begins, we'll expand with: `src/`, `tests/`, `data/`.*
 
 ---
 
 ## Ideas
 
-### 1. Hybrid Model Approach
-Explore different ways to model the PLE process. Instead of a pure MC approach, create a hybrid model that leverages physical knowledge of the underlying process — potentially combining a physics-based model with learned components.
+### 1. Differentiable Monte Carlo (main direction)
+Convert the MC simulation into a backpropagatable problem (e.g., using PyTorch). Instead of grid search or discrete optimization, treat parameters as learnable and optimize via gradient descent using a differentiable loss.
 
-### 2. Optimizing More Parameters via Hyperopt
-The paper does a grid search for γ and n̄. The idea is to also optimize other fixed parameters like σ (currently fixed at 6) and λ (currently fixed at 2) using hyperopt or similar. This could improve reconstruction accuracy. *Prototyped in `notebooks/Hyperopt-n-sigma-gamma.ipynb`.*
+### 2. Parameter Uncertainty via Fisher Information
+After achieving differentiable MC, quantify parameter uncertainty. Fisher Information provides a natural framework for this in the ML context.
 
-### 3. Deeper Physics Models
-Build models from scratch based on more detailed physical formalisms (Weisskopf-Wigner, Master equation / Jaynes-Cummings + Lindblad, Huang-Rhys electron-phonon coupling, charge-state switching). Identify important parameters and optimize them using PyTorch on real data.
+### 3. Hybrid Physics-Informed Model
+Explore hybrid models that combine physical knowledge of the PLE process with learned components — potentially using insights from the Denmark-Covid project (previous work).
 
-### 4. Monte Carlo + PyTorch Batch Optimization
-Instead of grid search over many individual MC simulations, treat γ, n̄ (and potentially other parameters) as learnable PyTorch parameters. Run batches of ~2000 MC simulations per step and optimize using a χ²-based loss function. Requires refreshing how loss optimization works for stochastic processes.
+### 4. Hyperopt / Grid Search (archived)
+The paper uses grid search for γ and n̄. Hyperopt can extend this to more parameters (σ, λ), but this direction has been deprioritized as not sufficiently novel. Prototype in `archive/notebooks/Hyperopt-n-sigma-gamma.ipynb`.
 
 ---
 
 ## TODOs
 
-### Research & Understanding
-- [ ] Deepen understanding of the Monte Carlo method used in the paper
-- [ ] Understand the ML approach and how it compares to MC
-- [ ] Understand the 2-level quantum system with stochastic noise ("spectral shape based on noise process")
-- [ ] Understand the description of PLE NV (how the measurement works in detail)
-- [ ] Study Fisher Information and parameter uncertainty
-- [ ] Refresh how loss-optimization of stochastic processes works (for the PyTorch MC idea)
-- [ ] Read the complexer models in detail (Master equation, Huang-Rhys, etc.)
+### Differentiable MC
+- [ ] Research approaches to make MC simulation backpropagatable
+- [ ] Consider: reparameterization trick, Gumbel-Softmax, differentiable histogram approximations, score function estimators
+- [ ] Prototype the most promising approach
+- [ ] Test on dummy data
 
-### Implementation
-- [ ] **Debug** `Hyperopt-n-sigma-gamma.ipynb` — first test ran without errors but needs line-by-line verification
-- [ ] Get access to real experimental data
+### Theory
+- [ ] Study Fisher Information in the parameter uncertainty context
+- [ ] Understand the 2-level quantum system with stochastic noise
+- [ ] Understand PLE NV measurement in detail
 
-### Conceptual
-- [ ] Understand why Cauchy distribution is used and what physical meaning γ has in relation to it
-- [ ] Evaluate: is the hybrid model approach viable given the low signal-to-noise ratio?
+### Data
+- [ ] Get access to real experimental data (ask Gregor about Laura's data)
 
 ---
 
 ## Questions for Gregor
 
-1. Can I get access to the real data?
-2. Why is σ fixed at 6? Are there more parameters that could be optimized?
-3. Is the optimization idea (hyperopt for more parameters) sensible in general?
-4. *(Add more as they come up)*
-
----
-
-*This file auto-syncs from JOURNAL.md — ideas, TODOs, and questions are periodically extracted and updated.*
+1. ✅ Can I get access to the real data? → Asked, waiting
+2. ✅ Is σ=6 fixed? → Can be optimized, grid search was easiest
+3. ✅ Is Hyperopt sensible? → Interesting but not novel enough
+4. ❓ How to quantify parameter uncertainty after differentiable MC fitting?
+5. ❓ Should I look at the Denmark-Covid project for the differentiable approach?
