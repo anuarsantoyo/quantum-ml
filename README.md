@@ -1,4 +1,4 @@
-# Quantum ML Project 🧪🔬🤖
+# Quantum ML Project 
 
 **Continuation of:** [Monte Carlo-based Parameter Reconstruction of an Optical Quantum System](https://arxiv.org/abs/2501.07951)
 

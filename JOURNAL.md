@@ -90,9 +90,10 @@ I created a notebook `notebooks/Hyperopt-n-sigma-gamma.ipynb` where I command Pu
 
 ## Questions for Gregor
 
-1. [ ] Can I get access to the real data
-2. [ ] Why sigma 6? Is there more parameters that we could optimize?
-3. [ ] Is the idea in general sinfull?
+1. [X] Can I get access to the real data
+
+2. [X] Why sigma 6? Is there more parameters that we could optimize?
+3. [X] Is the idea in general sinfull?
 
 
 # 23.05.2026
@@ -202,11 +203,11 @@ where $k_{\text{ion}}$ and $k_{\text{rec}}$ are power‑dependent. For NV⁻ in 
 
 ## TODO
 
-- [ ] Debugg Hyperopt-n-sigma-gamma.ipynb to be sure that the AI generated code works as expected (first test showed no errors but deeper analysis is needed)
+- ~~[ ] Debugg Hyperopt-n-sigma-gamma.ipynb to be sure that the AI generated code works as expected (first test showed no errors but deeper analysis is needed)~~
 
 - [ ] Read the complexer models more in detail
 
-- [ ] Rethink TODO noting, if I should migrate the todos to the Readme file or just keep everything here
+- [X] Rethink TODO noting, if I should migrate the todos to the Readme file or just keep everything here
 
 
 # 25.05.2026
@@ -257,8 +258,37 @@ Make the entire pipeline **differentiable** so we can use gradient descent inste
 - If the complex process is not differentiable, train a neural network surrogate.
 
 ### Summary
-By reparameterizing the random sampling, smoothing the density estimate, and using a differentiable divergence, we transform a discrete simulation‑based calibration problem into a continuous optimization problem solvable with gradient descent.
+By reparameterizing the random sampling, smoothing the density estimate, and using a differentiable divergence, we transform a discrete simulation‑based calibration problem into a continuous optimization problem solvable with gradient descent. Note, we would generate many samples to obtain many linewithds to obtain the KDE that substitutes the $\chi^2$ test from hitogram and do gradient descent through all the sample. So each comparison would be a batch, where many MC simulations would have been created.
 
 
 ## TODO:
 - [ ] Solution proposed was for a simple example, check how to apply it to our montecarlo simulation
+
+
+
+# 27.05.2026
+
+## Meeting Summary
+
+I had a meeting with Gregor and Carla, which was very fruitfull. I explained my understanding of the MC simulation, which we called a run in the meeting to avoid confusion. My understanding was correct. I asked about the fact that $\sigma, \hat{n}, \lambda, \gamma$ could be optimized, he said that this is a possibility and that at the moment grid search of $\sigma$ and $\hat{n}$ was the easiest solution.
+
+I proposed the Hyperopt idea, he mentioned that this is something that could be done, but that it didn't seem to be something very new compared to what we already have, so even as interesting as it could be this approach should not be the focus of further development. 
+
+On the other hand, the [Monte Carlo PyTorch idea](#idea-monte-carlo-with-pytorch-and-loss-function), (converting the Montecarlo Simulation to a backpropagatable problem using maybe PyTorch) was more interesing for him as it actually exploits an ML strategy an proposed a newer approach (which appears to be relevant). For this reason my next steps will be to find out how to achieve this. I could inspire myself in the project Denmark-Covid Project. He mentioned that for access to the data he would have to ask Laura (?) and hinted that the data might be have already be used for the last paper (or so I understood). We discussed for a while on ideas on how the backpropagatable idea (might need a better name) could work and he mentioned some comment were he thinks it might fail. I believe that already from the intial formulation it would be clear if this is achievable the [Reparametrization solution](#mc-pyt-solution-1-reparametrization) is only a first idea, more approaches could be found. 
+
+Here a small sketch I used in the meeting for explanation of the idea:
+
+![alt text](docs/journal/differentiableMC_sketch.png)
+
+
+Parameter uncertainty was a big topic, he mentioned that that is even more interesting that the optimal values itself, so after seeing if the problem is backpro... differentiable (from now on). After seing if I can create a differentiable MC simulation I should see how to find the parameter uncertainty (which I believe should be so complicated in the context of ML)
+
+Fischer Information came back again, so I should look into what that exactly means.
+
+I also agreed on sharing this repo with them, so I will be carefull on what I write about them (just a joke in case you are here.)
+
+## TODO
+
+- [ ] Look for different approaches to make a montecarlo simulation backpropagatable, so that we can optimize the parameters using the histogram (or similar) comparison as loss function. This will evolve in more Todos.
+
+- [ ] Understan Fischer Information in the parameter uncertainty context
