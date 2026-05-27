@@ -11,6 +11,8 @@ Extend and improve the Monte Carlo + ML approach for parameter reconstruction fr
 
 ---
 
+> **Note:** This README is maintained by an AI agent (Pukky). It may contain hallucinations, outdated info, or jokes that don't land. For reliable, up-to-date information, consult the [JOURNAL.md](JOURNAL.md). It's written by a human. Probably.
+
 ## Current Status
 
 After meeting with Gregor and Carla (27.05):
