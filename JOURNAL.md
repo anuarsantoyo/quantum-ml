@@ -292,3 +292,21 @@ I also agreed on sharing this repo with them, so I will be carefull on what I wr
 - [ ] Look for different approaches to make a montecarlo simulation backpropagatable, so that we can optimize the parameters using the histogram (or similar) comparison as loss function. This will evolve in more Todos.
 
 - [ ] Understan Fischer Information in the parameter uncertainty context
+
+---
+
+# 12.06.2026
+
+## Differentiable Sampling Ideas
+
+New ideas for making the first part of the problem (random sampling of electrons) differentiable.
+
+### STE + Finite-Difference Optimisation for Discrete Simulation Counts
+
+Optimising μ, σ of a normal distribution when the sampled value determines a discrete simulation count (n = round(x)).
+
+- Use the **reparameterisation trick**: x = μ + σε, ε ∼ 𝒩(0,1).
+- **Rounding is non‑differentiable** → apply the **Straight‑Through Estimator (STE)**: forward pass uses real rounding; backward pass pretends ∂n/∂x = 1.
+- The **black‑box loss L(n)** has no analytical gradient → estimate ∂L/∂n via finite differences, e.g. central difference (L(n+1) − L(n−1))/2.
+- **Gradients for the parameters** then become: ∇μ = gₙ, ∇σ = gₙ·ε, where gₙ is the finite‑difference estimate.
+- Update μ, σ with gradient descent. The method is **biased** (due to the STE) but **low‑variance** and simple to implement, often working well when the loss varies smoothly with n.
