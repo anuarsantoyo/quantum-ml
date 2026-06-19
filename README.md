@@ -55,6 +55,7 @@ Explore hybrid models that combine physical knowledge of the PLE process with le
 - [x] Research backprop approaches (reparam trick, STE, implicit diff)
 - [x] Prototype & test implicit diff through Lorentzian/Voigt fit (ch3 works)
 - [ ] **Histogram → smooth density conversion** — convert experimental linewidth histogram to KDE-comparable form
+  - Candidate: Integrated Squared Error (L2) on bin counts — simpler than χ², differentiable
 - [ ] **Unify ch2 + ch3** into a single differentiable MC pipeline (sampling + fit, end-to-end)
 - [ ] **Test end-to-end on dummy data** — simulate synthetic "experimental" data, recover (γ, n̄) via gradient descent
 
