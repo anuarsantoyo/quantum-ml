@@ -378,7 +378,42 @@ Built the entire forward pipeline in `notebooks/differentiable-mc.ipynb`:
 
 Full pipeline tested: 200 runs, no inf/nan, loss landscape works (wrong params → higher loss, same params → lower loss).
 
-Now starting the real challenge: **making it differentiable** so we can optimize (γ, n̄) via gradient descent.
+### Timing
+Ran timing tests: 1 run ≈ 0.034s, 100 runs ≈ 3.6s, 2000 runs ≈ 72s (1.2 min). L-BFGS is the bottleneck but it's manageable — a 200-step optimization loop would take roughly 4-8 hours.
+
+### Organization discussion
+- Chose to keep functions in the notebook for now (no utils.py) — refactor when pipeline stabilizes
+- Restructured code: separated `sample_n`, `sample_cauchy`, `sample_background`, composed into `sample_photons`
+- MCParams dataclass keeps parameters grouped
+
+### Loss function discussion
+- Built `kde_to_bin_counts` (erf-based smooth binning) + `l2_loss`
+- Discussed whether KDE → hist → loss is redundant
+  - Option A: soft binning (direct erf) — this is what we do, just named confusingly
+  - Option B: compare KDE-to-KDE directly — not possible without raw experimental data
+  - Keeping current naming since it's easier to understand
+
+### Optimization strategy discussion
+
+**The core problem:** We need to optimize (γ, n̄) simultaneously but they have different gradient properties:
+- γ flows through a continuous chain (Cauchy → fit → FWHM → loss) — potentially differentiable
+- n̄ hits `round()` — discrete step, needs finite-difference
+
+**Ideas discussed:**
+
+1. **Optimize γ first, sweep n̄ later** — Phase 1: gradient descent on γ with n̄ fixed. Phase 2: sweep n̄ candidate values. Problem: assumes γ and n̄ are independent, which they're not (paper Fig 3b shows coupling).
+
+2. **Alternating — my idea (2 sims/step)** — Run sim at (γ, n̄) for γ gradient. Run sim at (γ, n̄+1) for one-sided finite-diff on n̄. Update both each step. 2 sims/step. Concern: γ gradient is evaluated at the *wrong* n̄, one-sided fd is biased.
+
+3. **Alternating with averaging (2 sims/step)** — Run sim at (γ, n̄+1) and (γ, n̄-1). Average the γ gradients from both (batch size 2). Use both losses for central fd on n̄. 2 sims/step. Concern: batch size 2 for γ buys nothing since gradients are deterministic with fixed noise.
+
+4. **Central diff (3 sims/step)** — Run at (γ, n̄), (γ, n̄+1), (γ, n̄-1). Use middle for γ gradient (correct n̄). Use L+ and L- for unbiased central fd on n̄. 3 sims/step. 50% more expensive but cleaner.
+
+5. **All finite-difference** — Probe every parameter via fd, works with existing code, scales to 3+ params at cost (N+1) sims/step.
+
+**Key insight:** The real bottleneck is L-BFGS (2000 fits per simulation), not the forward pass itself. Time test showed 1 sim ≈ 1.2 min, so any strategy with 2-3 sims/step requires 4-8h for 200 steps — doable but not real-time.
+
+**Next step:** Make γ differentiable first (implicit diff through fit), then decide on the optimization loop structure.
 
 ### Updated TODO
 
@@ -387,7 +422,8 @@ Now starting the real challenge: **making it differentiable** so we can optimize
 - [x] Collapse (simulate 2000 runs → FWHM distribution)
 - [x] KDE
 - [x] Loss function (kde_to_bin_counts + L2)
-- [ ] **Make the pipeline differentiable** — reparemetrize sampling + implicit diff through fit
+- [ ] **Make the pipeline differentiable** — implicit diff through fit + reparameterized sampling
+- [ ] **Decide optimization strategy** — from the ideas above
 - [ ] Test end-to-end optimization on dummy data
 - [ ] Get real data from Gregor
 - [ ] Understand Fisher Information for parameter uncertainty
