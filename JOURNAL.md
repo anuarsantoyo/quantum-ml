@@ -354,16 +354,40 @@ Gregor mentioned the data could be given to me — waiting on that. This needs m
 - [ ] Test end-to-end on dummy data (simulate "real" data, then recover parameters)
 - [ ] Understand Fisher Information for parameter uncertainty in the ML context
 
-## Differentiable Sampling Ideas
+---
 
-New ideas for making the first part of the problem (random sampling of electrons) differentiable.
+# 19.06.2026 (later)
 
-### STE + Finite-Difference Optimisation for Discrete Simulation Counts
+## Pipeline Complete — Moving to Differentiation
 
-Optimising μ, σ of a normal distribution when the sampled value determines a discrete simulation count (n = round(x)).
+Built the entire forward pipeline in `notebooks/differentiable-mc.ipynb`:
 
-- Use the **reparameterisation trick**: x = μ + σε, ε ∼ 𝒩(0,1).
-- **Rounding is non‑differentiable** → apply the **Straight‑Through Estimator (STE)**: forward pass uses real rounding; backward pass pretends ∂n/∂x = 1.
-- The **black‑box loss L(n)** has no analytical gradient → estimate ∂L/∂n via finite differences, e.g. central difference (L(n+1) − L(n−1))/2.
-- **Gradients for the parameters** then become: ∇μ = gₙ, ∇σ = gₙ·ε, where gₙ is the finite‑difference estimate.
-- Update μ, σ with gradient descent. The method is **biased** (due to the STE) but **low‑variance** and simple to implement, often working well when the loss varies smoothly with n.
+| Function | Purpose |
+|----------|---------|
+| `MCParams` | Container for (γ, n̄, σ, λ) |
+| `sample_n` | Reparameterized N ~ N(n̄, σ) |
+| `sample_cauchy` | n frequencies from Cauchy(γ) |
+| `sample_background` | Uniform background ~ Poisson(λ) |
+| `sample_photons` | Concatenates signal + background |
+| `fit_pseudo_voigt` | MLE via L-BFGS → FWHM per run |
+| `full_run` | Params in → one FWHM out |
+| `simulate` | N runs → FWHM distribution |
+| `kde` | Smooth differentiable density |
+| `kde_to_bin_counts` | FWHMs → smooth bin counts via erf |
+| `l2_loss` | L2 between two histograms |
+
+Full pipeline tested: 200 runs, no inf/nan, loss landscape works (wrong params → higher loss, same params → lower loss).
+
+Now starting the real challenge: **making it differentiable** so we can optimize (γ, n̄) via gradient descent.
+
+### Updated TODO
+
+- [x] Sampling (continuous photons)
+- [x] Voigt fitting (MLE via L-BFGS)
+- [x] Collapse (simulate 2000 runs → FWHM distribution)
+- [x] KDE
+- [x] Loss function (kde_to_bin_counts + L2)
+- [ ] **Make the pipeline differentiable** — reparemetrize sampling + implicit diff through fit
+- [ ] Test end-to-end optimization on dummy data
+- [ ] Get real data from Gregor
+- [ ] Understand Fisher Information for parameter uncertainty
