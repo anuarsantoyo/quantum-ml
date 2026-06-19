@@ -342,7 +342,9 @@ Options discussed:
 - Use the experimental histogram to parameterize a smooth density (e.g. a Gaussian mixture) and compare via a differentiable divergence
 - Keep the histogram on the experimental side but use a smooth surrogate for the χ² loss (e.g. a differentiable binning approximation)
 
-This needs more thought and prototyping.
+**Another idea: Integrated Squared Error (L2) on Bin Counts** — instead of the χ² statistic, use the sum of squared differences between simulated and experimental bin counts directly. This is simpler, avoids the χ² weighting (which can blow up for low-count bins), and is differentiable as long as the bin counts come from a differentiable density. The L2 loss gives a smooth landscape and the gradient is straightforward. We'll try this when we get the data.
+
+Gregor mentioned the data could be given to me — waiting on that. This needs more thought and prototyping.
 
 ### Revised TODO
 
