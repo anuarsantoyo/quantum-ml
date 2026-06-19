@@ -310,3 +310,58 @@ Optimising μ, σ of a normal distribution when the sampled value determines a d
 - The **black‑box loss L(n)** has no analytical gradient → estimate ∂L/∂n via finite differences, e.g. central difference (L(n+1) − L(n−1))/2.
 - **Gradients for the parameters** then become: ∇μ = gₙ, ∇σ = gₙ·ε, where gₙ is the finite‑difference estimate.
 - Update μ, σ with gradient descent. The method is **biased** (due to the STE) but **low‑variance** and simple to implement, often working well when the loss varies smoothly with n.
+
+---
+
+# 19.06.2026
+
+## Meeting with Gregor & Clara
+
+Had a meeting with Gregor and Clara today. I walked them through the differentiable MC idea in detail — the full pipeline I've been building in the notebooks.
+
+### What I showed them
+
+The conceptual split into two challenges:
+1. **Making the sampling differentiable** (ch2) — reparameterization trick + STE + finite-difference surrogate gradients for the discrete photon count sampling
+2. **Differentiating through the fit** (ch3) — implicit differentiation through the Voigt/Lorentzian fit, so we can backprop through the FWHM extraction without unrolling the optimizer
+
+I demonstrated that ch3 is already working: a full optimization loop where we start with a guess for the true linewidth γ_true and gradient-descend through the fit to recover the target. The parameters converge and gamma_fit reaches the expected value.
+
+### Their response
+
+Both understood the approach. Gregor is on board — I'm supposed to implement this. The overall direction was validated. The code and notebooks are in good shape to move forward.
+
+### Key open question: histogram → KDE conversion
+
+The interesting conceptual challenge that came up:
+
+In the original paper, the comparison is **histogram vs histogram** (simulated linewidth distribution vs experimental linewidth distribution) via χ². In the differentiable version, we want to compare **KDE vs ?** — but the real experimental data is a histogram of fitted linewidths. How do we convert it to something smooth and differentiable?
+
+Options discussed:
+- Fit a KDE to the experimental histogram and compare KDE-to-KDE (divergence like KL, MMD, or Sinkhorn)
+- Use the experimental histogram to parameterize a smooth density (e.g. a Gaussian mixture) and compare via a differentiable divergence
+- Keep the histogram on the experimental side but use a smooth surrogate for the χ² loss (e.g. a differentiable binning approximation)
+
+This needs more thought and prototyping.
+
+### Revised TODO
+
+- [ ] Prototype histogram → smooth density conversion for real data
+- [ ] Compare KDE-to-KDE divergence vs smooth χ² surrogate
+- [ ] Port ch2 and ch3 into a unified differentiable MC pipeline
+- [ ] Test end-to-end on dummy data (simulate "real" data, then recover parameters)
+- [ ] Understand Fisher Information for parameter uncertainty in the ML context
+
+## Differentiable Sampling Ideas
+
+New ideas for making the first part of the problem (random sampling of electrons) differentiable.
+
+### STE + Finite-Difference Optimisation for Discrete Simulation Counts
+
+Optimising μ, σ of a normal distribution when the sampled value determines a discrete simulation count (n = round(x)).
+
+- Use the **reparameterisation trick**: x = μ + σε, ε ∼ 𝒩(0,1).
+- **Rounding is non‑differentiable** → apply the **Straight‑Through Estimator (STE)**: forward pass uses real rounding; backward pass pretends ∂n/∂x = 1.
+- The **black‑box loss L(n)** has no analytical gradient → estimate ∂L/∂n via finite differences, e.g. central difference (L(n+1) − L(n−1))/2.
+- **Gradients for the parameters** then become: ∇μ = gₙ, ∇σ = gₙ·ε, where gₙ is the finite‑difference estimate.
+- Update μ, σ with gradient descent. The method is **biased** (due to the STE) but **low‑variance** and simple to implement, often working well when the loss varies smoothly with n.

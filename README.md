@@ -15,11 +15,12 @@ Extend and improve the Monte Carlo + ML approach for parameter reconstruction fr
 
 ## Current Status
 
-After meeting with Gregor and Carla (27.05):
-- ✅ Understanding of the MC simulation was correct
-- ✅ Hyperopt approach → interesting but not novel enough, **deprioritized**
-- ✅ **Differentiable MC** → the promising direction
-- 📌 Repo to be shared with the group
+After meeting with Gregor and Clara (19.06):
+- ✅ Notion of two challenges (sampling + fitting) validated
+- ✅ **ch3 works** — implicit differentiation through Lorentzian fit, full optimization loop converges
+- ✅ Differentiable MC direction greenlit — proceed with implementation
+- 🔴 **Next:** Solve histogram → smooth density conversion to unify the pipeline
+- 📌 Repo shared with the group
 
 ---
 
@@ -50,16 +51,17 @@ Explore hybrid models that combine physical knowledge of the PLE process with le
 
 ## TODOs
 
-### Differentiable MC
-- [ ] Research approaches to make MC simulation backpropagatable
-- [ ] Consider: reparameterization trick, Gumbel-Softmax, differentiable histogram approximations, score function estimators
-- [ ] Prototype the most promising approach
-- [ ] Test on dummy data
+### Differentiable MC Pipeline
+- [x] Research backprop approaches (reparam trick, STE, implicit diff)
+- [x] Prototype & test implicit diff through Lorentzian/Voigt fit (ch3 works)
+- [ ] **Histogram → smooth density conversion** — convert experimental linewidth histogram to KDE-comparable form
+- [ ] **Unify ch2 + ch3** into a single differentiable MC pipeline (sampling + fit, end-to-end)
+- [ ] **Test end-to-end on dummy data** — simulate synthetic "experimental" data, recover (γ, n̄) via gradient descent
 
 ### Theory
 - [ ] Understand Fisher Information and its role in parameter uncertainty
-- [ ] Understand the 2-level quantum system with stochastic noise
-- [ ] Understand PLE NV measurement in detail
+- [x] Understand the 2-level quantum system with stochastic noise
+- [x] Understand PLE NV measurement in detail
 
 ### Data
 - [ ] Get access to real experimental data (ask Gregor about Laura's data)
