@@ -2,6 +2,7 @@
 numpy
 scipy
 matplotlib
+pandas
 jupyter
 
 # Will add quantum and ML frameworks as we decide on direction
