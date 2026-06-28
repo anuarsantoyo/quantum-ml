@@ -458,3 +458,86 @@ So we can compare the two distributions directly. Replaced the loss step of `not
 Quick sanity test passed: wrong params → MMD² ≈ 0.088, matching params → ≈ 0.003 (much lower).
 
 Note for later: FWHM spans orders of magnitude, so we'll likely apply the loss in `log` space so the single kernel scale is meaningful across the range. Alternatives considered (1-D Wasserstein, Cramér/energy distance, KDE-to-KDE L2) — kept MMD² as the primary, can cross-check against these.
+
+---
+# 28.06.2026
+
+## Differentiable pipeline in γ — working end-to-end
+
+Made `gamma` differentiable through the whole pipeline in `notebooks/differentiable-mc.ipynb`, so `loss = mmd2_biased(log10(sim), log10(real)); loss.backward()` produces a correct `gamma.grad` and gradient descent recovers γ. Scope this round: **γ only** (nbar held fixed); inner fit **switched to a Lorentzian** (the matched model). Built and validated as a script first, then ported into the notebook (now Steps 1–8).
+
+**What changed and why:**
+
+1. **Reparameterized sampling.** Per run we fix the randomness as quantiles `u` (+ background `b`, count `N`); the signal detunings `γ·tan(π(u−0.5))` are then a differentiable function of γ.
+
+2. **Truncation instead of clip-to-edge — fixes a latent bug.** The original `np.clip(..., FREQ_MIN, FREQ_MAX)` piled ~17% of the Cauchy mass as spikes at ±75. With those spikes the fitted FWHM was **non-monotonic in γ** (rose then collapsed; γ=30 → median 0.84, mean inf) → γ not recoverable. Switched to **truncation** (out-of-window photons aren't detected) + a **truncation-aware Lorentzian+uniform MLE** (Lorentzian renormalized over the window). This is the correctly-specified estimator: clean recovery on synthetic data (γ=20 → fit 20.07) and median FWHM now **monotonic** in γ.
+
+3. **Inner fit: pseudo-Voigt → Lorentzian + uniform background.** The signal is pure Cauchy, so a Lorentzian is the matched model; `FWHM = 2·γ_fit` exactly, and the 3-param Hessian (center, log_gamma, logit_w) is well-conditioned — important for stable implicit-diff gradients (the 4-param pseudo-Voigt Hessian is ill-conditioned near η saturation).
+
+4. **Differentiating through the fit — implicit function theorem, not unrolling.** Wrapped one run as a `torch.autograd.Function`: forward runs the (detached) L-BFGS fit to find θ*; backward returns `dFWHM/dγ = −(∂FWHM/∂θ)·H_θθ⁻¹·H_θγ` (γ enters the inner NLL only through the data). Hessian blocks via `torch.func`; scale-aware Tikhonov reg + condition/PD guards zero out the rare bad run instead of emitting garbage. Runs on float64.
+
+**Validation (the gates):**
+- **Per-run gradient vs central finite difference:** median relative error **0.12%** (90th pct ~1%); large errors only where the true gradient ≈ 0 (degenerate fits).
+- **Gradient sign:** points toward γ_true from both sides, ≈ 0 at the truth.
+- **End-to-end recovery:** from a wrong start γ=10, recovered **γ = 20.5 ± 0.15** (true 20.0); loss dropped 0.59 → ~0.001 (the same-params noise floor). Slight overshoot above 20 from lr=0.5 + a small (400-run) noisy target — tightens with a bigger target / lower lr.
+
+**Cost:** ~4 s/step at 200 runs (L-BFGS per run dominates). Use a few hundred runs during optimization; full 2000 only for final eval. A `vmap`ed batched Gauss-Newton inner fit is the obvious future speedup.
+
+**Next:** make `nbar` differentiable via the finite-difference surrogate (the photon count is discrete) and run joint (γ, nbar) recovery; then point the loss at the real experimental FWHM data.
+
+## Line-by-line review of the differentiable pipeline
+
+After getting the forward pass working, I handed the code to pukky to make it differentiable **with respect to γ only** (nbar comes later). It claims it managed to do that, so I'm now going through the code line by line to check whether what was done actually sounds correct. I'll log the important findings here as I go.
+
+### Finding 1 — the reparameterization trick for the Cauchy signal
+
+The signal detunings are drawn with `signal_detunings(gamma, u) = gamma * tan(π·(u − 0.5))`, where `u` is a frozen uniform draw. This is the reparameterization trick built on the **probability integral transform** for a Cauchy. Working it out from scratch to confirm it's correct:
+
+**1. The Cauchy distribution.** A photon's detuning from line center follows a Lorentzian = Cauchy with location 0 and scale γ. Its density is
+
+```
+            1        gamma
+p(x) =  ----- · ---------------          x in (-inf, inf)
+           pi      x^2 + gamma^2
+```
+
+γ is the half-width at half-maximum: `p(±gamma) = p(0)/2`. The tails decay only like `1/x^2` (heavy tails — this is why we later truncate to the detection window).
+
+**2. The CDF.** Integrating the density gives a closed form:
+
+```
+            1     1                 x
+F(x)  =   --- + ---- · arctan( ------- )
+            2     pi             gamma
+```
+
+`F` rises smoothly and monotonically from 0 (x = -inf) to 1 (x = +inf); `F(0) = 1/2`.
+
+**3. The inverse CDF (quantile function).** Solve `u = F(x)` for x:
+
+```
+u - 0.5            = (1/pi) · arctan(x / gamma)
+pi · (u - 0.5)     = arctan(x / gamma)
+tan(pi·(u - 0.5))  = x / gamma
+x                  = gamma · tan(pi · (u - 0.5))         = F^{-1}(u)
+```
+
+**4. Probability integral transform (why this samples a Cauchy).** The PIT says: if a random variable X has continuous CDF F, then U = F(X) is Uniform(0,1); and conversely, if U ~ Uniform(0,1) then X = F^{-1}(U) has CDF F. So pushing a uniform `u` through the inverse CDF above produces exactly a Cauchy(0, γ) sample. That's the line of code.
+
+**Why this is the *reparameterization* trick (the point for differentiability):** all the randomness lives in `u`, which is drawn once and frozen. γ enters only as a deterministic, smooth multiplier — there's no randomness sitting between γ and the output. So the derivative is exact and well-defined:
+
+```
+  d x
+------- = tan(pi · (u - 0.5))
+d gamma
+```
+
+Holding `u` fixed, the photon position is a differentiable function of γ. This is what makes γ recoverable by gradient descent (vs. the old entangled `np.random.standard_cauchy() * gamma`, where the draw and γ are tangled and no clean derivative exists). Sanity checks on the formula: `u = 0.5 → x = 0` (center); `u = 0.25, 0.75 → x = ∓gamma, ±gamma` (the quartiles sit at ±γ, consistent with γ = HWHM); `u → 0 or 1 → x → ∓inf` (the heavy tails). Conclusion: **this part is correct.**
+
+### Finding 2 — continuous representation vs. the experiment's binning
+
+A modeling-choice note to track. In the **real PLE experiment** the spectrum is built by **binning** photon counts into a histogram and fitting a (Voigt) line shape to that histogram — binning is essentially a technological/measurement constraint. In **our simulation** we skip binning entirely: we keep the **continuous photon frequencies** and fit the line shape (Lorentzian MLE) directly to the unbinned points.
+
+We're deliberately keeping the continuous version because it's cleaner and more efficient (no binning information loss / bin-edge artifacts) and, importantly, it's what makes the implicit-diff gradient tractable. The justification for why this is acceptable: **the only thing we ever compare against the experiment is the distribution of FWHMs** — binning is just the experiment's machinery for turning photons into one FWHM per run, not a physical feature of the sample.
+
+Caveat to recheck later: the FWHM is an *estimator output*, so binned-Voigt-LSQ (theirs) vs. unbinned-Lorentzian-MLE (ours) could in principle differ in bias/variance — most likely in the low-count / low-transmission regime. For now we treat this as a second-order detail and keep the continuous representation; **flag to revisit if we see sim-vs-real mismatch** once the loss is pointed at the real data. (Related and likely larger simplification: our generative model emits a pure Lorentzian while real lines may carry Gaussian broadening → Voigt — that's the more consequential thing to check first if real-data matching struggles.)
