@@ -425,5 +425,36 @@ Ran timing tests: 1 run ≈ 0.034s, 100 runs ≈ 3.6s, 2000 runs ≈ 72s (1.2 mi
 - [ ] **Make the pipeline differentiable** — implicit diff through fit + reparameterized sampling
 - [ ] **Decide optimization strategy** — from the ideas above
 - [ ] Test end-to-end optimization on dummy data
-- [ ] Get real data from Gregor
+- [x] Get real data from Gregor
 - [ ] Understand Fisher Information for parameter uncertainty
+
+---
+# 27.06.2026
+
+## Real data from Gregor — received & understood
+
+Gregor sent the experimental PLE line-width data, now in `data/raw_data/`. Went through it and figured out the organization (full write-up in [data/raw_data/data_explanation.md](data/raw_data/data_explanation.md)):
+
+- Two sessions by red-laser power: `fwhm_1nW_240221/` (1 nW) and `fwhm_3nW_210221/` (3 nW), 7 files each sweeping the transmission setting `Trans05 … Trans100`.
+- Each file is a 2-column table, 3200 rows = 3200 fit attempts. **Column 1 = line width (FWHM), column 2 = fit error (1σ uncertainty on the FWHM, same units as col 1).** Failed fits = `nan nan` (confirmed by Gregor via email).
+- Valid-row count grows with transmission (~160 → ~2500) → effective SNR knob. Median FWHM grows with power → power broadening. Huge col-2 values pair with near-zero FWHM = degenerate fits; `err/fwhm` is the natural quality cut.
+- Open question: absolute unit of the line width isn't in the files (notebook currently works in MHz) — to confirm with Gregor later.
+
+So the histogram of valid column-1 values is the experimental FWHM distribution our MC pipeline should reproduce.
+
+## Idea: use the fit error as a weight in the loss (future)
+
+Right now the L2 loss treats every valid FWHM equally. But we also have the per-fit uncertainty (column 2). Future idea: turn the loss into a **weighted** loss using the fit error — down-weight high-uncertainty fits (e.g. weight ∝ 1/σ² or some function of `err/fwhm`) so noisy, low-SNR points contribute less to the bin counts / loss. This should make the experimental FWHM distribution we match against more robust, especially at low transmission where many fits are poor. Revisit once the differentiable pipeline is working.
+
+## Realization: the data are samples, not histograms — switched loss to MMD²
+
+While doing EDA (`notebooks/eda.ipynb`) it clicked that each file is **a list of individual FWHM values** (one per fit attempt), *not* a pre-binned histogram as I'd assumed. Great news: both sides of the loss are now just **sets of samples** — simulated FWHMs (from `simulate()`, parameter-dependent) and real FWHMs (fixed). We no longer have to bin anything or work around histogram comparison (`kde_to_bin_counts` + L2 was only needed to match a binned target).
+
+So we can compare the two distributions directly. Replaced the loss step of `notebooks/differentiable-mc.ipynb` with the **biased MMD²** estimator (Gaussian kernel, median-heuristic bandwidth). Also removed the now-unused KDE step (the old binning workaround) and improved the docstrings throughout, so the pipeline is now Steps 1–6 with MMD² as the final loss step:
+- differentiable in the simulated samples → gradients flow back to the params,
+- handles unequal sample sizes (m ≠ n) naturally,
+- no bins, no grid, no bandwidth-for-binning headache.
+
+Quick sanity test passed: wrong params → MMD² ≈ 0.088, matching params → ≈ 0.003 (much lower).
+
+Note for later: FWHM spans orders of magnitude, so we'll likely apply the loss in `log` space so the single kernel scale is meaningful across the range. Alternatives considered (1-D Wasserstein, Cramér/energy distance, KDE-to-KDE L2) — kept MMD² as the primary, can cross-check against these.
