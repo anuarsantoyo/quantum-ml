@@ -1,6 +1,12 @@
 # 2026-07-03
 
-## REINFORCE Toy for μ (mean photon count) — Full Summary
+## Morning: Presentation 🎉
+
+Anuar finished and gave the presentation today. It was a big success — they loved it and were impressed with how fast the development progressed. Anuar mentioned it was thanks to Pukky 🔬
+
+He also met the professor afterward. It was a bit awkward — the professor seemed to think Anuar wanted something from him, but Anuar was just being sociable. Overall a great outcome.
+
+## Afternoon: REINFORCE Toy for μ (mean photon count) — Full Summary
 
 ### Goal
 Build a toy notebook that uses REINFORCE to optimize the **mean photon count** μ through the discrete rounding step (int n), keeping γ fixed. Gamma is already differentiable via implicit differentiation — this tackles the other half of the problem.
