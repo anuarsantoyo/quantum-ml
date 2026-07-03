@@ -102,3 +102,8 @@ It works: dLoss/dFWHM is computed. The next step is dFWHM/dfrequencies.
 We test it by creating a true gamma distribution and building the MMD² loss from it.
 
 ![alt text](image-17.png)
+
+# Next steps
+
+- Integrate dloss/dn
+- Research reinforce approach, if not suitable do n+1 / n-1 approach and update lambda as average of gradients from both runs (other strategies to be found)
