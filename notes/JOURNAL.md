@@ -66,11 +66,11 @@ data/         # Datasets (gitignored)
 I started reading the papaer in detail, I am getting a much better idea of the whole problem and the approach to solve it.
 
 Here is a summary of the Monte Carlo Method in General
-![alt text](docs/journal/MCM.png)
+![alt text](../docs/journal/MCM.png)
 
 
 Here is a Summary of one Monte Carlo Simulation
-![alt text](docs/journal/MCSimulation.png)
+![alt text](../docs/journal/MCSimulation.png)
 
 
 ## Idea: Optimizing $\sigma$
@@ -279,7 +279,7 @@ On the other hand, the [Monte Carlo PyTorch idea](#idea-monte-carlo-with-pytorch
 
 Here a small sketch I used in the meeting for explanation of the idea:
 
-![alt text](docs/journal/differentiableMC_sketch.png)
+![alt text](../docs/journal/differentiableMC_sketch.png)
 
 
 Parameter uncertainty was a big topic, he mentioned that that is even more interesting that the optimal values itself, so after seeing if the problem is backpro... differentiable (from now on). After seing if I can create a differentiable MC simulation I should see how to find the parameter uncertainty (which I believe should be so complicated in the context of ML)
@@ -434,7 +434,7 @@ Ran timing tests: 1 run ≈ 0.034s, 100 runs ≈ 3.6s, 2000 runs ≈ 72s (1.2 mi
 
 ## Real data from Gregor — received & understood
 
-Gregor sent the experimental PLE line-width data, now in `data/raw_data/`. Went through it and figured out the organization (full write-up in [data/raw_data/data_explanation.md](data/raw_data/data_explanation.md)):
+Gregor sent the experimental PLE line-width data, now in `data/raw_data/`. Went through it and figured out the organization (full write-up in [data/raw_data/data_explanation.md](../data/raw_data/data_explanation.md)):
 
 - Two sessions by red-laser power: `fwhm_1nW_240221/` (1 nW) and `fwhm_3nW_210221/` (3 nW), 7 files each sweeping the transmission setting `Trans05 … Trans100`.
 - Each file is a 2-column table, 3200 rows = 3200 fit attempts. **Column 1 = line width (FWHM), column 2 = fit error (1σ uncertainty on the FWHM, same units as col 1).** Failed fits = `nan nan` (confirmed by Gregor via email).
