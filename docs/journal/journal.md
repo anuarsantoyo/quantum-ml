@@ -73,3 +73,10 @@ Main difference: REINFORCE only remembers the current loss + decayed baseline (n
 **Refinement suggestion:** Use the **percentile** of FWHM_i in the target CDF instead of raw distance, to be more robust to outliers.
 
 **Next:** Discuss implementability with Anuar. (Parked for later.)
+
+### TODOs (parked)
+
+- **Clean code:** Refactor the notebooks — extract shared simulation/fitting/loss code into `utils.py` module
+- **Replace MMD² with Wasserstein-1** across all notebooks (consistent loss function)
+- **Think of utils:** Organize common functions (fitting, simulation, Wasserstein loss) into reusable modules
+- **Reinstall mask strategy:** The original gamma-differentiable code had a photon truncation scheme (masking out-of-window photons). Re-evaluate and reinstate if beneficial.
