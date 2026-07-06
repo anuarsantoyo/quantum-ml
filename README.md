@@ -1,68 +1,84 @@
-# Quantum ML Project 
+# Quantum ML 🔬⚛️
 
-**Continuation of:** [Monte Carlo-based Parameter Reconstruction of an Optical Quantum System](https://arxiv.org/abs/2501.07951)
+**Differentiable Monte Carlo for Parameter Estimation in Optical Quantum Systems.**
 
-## Project Description
-
-Extend and improve the Monte Carlo + ML approach for parameter reconstruction from low signal-to-noise optical quantum system data. The original paper applies this to photoluminescence excitation (PLE) spectroscopy of NV centers in diamond — we aim to generalize, optimize, and explore new directions.
-
-**Collaborator:** Dr. Gregor Pieplow (weekly meetings)
-**Model:** DeepSeek (via OpenClaw agent "Pukky")
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
+[![arXiv](https://img.shields.io/badge/arXiv-2501.07951-b31b1b.svg)](https://arxiv.org/abs/2501.07951)
 
 ---
 
-> **Note:** This README is maintained by an AI agent (Pukky). It may contain hallucinations, outdated info, or jokes that don't land. For reliable, up-to-date information, consult the [JOURNAL.md](notes/JOURNAL.md). It's written by a human.
+## Overview
 
-## Current Status
+This project develops **differentiable Monte Carlo methods** for parameter estimation in low signal-to-noise optical quantum systems. We replace brute-force grid search with gradient-based optimization by making the entire simulation pipeline differentiable.
 
-After building the forward pipeline (19.06):
-- ✅ Full MC simulation built: sampling → fitting → simulation → loss
-- ✅ Loss landscape works (L2 on smooth bin counts via `kde_to_bin_counts`)
-- 🔴 **Next:** Make the pipeline differentiable — reparameterize sampling + implicit diff
-- 📌 Repo shared with the group
+**Application:** Photoluminescence excitation (PLE) spectroscopy of NV centers in diamond — reconstructing optical linewidths from noisy experimental data.
+
+**Key idea:** Convert the Monte Carlo simulation into a backpropagatable program using PyTorch, enabling gradient descent on physical parameters instead of discrete grid search.
+
+---
+
+## Results
+
+| Approach | Status | Description |
+|----------|--------|-------------|
+| Differentiable MC framework | ✅ Working | Gradient flows through sampling → fitting → loss |
+| MMD² loss | ✅ Working | Continuous, differentiable distribution comparison |
+| Gamma optimization | ✅ Working | End-to-end: synthetic data → loss → parameter update |
+| Real data validation | 🔶 In progress | Testing on experimental NV center data |
+
+![Optimization convergence](notebooks/differentiable-gamma-simplified.ipynb)
 
 ---
 
 ## Project Structure
 
 ```
-qm-ml/
-├── README.md          # Dashboard — overview, ideas, TODOs
-├── JOURNAL.md         # Running log — ideas, decisions, notes
-├── docs/papers/       # PDFs of papers we read
-├── docs/journal/      # Images, sketches for the journal
-├── notebooks/         # Jupyter notebooks (archived prototypes in archive/)
-├── requirements.txt
-└── .gitignore
+├── notebooks/           # Jupyter notebooks (chapters 1-3)
+│   ├── chapter-1-*      # MC algorithm explanation
+│   ├── chapter-2-*      # Differentiable sampling
+│   └── chapter-3-*      # Implicit differentiation through fitting
+├── data/                # Experimental data (gitignored)
+├── scripts/             # Utility scripts
+├── notes/               # Journal, presentations
+└── docs/                # Papers, references
 ```
 
 ---
 
-## Ideas
+## How to Run
 
-### 1. Differentiable Monte Carlo (main direction)
-Convert the MC simulation into a backpropagatable problem (e.g., using PyTorch). Instead of grid search or discrete optimization, treat parameters as learnable and optimize via gradient descent using a differentiable loss.
+```bash
+pip install -r requirements.txt
+jupyter notebook notebooks/
+```
 
-### 2. Hybrid Physics-Informed Model
-Explore hybrid models that combine physical knowledge of the PLE process with learned components — potentially using insights from the Denmark-Covid project (previous work).
+Start with `chapter-1-mc-algorithm.ipynb` for background, then `differentiable-gamma-simplified.ipynb` for the main results.
 
 ---
 
-## TODOs
+## Background
 
-### Differentiable MC Pipeline
-- [x] Sampling (continuous photons)
-- [x] Voigt fitting (MLE via L-BFGS)
-- [x] Collapse (simulate 2000 runs → FWHM distribution)
-- [x] KDE
-- [x] Loss function (kde_to_bin_counts + L2)
-- [ ] **Make the pipeline differentiable** — reparameterize sampling + implicit diff through fit
-- [ ] Test end-to-end optimization on dummy data
+This work extends [arXiv:2501.07951](https://arxiv.org/abs/2501.07951) — "Monte Carlo-based Parameter Reconstruction of an Optical Quantum System" (Pieplow et al.).
 
-### Theory
-- [ ] Understand Fisher Information and its role in parameter uncertainty
-- [x] Understand the 2-level quantum system with stochastic noise
-- [x] Understand PLE NV measurement in detail
+**Collaborator:** Dr. Gregor Pieplow, AG Schröder — Humboldt-Universität zu Berlin
+**Weekly meetings, ongoing research since 2026.**
 
-### Data
-- [ ] Get real data from Gregor
+---
+
+## Citation
+
+```bibtex
+@misc{santoyo2026quantumml,
+  author = {Santoyo Alum, Anuar and Pieplow, Gregor},
+  title = {Differentiable Monte Carlo for Parameter Estimation in NV Center Spectroscopy},
+  year = {2026},
+  howpublished = {\url{https://github.com/anuarsantoyo/quantum-ml}}
+}
+```
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE)
