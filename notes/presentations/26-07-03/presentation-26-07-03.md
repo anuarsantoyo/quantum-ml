@@ -65,8 +65,8 @@ The smaller the FWHM, the higher the fit error — this is especially pronounced
 ### Good news!
 Key finding: the FWHM are continuous values, not binned as we had assumed. This simplifies the final loss.
 
-
-# MMD²
+# Real Data Loss
+## MMD²
 
 I found a loss function that compares two lists of samples and tested whether it optimizes on real data, using `(df["transmission"] == 60) & (df["power_nW"] == 3)`.
 
@@ -76,7 +76,7 @@ MMD²(X, Y) = mean(k(x, x')) + mean(k(y, y')) − 2·mean(k(x, y))
 
 It is 0 when the two sample sets come from the same distribution and grows as they diverge. Because it is built from a smooth kernel, it is differentiable — which is exactly what we need to backpropagate through and optimize.
 
-## Development plot for test
+### Development plot for test
 
 We can follow the optimization step by step.
 ![alt text](image-11.png)
@@ -88,14 +88,38 @@ We can follow the optimization step by step.
 
 
 
-## Sigma tuning
+### Sigma tuning
 
 The choice of sigma in the loss affects the result. This warrants further experimentation.
 ![alt text](image-16.png)
 
 
-## Conclusion
+### Conclusion
 It works: dLoss/dFWHM is computed. The next step is dFWHM/dfrequencies.
+
+
+
+## Waserstein 1D loss
+
+Realizing that the pot does not converge entirely, even when we were simply optimizing the sample plot made me think of looking for a new loss function. As I realized that we have the same amount of samples as target data (to be double checked with Gregor). We can simply used the Waserstein for 1D which is much simpler, quicker and doesnt have the issue of vanishing gradients as MMD^2 does. 
+
+
+Unlike MMD², the 1D Wasserstein distance requires no kernel bandwidth tuning.
+It directly measures the L1 distance between the sorted samples of two distributions:
+
+$$W_1(P, Q) = \frac{1}{N} \sum_{i=1}^N |P_{(i)} - Q_{(i)}|$$
+
+where $P_{(i)}$ and $Q_{(i)}$ are the sorted samples.
+This gives a natural, parameter-free way to match distributions in 1D.
+
+### Optimization development
+
+![alt text](image-26.png)
+![alt text](image-27.png)
+![alt text](image-28.png)
+![alt text](image-29.png)
+![alt text](image-30.png)
+![alt text](image-31.png)
 
 # Gamma differentiable
 
