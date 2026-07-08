@@ -183,7 +183,7 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, reg=1e-4):
         df_dgamma = 2.0
     
     # Compute sigma_FWHM: sqrt(dF/dtheta @ H_inv @ dF/dtheta^T)
-    sigma_fwhm = torch.sqrt((dF_dtheta.unsqueeze(0) @ H_inv @ dF_dtheta.unsqueeze(1)).squeeze().clamp_min(1e-30)).item()
+    sigma_fwhm = torch.sqrt(((dF_dtheta.unsqueeze(0) @ H_inv @ dF_dtheta.unsqueeze(1)).squeeze().clamp_min(1e-30)) / max(len(photons_t), 1)).item()
     if not math.isfinite(sigma_fwhm):
         sigma_fwhm = 0.5 * gamma_val
     
