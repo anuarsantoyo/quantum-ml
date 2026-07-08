@@ -10,7 +10,7 @@
 
 ## Overview
 
-This project develops **differentiable Monte Carlo methods** for parameter estimation in low signal-to-noise optical quantum systems. We replace brute-force grid search with gradient-based optimization by making the entire simulation pipeline differentiable.
+This project develops  **differentiable Monte Carlo methods** for parameter estimation in low signal-to-noise optical quantum systems. We replace brute-force grid search with gradient-based optimization by making the entire simulation pipeline differentiable.
 
 **Application:** Photoluminescence excitation (PLE) spectroscopy of NV centers in diamond — reconstructing optical linewidths from noisy experimental data.
 
