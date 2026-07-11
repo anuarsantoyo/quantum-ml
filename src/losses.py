@@ -129,3 +129,37 @@ def wasserstein_loss(x, y):
 
 
 import math  # needed by mmd_loss median heuristic
+
+
+def per_run_wasserstein_sorted(fwhms, target):
+    """
+    Per-quantile Wasserstein via sorted quantile matching.
+
+    Sort both the B simulated FWHMs and the target, then match
+    quantile-to-quantile: loss_i = |f_{(i)} - y_{(i)}|.
+
+    The average of per_quantile_loss is exactly the 1D Wasserstein-1
+    distance between the two sets (when matched to same size).
+
+    Parameters
+    ----------
+    fwhms : tensor (B,)
+        Simulated FWHM values.
+    target : tensor (M,)
+        Target FWHM values (M >= B).
+
+    Returns
+    -------
+    per_quantile_loss : tensor (B,)
+        One loss per quantile position.
+    sort_idx : tensor (B,)
+        Indices that sorted fwhms (to map n_i -> sorted order).
+    mean_loss : scalar
+        The batch Wasserstein-1 distance.
+    """
+    B = len(fwhms)
+    sorted_fwhms, sort_idx = torch.sort(fwhms)
+    sorted_target, _ = torch.sort(target)
+    matched_target = sorted_target[:B]
+    per_quantile_loss = torch.abs(sorted_fwhms - matched_target)
+    return per_quantile_loss, sort_idx, per_quantile_loss.mean()

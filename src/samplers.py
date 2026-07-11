@@ -10,6 +10,12 @@ import torch
 import numpy as np
 
 
+# --- Detection window constants ---
+FREQ_MIN = -75.0
+FREQ_MAX = 75.0
+FREQ_RANGE = FREQ_MAX - FREQ_MIN   # 150 MHz
+
+
 def sample_cauchy_reparam(gamma, n_photons, rng=None):
     """
     Reparameterized Cauchy sampling.
@@ -37,13 +43,13 @@ def sample_cauchy_reparam(gamma, n_photons, rng=None):
     return gamma * torch.tan(torch.pi * (u - 0.5))
 
 
-def sample_cauchy_truncated(gamma, n_photons, window=150.0, rng=None):
+def sample_cauchy_truncated(gamma, n_photons, window=FREQ_RANGE, rng=None):
     """
     Reparameterized Cauchy with truncation to a finite detection window.
 
-    Samples are truncated to [-window/2, window/2]. The truncation is
-    handled by rejection sampling in the inverse CDF domain: only uniform
-    draws that map inside the window are accepted.
+    Samples are truncated to [-window/2, window/2] using inverse transform
+    sampling of the truncated Cauchy. All samples land inside the window
+    and are a smooth function of gamma.
 
     Parameters
     ----------
@@ -62,16 +68,15 @@ def sample_cauchy_truncated(gamma, n_photons, window=150.0, rng=None):
     if rng is None:
         rng = np.random.default_rng()
     half = window / 2.0
-    # CDF: F(x) = 0.5 + (1/pi) * arctan(x / gamma)
-    # F(-half) and F(half) bound the uniform range
-    u_min = 0.5 + torch.atan(torch.tensor(-half / gamma, dtype=torch.float32)) / torch.pi
-    u_max = 0.5 + torch.atan(torch.tensor(half / gamma, dtype=torch.float32)) / torch.pi
+    gamma_t = torch.as_tensor(gamma, dtype=torch.float32)
+    # Truncated Cauchy CDF bounds
+    u_min = 0.5 + torch.atan(torch.tensor(-half / gamma_t)) / torch.pi
+    u_max = 0.5 + torch.atan(torch.tensor(half / gamma_t)) / torch.pi
+    u = torch.tensor(rng.uniform(float(u_min), float(u_max), n_photons), dtype=torch.float32)
+    return gamma_t * torch.tan(torch.pi * (u - 0.5))
 
-    u = torch.tensor(rng.uniform(u_min.item(), u_max.item(), n_photons), dtype=torch.float32)
-    return gamma * torch.tan(torch.pi * (u - 0.5))
 
-
-def sample_cauchy_masked(gamma, n_photons, window=150.0, rng=None):
+def sample_cauchy_masked(gamma, n_photons, window=FREQ_RANGE, rng=None):
     """
     Reparameterized Cauchy with masking instead of truncation.
 
@@ -147,3 +152,72 @@ def sample_poisson_reparam(lam, n_samples, rng=None):
     eps = torch.tensor(rng.normal(0, 1, n_samples), dtype=torch.float32)
     raw = lam + torch.sqrt(torch.abs(lam) + 1e-8) * eps
     return torch.round(torch.clamp(raw, min=0))
+
+
+# =========================================================================
+# Truncated signal sampling (used by all differentiable notebooks)
+# =========================================================================
+
+def signal_detunings(gamma, u, window=FREQ_RANGE):
+    """
+    Map frozen quantiles `u` to window-truncated Cauchy signal detunings.
+
+    Uses inverse transform of the Cauchy TRUNCATED to [-window/2, window/2].
+    Keeps the photon set count fixed (= len(u)) — no rejection loop needed.
+    All positions are smooth functions of gamma (differentiable).
+
+    Parameters
+    ----------
+    gamma : scalar tensor
+        Lorentzian HWHM (MHz).
+    u : tensor (N,)
+        Frozen uniform(0,1) quantiles.
+    window : float
+        Detection window full width.
+
+    Returns
+    -------
+    detunings : tensor (N,)
+    """
+    half = 0.5 * window
+    # Truncated Cauchy quantile function:
+    # F_t^{-1}(u) = gamma * tan(atan(L/gamma) * (2*u - 1))
+    return gamma * torch.tan(torch.atan(half / gamma) * (2.0 * u - 1.0))
+
+
+def build_photons(gamma, u, b, window=FREQ_RANGE):
+    """
+    Build one run's photons: window-truncated signal at `gamma` + background.
+
+    Parameters
+    ----------
+    gamma : scalar tensor
+        Lorentzian HWHM.
+    u : tensor (N,)
+        Frozen signal quantiles.
+    b : tensor (M,)
+        Background detunings (already drawn uniformly).
+    window : float
+        Detection window full width.
+
+    Returns
+    -------
+    photons : tensor (N + M,)
+    """
+    return torch.cat([signal_detunings(gamma, u, window), b])
+
+
+def draw_fixed_noise(nbar, sigma, lambda_, rng):
+    """
+    Draw and FREEZE one run's parameter-free randomness.
+
+    Returns (u, b, N) where:
+        u: (N,) uniform quantiles for signal photons (frozen)
+        b: (M,) background detunings (frozen)
+        N: int — number of signal photons
+    """
+    n = int(max(round(nbar + sigma * rng.standard_normal()), 0))
+    u = torch.tensor(rng.uniform(0.0, 1.0, size=n), dtype=torch.float32)
+    b = torch.tensor(rng.uniform(FREQ_MIN, FREQ_MAX, size=int(rng.poisson(lambda_))),
+                     dtype=torch.float32)
+    return u, b, n
