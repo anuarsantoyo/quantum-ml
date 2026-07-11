@@ -556,3 +556,14 @@ So three deviations stack here (all in the estimator, not the physics): unbinned
 **Caveat (same flag as Finding 2):** FWHM is an estimator output, so our estimator and the paper's can differ in bias/variance — most likely in the low-count regime, which is exactly the regime the whole MCM is about. If we want to reproduce the paper's FWHM-bias *identically*, this matters; if the goal is just robust differentiable γ recovery, our version is a reasonable substitute. **Revisit if sim-vs-real matching struggles once the loss points at real data.**
 
 Caveat to recheck later: the FWHM is an *estimator output*, so binned-Voigt-LSQ (theirs) vs. unbinned-Lorentzian-MLE (ours) could in principle differ in bias/variance — most likely in the low-count / low-transmission regime. For now we treat this as a second-order detail and keep the continuous representation; **flag to revisit if we see sim-vs-real mismatch** once the loss is pointed at the real data. (Related and likely larger simplification: our generative model emits a pure Lorentzian while real lines may carry Gaussian broadening → Voigt — that's the more consequential thing to check first if real-data matching struggles.)
+
+
+# 11.07.2026
+
+## TODO:
+- Organize Journal, avoid using Ai for the journal, or if done with control. The journal must be human readable and relatable for you to remember stuff. When Ai comes in in generates a lot of text that you wont read again.
+
+- Add last advancemenst in optimizaiton of gamma and mu simultaneously nad the reinforce experiments.
+
+## Planing presentation
+After the successful presentation on the 03.07.2026. I have done more (to be added) and this is how I would like to present it. 
