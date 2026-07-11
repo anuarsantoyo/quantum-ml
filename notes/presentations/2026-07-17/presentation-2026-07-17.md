@@ -1,0 +1,16 @@
+- Last time Gamma worked fine
+- now we wanted to add the ptimization of mu. I proposed back then finite differentiation, but this has draw backs (mention drawbacks). I found another strategy that we borrow from Reinfocement learig called Reinforce
+- explain REINFORCE
+- Reinforce in our situation:
+    - we dont only sampl one we sample many
+    - no prob we use all samples
+    - prob same loss no optimization (every direction looks as good)
+    - sol use the loss of each run as the loss used for the advantage of the run
+    -works beautifully
+- Optimization of both:
+    - they optimze but they are degenerate, different compinatoins of mu and gamma give the same optimal result so they dont converge both to the true value
+    - No idea what is going on-> mu gama fwhm distribution visualization
+    - idea: include extra constraint by not only fitting to fwhm but also to the uncertainty.
+    - Works (close to the optimum still some issues, but for now considered small refinements)
+
+- Optimization with real data
