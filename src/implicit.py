@@ -39,10 +39,12 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
         return 2.0 * gamma_val, 0.5 * gamma_val, 2.0
 
     from src.samplers import build_photons
-    photons_np = build_photons(
+    # u, b are numpy arrays -> convert to tensors
+    u_t = torch.as_tensor(u, dtype=torch.float32)
+    b_t = torch.as_tensor(b, dtype=torch.float32)
+    photons_t = build_photons(
         torch.tensor(gamma_val, dtype=torch.float32),
-        u, b).numpy()
-    photons_t = torch.tensor(photons_np, dtype=torch.float32)
+        u_t, b_t)
 
     # ---- Step 1: L-BFGS fit ----
     theta = fit_fn(photons_t)
@@ -55,9 +57,9 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
     # ---- Step 2: Gradient of NLL w.r.t theta at (theta_star, gamma±eps) ----
     def _grad_theta_at_gamma(g_val):
         t = theta_star.detach().clone().requires_grad_()
-        p = torch.tensor(build_photons(
+        p = build_photons(
             torch.tensor(g_val, dtype=torch.float32),
-            u, b).numpy(), dtype=torch.float32)
+            u_t, b_t)
         loss = nll_fn(t, p)
         return torch.autograd.grad(loss, t, create_graph=False)[0]
 
