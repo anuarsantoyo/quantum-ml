@@ -1,83 +1,75 @@
-# Optimization of mu
-## Original idea discreat differenciation
+# Optimization of μ
 
-- explain that this has problem as 2 runs must be made(which is expensive) and it explodes with more parameters
-- gamma step needed to be averaged and never calculated in N itself
+## Original idea: discrete differentiation
+- Requires two separate runs → expensive and doesn’t scale with more parameters
+- γ gradient was obtained by averaging over shifted‑parameter runs, never inside the N‑sample simulation itself
 
-## New idea Reinforce
-- Taken from reinfocement learning
-- Brief explanation of reinforce
+## New idea: REINFORCE
+- From reinforcement learning: a way to get gradients through stochastic computations
+- The problem: we want to optimize μ, but the loss involves non‑differentiable sampling
+- REINFORCE estimates the gradient of the expected reward:
+  $$\nabla_\mu \mathbb{E}[R] = \mathbb{E}\left[ R \cdot \nabla_\mu \log p(\text{data} \mid \mu) \right]$$
+- In practice, we use a baseline (e.g., average reward) to reduce variance:
+  $$\nabla_\mu \approx \frac{1}{N}\sum_i \big(R_i - \bar{R}\big) \cdot \nabla_\mu \log p(x_i \mid \mu)$$
+- The “score” $\nabla_\mu \log p$ tells us how to change μ to make each sample more likely
+- Positive reward → move in the direction that increases likelihood; negative → opposite
+- This lets us backpropagate through the whole simulation, including the fitting step
 
-# First Reinforce Experiment: Many samples - One loss
-- We dont have only one sample to calulate loss, we have many.
-- Idea use the many samples (of each run) and calculate the step using the advantage from the loss
-- Result: bad, no optimization.
+# First REINFORCE Experiment: Many samples – One loss
+- Many samples per run, but only a single global loss
+- Every sample in a run gets the same advantage → no differential signal to guide improvement
+- Result: no optimization
 ![alt text](image.png)
 
-- Makes complete sense, as all advantages are the same, as we have many samples no clear direction for improvement
-
-# Second Reinforce Experiment: Many samples - Many losses
-
-- New idea. Each run has its own loss (the distance of their own point for the wasserstein 1d). Each run gets its own loss/advantage and the optimization of mu is average through all the gradients calculated per run. (right?)
-
+# Second REINFORCE Experiment: Many samples – Many losses
+- Each run gets its own loss (Wasserstein‑1D distance of its own point)
+- Per‑run advantage → gradient averaged across runs
+- Optimizes well until close to the target, where Wasserstein re‑ordering causes sudden jumps
+  *(Future idea: fix the event order from the start to avoid those jumps)*
 ![alt text](image-3.png)
-
 ![alt text](image-4.png)
 
-This optimizes but when it gets close to the real it is not as good, as wasserstein jump form one place to another (future idea, fix the order from the beginning and dont let the f)
+# Joint Optimization: μ and γ
+- Optimizing both together is degenerate: different (μ, γ) pairs can produce the same FWHM distribution
+- This makes it impossible to identify the true parameters from FWHM alone
+![alt text](image-5.png)
+![alt text](image-6.png)
+![alt text](image-7.png)
+![alt text](image-8.png)
 
-# Joint Optimization: mu and gamma
+# μ and γ influence on FWHM distributions
+- Visual inspection to understand the degeneracy
+  - Higher μ → more photons → narrower FWHM (thinner distribution)
+  - Larger γ → wider line → thicker distribution (plus a shift)
+  - The two effects can cancel: many (μ, γ) combinations give identical FWHM
+![alt text](image-9.png)
 
-- mu and gamma optimize together but degenerate: different (mu, gamma) pairs give same FWHM
-- Visualization showed the problem
-- Solution: add sigma (fit uncertainty) as second matching target
+# Joint Optimization with FWHM σ (uncertainty)
+**Key insight:** the data contain uncertainties!
 
-## Joint Optimization with Sigma
+- Different (μ, γ) pairs can match the same FWHM but differ in their *FWHM uncertainty* (σ)
+- Example:
+  - μ=20, γ=10 → few photons, large σ (uncertain FWHM)
+  - μ=200, γ=5 → many photons, small σ (precise FWHM)
+- Both hit the same FWHM target, but σ tells them apart
 
-**The problem:** different (μ, γ) pairs can produce the same FWHM distribution — the solution is degenerate.
+**Solution:** add a second term that matches the whole σ distribution
 
-**Example intuition:**
-- μ=20, γ=10: few photons on a narrow line → wider FWHM uncertainty
-- μ=200, γ=5: many photons on a narrow line → tighter FWHM uncertainty
-
-Both could match the same target FWHM, but the run-to-run uncertainty (σ of the fitted FWHM) tells them apart.
-
-**What we did:** added a second loss term that matches the FWHM uncertainty σ to the target uncertainty:
-
-    L = L_fwhm + λ · L_sigma
+$$L = L_{\mathrm{FWHM}} + \lambda \cdot L_\sigma$$
 
 **Gradients:**
-- μ: REINFORCE with combined reward — per-run advantage combines FWHM and σ matching
-- γ: implicit diff for FWHM + CRLB approximation for σ (dσ/dγ ≈ 2/√n)
+- μ: REINFORCE with combined reward (FWHM + σ matching)
+- γ: implicit differentiation for FWHM + CRLB approximation for σ (dσ/dγ ≈ 2/√n)
 
-**Result:** the degeneracy is broken. Both μ and γ converge closer to their true values.
+**Result:** degeneracy broken — μ and γ converge closer to true values.
 
-### How sigma optimization works (details)
+### Sigma optimisation – how it works
+- σ comes from the Hessian of the log‑likelihood at the fit optimum
+- Loss: quantile‑aligned absolute error on both FWHM and σ
+- μ gradient: per‑run advantage = −|FWHMᵢ − target| − λ·|σᵢ − target_σ|
+  ∇μ = mean((advantage − baseline) · score)
+- γ gradient: sign(FWHM−target)·(dFWHM/dγ) + λ·sign(σ−target)·(2/√n)
+- μ controls σ mainly through photon count; γ controls FWHM through linewidth
+  → the two terms anchor different aspects, breaking the degeneracy
 
-**Where sigma comes from:** each Lorentzian fit produces the best-fit FWHM and its uncertainty σ, derived from the Hessian of the log-likelihood at the optimum. High curvature → confident fit (low σ). Flat curvature → uncertain fit (high σ).
-
-**Loss function:** both FWHM and σ are matched via quantile-aligned absolute error:
-
-    L = mean(|sort(FWHM_sim) − sort(FWHM_target)|)  +  λ · mean(|sort(σ_sim) − sort(σ_target)|)
-
-The sigma term penalises simulations whose uncertainty distribution differs from the target.
-
-**Gradient for μ (REINFORCE):** σ affects μ through the per-run advantage:
-
-    reward_i = −|FWHM_i − target_i| − λ · |σ_i − target_σ_i|
-    ∇μ = mean((reward_i − baseline) · score_i)
-
-Runs with both good FWHM and good σ matching get positive reinforcement.
-
-**Gradient for γ (implicit diff + CRLB):**
-
-    ∇γ = sign(FWHM − target) · dFWHM/dγ  +  λ_γ · sign(σ − target) · dσ/dγ
-
-Where dFWHM/dγ comes from implicit differentiation through the fit, and dσ/dγ ≈ 2/√n is the CRLB approximation (wider lines → higher σ, but more photons → lower σ).
-
-**Why it works:** the two terms (FWHM + σ) anchor different aspects of the solution. μ dominates the σ through photon count (more photons → lower σ), while γ dominates the FWHM through linewidth. Together they break the degeneracy.
-
-- μ update: REINFORCE with combined FWHM + sigma reward
-- γ update: implicit diff + sigma gradient via CRLB
-
-# Next: Optimization with real data
+# Next: Optimisation with real data
