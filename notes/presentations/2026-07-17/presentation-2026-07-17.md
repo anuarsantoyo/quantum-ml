@@ -70,6 +70,10 @@ $$L = L_{\mathrm{FWHM}} + \lambda \cdot L_\sigma$$
 
 **Result:** degeneracy broken — μ and γ converge closer to true values.
 
+![alt text](image-11.png)
+
+![alt text](image-12.png)
+
 ### Sigma optimisation – how it works
 - σ comes from the Hessian of the log‑likelihood at the fit optimum
 - Loss: quantile‑aligned absolute error on both FWHM and σ
