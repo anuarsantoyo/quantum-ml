@@ -96,6 +96,8 @@ Progress update — 17 July 2026
 - **Larger γ** → wider line → thicker distribution (plus shift)
 - The two effects can cancel → many (μ, γ) pairs give identical FWHM
 
+---
+
 ![image-9.png](image-9.png)
 
 ---
