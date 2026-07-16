@@ -14,6 +14,14 @@
 - The score $(n_i - \mu) / \sigma^2$ tells how μ influenced each outcome
 - This lets us backpropagate through the whole simulation, including the fitting step
 
+### Baseline
+- Without a baseline, even bad runs look "good" relative to nothing
+- The baseline centers the signal: above = bad, below = good
+- We use an exponential moving average across steps:
+  $$\text{bl} = 0.9 \cdot \text{bl}_{\text{prev}} + 0.1 \cdot \bar{L}_{\text{step}}$$
+- Each run's advantage = reward − baseline (same baseline for all runs in a step)
+- Recent steps matter more than old ones (adapts as μ improves)
+
 # First REINFORCE Experiment: Many samples – One loss
 - Many samples per run, but only a single global loss
 - Every sample in a run gets the same advantage → no differential signal to guide improvement
