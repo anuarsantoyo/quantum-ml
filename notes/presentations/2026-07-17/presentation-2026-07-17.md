@@ -1,16 +1,20 @@
 # Optimization of μ
 
-## Original idea: discrete differentiation
-- Requires two separate runs → expensive and doesn’t scale with more parameters
-- γ gradient was obtained by averaging over shifted‑parameter runs, never inside the N‑sample simulation itself
+## Original Idea: Discrete Differentiation
+- Requires two separate runs → expensive and does not scale with more parameters
+- γ gradient was obtained by averaging over shifted-parameter runs, never inside the N-sample simulation itself
 
-## New idea: REINFORCE
-- From reinforcement learning: a way to get gradients through stochastic computations
-- The problem: we want to optimize μ, but the loss involves non‑differentiable sampling
+## New Idea: REINFORCE
+- From reinforcement learning: a way to obtain gradients through stochastic computations
+- We want to optimize μ, but the loss involves non-differentiable sampling
 - REINFORCE estimates the gradient of the expected reward:
+
   $$\nabla_\mu \approx \frac{1}{N}\sum_{i=1}^{N} \text{Loss}_i \cdot \frac{n_i - \mu}{\sigma^2}$$
+
 - Baseline (average loss) reduces variance:
+
   $$\nabla_\mu \approx \frac{1}{N}\sum_{i=1}^{N} (\text{Loss}_i - \bar{L}) \cdot \frac{n_i - \mu}{\sigma^2}$$
+
 - The score $(n_i - \mu) / \sigma^2$ tells how μ influenced each outcome
 - This lets us backpropagate through the whole simulation, including the fitting step
 
@@ -18,43 +22,57 @@
 - Without a baseline, even bad runs look "good" relative to nothing
 - The baseline centers the signal: above = bad, below = good
 - We use an exponential moving average across steps:
+
   $$\text{bl} = 0.9 \cdot \text{bl}_{\text{prev}} + 0.1 \cdot \bar{L}_{\text{step}}$$
+
 - Each run's advantage = reward − baseline (same baseline for all runs in a step)
 - Recent steps matter more than old ones (adapts as μ improves)
 
-# First REINFORCE Experiment: Many samples – One loss
+---
+
+# REINFORCE Experiments
+
+## Experiment 1: Many Samples – One Loss
 - Many samples per run, but only a single global loss
 - Every sample in a run gets the same advantage → no differential signal to guide improvement
 - Result: no optimization
+
 ![alt text](image.png)
 
-# Second REINFORCE Experiment: Many samples – Many losses
-- Each run gets its own loss (Wasserstein‑1D distance of its own point)
-- Per‑run advantage → gradient averaged across runs
-- Optimizes well until close to the target, where Wasserstein re‑ordering causes sudden jumps
+## Experiment 2: Many Samples – Many Losses
+- Each run gets its own loss (Wasserstein-1D distance of its own point)
+- Per-run advantage → gradient averaged across runs
+- Optimizes well until close to the target, where Wasserstein re-ordering causes sudden jumps
   *(Future idea: fix the event order from the start to avoid those jumps)*
+
 ![alt text](image-3.png)
 ![alt text](image-4.png)
 
+---
+
 # Joint Optimization: μ and γ
+
+## Degeneracy Problem
 - Optimizing both together is degenerate: different (μ, γ) pairs can produce the same FWHM distribution
 - This makes it impossible to identify the true parameters from FWHM alone
-![alt text](image-5.png)
-![alt text](image-6.png)
-![alt text](image-7.png)
-![alt text](image-8.png)
 
-# μ and γ influence on FWHM distributions
+![alt text](image-17.png)
+![alt text](image-18.png)
+## μ and γ Influence on FWHM Distributions
 - Visual inspection to understand the degeneracy
   - Higher μ → more photons → narrower FWHM (thinner distribution)
   - Larger γ → wider line → thicker distribution (plus a shift)
   - The two effects can cancel: many (μ, γ) combinations give identical FWHM
+
 ![alt text](image-9.png)
 
-# Joint Optimization with FWHM σ (uncertainty)
-**Key insight:** the data contain uncertainties!
+---
 
-- Different (μ, γ) pairs can match the same FWHM but differ in their *FWHM uncertainty* (σ)
+# Joint Optimization with FWHM σ (Uncertainty)
+
+**Key insight:** the data contain uncertainties.
+
+- Different (μ, γ) pairs can match the same FWHM but differ in their FWHM uncertainty (σ)
 - Example:
   - μ=20, γ=10 → few photons, large σ (uncertain FWHM)
   - μ=200, γ=5 → many photons, small σ (precise FWHM)
@@ -68,38 +86,37 @@ $$L = L_{\mathrm{FWHM}} + \lambda \cdot L_\sigma$$
 - μ: REINFORCE with combined reward (FWHM + σ matching)
 - γ: implicit differentiation for FWHM + CRLB approximation for σ (dσ/dγ ≈ 2/√n)
 
+## Sigma Optimisation – How It Works
+- σ comes from the Hessian of the log-likelihood at the fit optimum
+- Loss: quantile-aligned absolute error on both FWHM and σ
+- μ gradient: per-run advantage = −|FWHMᵢ − target| − λ·|σᵢ − target_σ|
 
- Sigma optimisation – how it works
-- σ comes from the Hessian of the log‑likelihood at the fit optimum
-- Loss: quantile‑aligned absolute error on both FWHM and σ
-- μ gradient: per‑run advantage = −|FWHMᵢ − target| − λ·|σᵢ − target_σ|
   ∇μ = mean((advantage − baseline) · score)
+
 - γ gradient: sign(FWHM−target)·(dFWHM/dγ) + λ·sign(σ−target)·(2/√n)
 - μ controls σ mainly through photon count; γ controls FWHM through linewidth
   → the two terms anchor different aspects, breaking the degeneracy
 
+---
 
-## First Joint Optimization with FWHM σ results
+# Joint Optimization Results with FWHM σ
+
+## First Result: Basic Joint Optimization
+Works well but overshoots because close to the true value the distributions match closely and the μ gradient becomes mostly noise. With a large μ it jumps around.
 
 ![alt text](image-11.png)
-
 ![alt text](image-12.png)
 
-
-Works amazing but overshoots because close to the ture vlue the distributions match very well and the gradint  of mu becomes mostly noise, with a large mu it jumps around.
-
-## Second Joint Optimization with FWHM σ result: LR decay
-
-We included gradient decay to restrict the noise
+## Second Result: With Learning Rate Decay
+We included gradient decay to restrict the noise.
 
 ![alt text](image-13.png)
 ![alt text](image-14.png)
 
-Falls slightly short but still very good. (We could keep experimenting with decay strategies)
+Falls slightly short but still very good. (We could keep experimenting with decay strategies.)
 
-## Third Joint Optimization with FWHM σ result: FWHM mean loss
-
-Included a new fwhm mean loss to provide my with a clear signal once it reaches the noisy part from the distribution.
+## Third Result: With FWHM Mean Loss
+Included a new FWHM mean loss to provide μ with a clear signal once it reaches the noisy region of the distribution.
 
 **New:** Added a **mean-matching term** to help REINFORCE push μ to the correct value when per-quantile signals become noisy.
 
@@ -111,9 +128,9 @@ Included a new fwhm mean loss to provide my with a clear signal once it reaches 
 ![alt text](image-15.png)
 ![alt text](image-16.png)
 
-
 Already very good. We could keep experimenting with the loss function.
 
+---
 
-
-# The real data
+# Real Data Optimization
+*(Content to be added.)*
