@@ -1,0 +1,139 @@
+---
+marp: true
+theme: uncover
+size: 16:9
+paginate: true
+
+# Optimization of μ
+
+
+---
+
+- Requires two separate runs → expensive and doesn’t scale with more parameters
+- γ gradient was obtained by averaging over shifted‑parameter runs, never inside the N‑sample simulation itself
+
+
+---
+
+- From reinforcement learning: a way to get gradients through stochastic computations
+- The problem: we want to optimize μ, but the loss involves non‑differentiable sampling
+- REINFORCE estimates the gradient of the expected reward:
+  $$\nabla_\mu \mathbb{E}[R] = \mathbb{E}\left[ R \cdot \nabla_\mu \log p(\text{data} \mid \mu) \right]$$
+- In practice, we use a baseline (e.g., average reward) to reduce variance:
+  $$\nabla_\mu \approx \frac{1}{N}\sum_i \big(R_i - \bar{R}\big) \cdot \nabla_\mu \log p(x_i \mid \mu)$$
+- The “score” $\nabla_\mu \log p$ tells us how to change μ to make each sample more likely
+- Positive reward → move in the direction that increases likelihood; negative → opposite
+- This lets us backpropagate through the whole simulation, including the fitting step
+
+
+---
+
+# First REINFORCE Experiment: Many samples – One loss
+- Many samples per run, but only a single global loss
+- Every sample in a run gets the same advantage → no differential signal to guide improvement
+- Result: no optimization
+
+---
+
+![image.png](image.png)
+
+---
+
+
+
+---
+
+# Second REINFORCE Experiment: Many samples – Many losses
+- Each run gets its own loss (Wasserstein‑1D distance of its own point)
+- Per‑run advantage → gradient averaged across runs
+- Optimizes well until close to the target, where Wasserstein re‑ordering causes sudden jumps
+  *(Future idea: fix the event order from the start to avoid those jumps)*
+
+---
+
+![image-3.png](image-3.png)
+
+---
+
+![image-4.png](image-4.png)
+
+---
+
+
+
+---
+
+# Joint Optimization: μ and γ
+- Optimizing both together is degenerate: different (μ, γ) pairs can produce the same FWHM distribution
+- This makes it impossible to identify the true parameters from FWHM alone
+
+---
+
+![image-5.png](image-5.png)
+
+---
+
+![image-6.png](image-6.png)
+
+---
+
+![image-7.png](image-7.png)
+
+---
+
+![image-8.png](image-8.png)
+
+---
+
+
+
+---
+
+# μ and γ influence on FWHM distributions
+- Visual inspection to understand the degeneracy
+  - Higher μ → more photons → narrower FWHM (thinner distribution)
+  - Larger γ → wider line → thicker distribution (plus a shift)
+  - The two effects can cancel: many (μ, γ) combinations give identical FWHM
+
+---
+
+![image-9.png](image-9.png)
+
+---
+
+
+
+---
+
+# Joint Optimization with FWHM σ (uncertainty)
+**Key insight:** the data contain uncertainties!
+
+- Different (μ, γ) pairs can match the same FWHM but differ in their *FWHM uncertainty* (σ)
+- Example:
+  - μ=20, γ=10 → few photons, large σ (uncertain FWHM)
+  - μ=200, γ=5 → many photons, small σ (precise FWHM)
+- Both hit the same FWHM target, but σ tells them apart
+
+**Solution:** add a second term that matches the whole σ distribution
+
+$$L = L_{\mathrm{FWHM}} + \lambda \cdot L_\sigma$$
+
+**Gradients:**
+- μ: REINFORCE with combined reward (FWHM + σ matching)
+- γ: implicit differentiation for FWHM + CRLB approximation for σ (dσ/dγ ≈ 2/√n)
+
+**Result:** degeneracy broken — μ and γ converge closer to true values.
+
+### Sigma optimisation – how it works
+- σ comes from the Hessian of the log‑likelihood at the fit optimum
+- Loss: quantile‑aligned absolute error on both FWHM and σ
+- μ gradient: per‑run advantage = −|FWHMᵢ − target| − λ·|σᵢ − target_σ|
+  ∇μ = mean((advantage − baseline) · score)
+- γ gradient: sign(FWHM−target)·(dFWHM/dγ) + λ·sign(σ−target)·(2/√n)
+- μ controls σ mainly through photon count; γ controls FWHM through linewidth
+  → the two terms anchor different aspects, breaking the degeneracy
+
+
+---
+
+# Next: Optimisation with real data
