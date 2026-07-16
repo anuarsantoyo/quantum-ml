@@ -52,12 +52,16 @@
 
 # Joint Optimization: μ and γ
 
+Now that gamma and mu optimization work, we combine them.
+
+![alt text](image-17.png)
+![alt text](image-18.png)
+
+
 ## Degeneracy Problem
 - Optimizing both together is degenerate: different (μ, γ) pairs can produce the same FWHM distribution
 - This makes it impossible to identify the true parameters from FWHM alone
 
-![alt text](image-17.png)
-![alt text](image-18.png)
 ## μ and γ Influence on FWHM Distributions
 - Visual inspection to understand the degeneracy
   - Higher μ → more photons → narrower FWHM (thinner distribution)
@@ -71,6 +75,7 @@
 # Joint Optimization with FWHM σ (Uncertainty)
 
 **Key insight:** the data contain uncertainties.
+![alt text](image-19.png)
 
 - Different (μ, γ) pairs can match the same FWHM but differ in their FWHM uncertainty (σ)
 - Example:
@@ -125,10 +130,25 @@ Included a new FWHM mean loss to provide μ with a clear signal once it reaches 
 | **μ** (REINFORCE + mean matching) | Per-quantile reward + λ_mean·|FWHM_mean − target_mean| | Mean term gives clean signal when per-quantile gradient dies |
 | **γ** (implicit diff + CRLB) | dLoss/dγ = W₁'(FWHM)·dFWHM/dγ + λ·W₁'(σ)·dσ/dγ | Matching both tightens γ constraints |
 
+### Why the mean loss helped
+
+The REINFORCE gradient for μ is:
+
+$$\nabla_\mu \approx \frac{1}{N}\sum_{i=1}^N (\text{Loss}_i - \text{bl}) \cdot \frac{n_i - \mu}{\sigma^2}$$
+
+Near the optimum the FWHM distributions nearly match, so per-quantile differences become small and noise-dominated. The correlation ρ between photon count `n_i` and per-run loss `Loss_i` drops, and the gradient vanishes.
+
+The mean term `|FWHM_mean − target_mean|` solves this by providing a **global error signal** that persists even when individual quantiles match:
+
+- **It has lower variance** than per-quantile differences (averaged over N=200 runs)
+- **It directly correlates with μ**: higher μ → more photons → narrower FWHM → lower mean
+- **It keeps the gradient alive** when the W1 signal dies, by ensuring the advantage doesn't collapse to zero
+- **It acts as a regularizer**: the per-run loss `Loss_i` gets a boost of `+λ_mean·|FWHM_mean − target_mean|`, which shifts ALL advantages uniformly, biasing the REINFORCE estimate toward the correct μ
+
 ![alt text](image-15.png)
 ![alt text](image-16.png)
 
-Already very good. We could keep experimenting with the loss function.
+Already very good, and a cleaner convergence path than LR decay alone (12b).
 
 ---
 
