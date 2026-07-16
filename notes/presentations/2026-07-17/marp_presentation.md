@@ -8,7 +8,7 @@ style: |
   section h1 { font-size: 44px; }
   section h2 { font-size: 36px; }
   section h3 { font-size: 30px; }
-  img { max-width: 85%; height: auto; display: block; margin: auto; }
+  img { max-width: 95%; height: auto; display: block; margin: auto; }
 ---
 
 # Optimization of μ
@@ -98,7 +98,7 @@ Progress update — 17 July 2026
 
 ---
 
-![image-9.png](image-9.png)
+![image-9.png width:1100](image-9.png)
 
 ---
 
