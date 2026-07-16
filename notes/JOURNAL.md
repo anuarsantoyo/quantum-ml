@@ -567,3 +567,42 @@ Caveat to recheck later: the FWHM is an *estimator output*, so binned-Voigt-LSQ 
 
 ## Planing presentation
 After the successful presentation on the 03.07.2026. I have done more (to be added) and this is how I would like to present it. 
+
+# 16.07.2026
+
+## Major milestone: joint optimization + real data working
+
+### What we achieved
+
+**μ optimization (REINFORCE):**
+- Policy gradient approach for optimizing μ through non-differentiable sampling
+- Per-run advantage with exponential moving average baseline
+- Works reliably — μ converges from any starting point
+
+**γ optimization (Implicit Differentiation):**
+- Differentiate through L-BFGS Lorentzian fit via the implicit function theorem
+- No backprop through optimizer iterations, only Hessian at the optimum
+- Gives dFWHM/dγ per run
+
+**Joint μ + γ + σ optimization:**
+- Joint optimization without sigma is degenerate: different (μ, γ) give same FWHM
+- Solution: match both FWHM distribution AND its uncertainty σ
+- μ: REINFORCE with combined FWHM + sigma reward
+- γ: implicit diff for FWHM + CRLB approximation for sigma (dσ/dγ ≈ 2/√n)
+
+**Real data validation — Notebook 13:**
+- Loaded real experimental data (3 nW, 40% transmission, 3913 FWHM values)
+- Optimization converged: FWHM loss 23.9 → 1.6
+- μ converged to 49.6 (synthetic true: 50.0)
+- The differentiable pipeline works on real measurements
+
+### Project structure cleaned
+- All notebooks numbered (01 → 13) telling a clear story
+- Core code extracted into src/ modules (samplers, fitting, losses, implicit, utils)
+- Presentations updated
+
+### Key files
+- `notebooks/12-joint-opt-with-sigma.ipynb` — main working notebook
+- `notebooks/13-real-data-optimization.ipynb` — real data validation
+- `src/implicit.py` — implicit differentiation through fit
+- `src/fitting.py` — Lorentzian fitting with uniform_bg flag
