@@ -19,5 +19,6 @@ Thumbs.db
 venv/
 .venv/
 
-# Cline
+# Cline / Claude
 .clinerules/
+.claude/
