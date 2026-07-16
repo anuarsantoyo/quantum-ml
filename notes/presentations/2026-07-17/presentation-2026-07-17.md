@@ -68,13 +68,8 @@ $$L = L_{\mathrm{FWHM}} + \lambda \cdot L_\sigma$$
 - μ: REINFORCE with combined reward (FWHM + σ matching)
 - γ: implicit differentiation for FWHM + CRLB approximation for σ (dσ/dγ ≈ 2/√n)
 
-**Result:** degeneracy broken — μ and γ converge closer to true values.
 
-![alt text](image-11.png)
-
-![alt text](image-12.png)
-
-### Sigma optimisation – how it works
+ Sigma optimisation – how it works
 - σ comes from the Hessian of the log‑likelihood at the fit optimum
 - Loss: quantile‑aligned absolute error on both FWHM and σ
 - μ gradient: per‑run advantage = −|FWHMᵢ − target| − λ·|σᵢ − target_σ|
@@ -83,4 +78,42 @@ $$L = L_{\mathrm{FWHM}} + \lambda \cdot L_\sigma$$
 - μ controls σ mainly through photon count; γ controls FWHM through linewidth
   → the two terms anchor different aspects, breaking the degeneracy
 
-# Next: Optimisation with real data
+
+## First Joint Optimization with FWHM σ results
+
+![alt text](image-11.png)
+
+![alt text](image-12.png)
+
+
+Works amazing but overshoots because close to the ture vlue the distributions match very well and the gradint  of mu becomes mostly noise, with a large mu it jumps around.
+
+## Second Joint Optimization with FWHM σ result: LR decay
+
+We included gradient decay to restrict the noise
+
+![alt text](image-13.png)
+![alt text](image-14.png)
+
+Falls slightly short but still very good. (We could keep experimenting with decay strategies)
+
+## Third Joint Optimization with FWHM σ result: FWHM mean loss
+
+Included a new fwhm mean loss to provide my with a clear signal once it reaches the noisy part from the distribution.
+
+**New:** Added a **mean-matching term** to help REINFORCE push μ to the correct value when per-quantile signals become noisy.
+
+| Gradient | Source | Why |
+|---|---|---|
+| **μ** (REINFORCE + mean matching) | Per-quantile reward + λ_mean·|FWHM_mean − target_mean| | Mean term gives clean signal when per-quantile gradient dies |
+| **γ** (implicit diff + CRLB) | dLoss/dγ = W₁'(FWHM)·dFWHM/dγ + λ·W₁'(σ)·dσ/dγ | Matching both tightens γ constraints |
+
+![alt text](image-15.png)
+![alt text](image-16.png)
+
+
+Already very good. We could keep experimenting with the loss function.
+
+
+
+# The real data
