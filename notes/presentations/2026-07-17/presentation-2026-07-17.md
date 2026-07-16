@@ -153,4 +153,4 @@ Already very good, and a cleaner convergence path than LR decay alone (12b).
 ---
 
 # Real Data Optimization
-*(Content to be added.)*
+![alt text](image-20.png)
