@@ -8,11 +8,10 @@
 - From reinforcement learning: a way to get gradients through stochastic computations
 - The problem: we want to optimize μ, but the loss involves non‑differentiable sampling
 - REINFORCE estimates the gradient of the expected reward:
-  $$\nabla_\mu \approx \frac{1}{N}\sum_{i=1}^{N} \text{Loss}_i \cdot \nabla_\mu \log p(x_i \mid \mu)$$
-- We subtract a baseline (average loss) to reduce variance:
-  $$\nabla_\mu \approx \frac{1}{N}\sum_{i=1}^{N} (\text{Loss}_i - \bar{L}) \cdot \nabla_\mu \log p(x_i \mid \mu)$$
-- The "score" $\nabla_\mu \log p$ tells how μ influenced each outcome
-- Positive reward → move in the direction that increases likelihood; negative → opposite
+  $$\nabla_\mu \approx \frac{1}{N}\sum_{i=1}^{N} \text{Loss}_i \cdot \frac{n_i - \mu}{\sigma^2}$$
+- Baseline (average loss) reduces variance:
+  $$\nabla_\mu \approx \frac{1}{N}\sum_{i=1}^{N} (\text{Loss}_i - \bar{L}) \cdot \frac{n_i - \mu}{\sigma^2}$$
+- The score $(n_i - \mu) / \sigma^2$ tells how μ influenced each outcome
 - This lets us backpropagate through the whole simulation, including the fitting step
 
 # First REINFORCE Experiment: Many samples – One loss
