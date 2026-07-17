@@ -1,5 +1,7 @@
 # Optimization of μ
 
+test our approach on all experiment data to get a starting point
+
 ## Original Idea: Discrete Differentiation
 - Requires two separate runs → expensive and does not scale with more parameters
 - γ gradient was obtained by averaging over shifted-parameter runs, never inside the N-sample simulation itself
@@ -154,3 +156,9 @@ Already very good, and a cleaner convergence path than LR decay alone (12b).
 
 # Real Data Optimization
 ![alt text](image-20.png)
+
+---
+
+## Next Steps
+
+- compute uncertainties
