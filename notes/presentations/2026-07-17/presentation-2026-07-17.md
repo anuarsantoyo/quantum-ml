@@ -155,10 +155,21 @@ Already very good, and a cleaner convergence path than LR decay alone (12b).
 ---
 
 # Real Data Optimization
-![alt text](image-20.png)
+
+I tryied with the real data, and it worked!
+power_nW == 3 & transmission == 40
+
+3725 valid PLE scans at 3nW, 40% transmission. Mean FWHM 26.89 ± 10.18, range [0.88, 89.94].
+
+3725 PLE scans made everyting extremely slow, for now at each step I randomly sampled 200 fwhm for initial experiments
+![alt text](image-21.png)
+![alt text](image-22.png)
 
 ---
 
-## Next Steps
+# Next steps
 
-- compute uncertainties
+- The L-BFGS is a bottle neck, find a better optimizer for the Voigt fitting
+- Play with the hyperparamters (Learning Rates, Lambdas in Losses). Using Tensor Board
+- Make the simulation as close to the PLE scans as possible to represent the procces as faithful as possible
+- Calculate $\mu$ and $\gamma$ Uncertainties.
