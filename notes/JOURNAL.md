@@ -606,3 +606,84 @@ After the successful presentation on the 03.07.2026. I have done more (to be add
 - `notebooks/13-real-data-optimization.ipynb` — real data validation
 - `src/implicit.py` — implicit differentiation through fit
 - `src/fitting.py` — Lorentzian fitting with uniform_bg flag
+
+---
+
+# 17.07.2026
+
+## Deep dive on uncertainty quantification — paper discussion
+
+Revisited the project after a break. Reviewed presentation from today and latest notebook results (13a–13f). Best result so far: notebook 13e, W₁=2.28, FWHM converged to 24.8 ± 5.1 vs target 26.9 ± 10.2 (3 nW, 40% transmission data).
+
+**Key insight from physics discussion:**
+- μ (mean photon count) and γ (Cauchy HWHM) are precisely what the whole method aims to recover — there's no independent ground truth for the real data
+- The paper's "true" 29 MHz FWHM at 3 nW is a Voigt FWHM — our γ is a Cauchy HWHM in the differentiable simulation, not directly comparable
+- Real data validation means validating the FWHM distribution match (mean: 24.8 vs target 26.9), not parameter recovery against unknown ground truth
+
+The presentation was updated with two new items:
+1. "test our approach on all experiment data to get a starting point"
+2. "compute uncertainties" as a next step
+
+## Uncertainty quantification methods survey
+
+Deep research on approaches for confidence intervals in our kind of problem. Searched literature on:
+- Wilks' theorem / likelihood ratio confidence regions (particle physics standard)
+- Profile likelihood (used at CERN, in astrophysics — Cowan lectures, Nielsen et al. Sci Rep 2016)
+- Bootstrap methods (Efron 1979, review by Simpson et al. J. R. Soc. Interface 2022)
+- Fisher Information / Cramér-Rao bound
+- MCMC (too expensive)
+- Finite-difference Hessian (too brittle for noisy landscape)
+- Delta method (requires closed-form estimator)
+
+**Discussion of options (with Pukky):**
+
+| Method | What it measures | Our noise? | Cost | Paper-viable? |
+|--------|-----------------|-----------|------|---------------|
+| Finite-diff Hessian | Local curvature | ❌ Too brittle | 30 min | ❌ |
+| Profile likelihood | Stat. uncertainty | ✅ Robust | ~2h | ✅ Physics std |
+| Bootstrap (seed) | Optimizer noise | ✅ | 80 min | ⚠️ Wrong Q |
+| Bootstrap (data) | Stat. uncertainty | ✅ | ~40 min parallel | ✅ Robust |
+| MCMC | Full posterior | ✅ | Days | ❌ Expensive |
+
+**Key criticism of seed bootstrap:** it measures optimizer variability, not statistical uncertainty. If the optimizer has systematic bias, seed bootstrap gives tight, confident, wrong error bars.
+
+**Key finding from external review (shared by Anuar):** Empirical data bootstrap is the strongest approach. Resample the 3200 experimental FWHMs with replacement, re-run full optimizer on the resampled data, repeat K=50-100. The spread of recovered (μ, γ) directly measures statistical uncertainty — "if I repeated the experiment, what would I get?" Uses real experimental noise, no model assumptions.
+
+**Caveat from Pukky:** Data bootstrap assumes the 3200 FWHM scans are i.i.d. — spectral diffusion could introduce correlations between consecutive scans. In practice NV spectroscopy correlation times are usually shorter than scan time, making the assumption reasonable.
+
+**Decision:** Go with empirical data bootstrap. Sequence:
+1. ✅ Seed bootstrap first — confirm optimizer stability
+2. Then data bootstrap (K=50-100) — statistical uncertainty
+3. Optionally parametric bootstrap — calibrate coverage
+
+---
+
+# 12.08.2026
+
+## Review of the 13-series — real-data optimization experiments
+
+Full pass over notebooks 13 → 13f after the break. All runs: real data (3 nW, 40% transmission, 3725 FWHM values), target distribution **26.9 ± 10.2 MHz**, joint μ (REINFORCE, LR 15) + γ (implicit diff + CRLB σ-gradient), Lorentzian fit, N_RUNS=200, N_ITER=80, μ₀=30, γ₀=15.
+
+### Experiment log
+
+| Exp | Change vs base | μ_final | γ_final | FWHM final | W₁ | Verdict |
+|---|---|---|---|---|---|---|
+| **13** (base) | λ_sig=0.3, LR_γ=0.5 | 70.4 | 5.1 | 10.8 ± 2.0 | — | ❌ loss diverged (54→74.8), γ collapsed |
+| **13a** | diagnose only | — | — | — | — | found quantile bug + too-narrow dist |
+| **13b** | quantile-matching fix | 100.4 | 12.4 | 25.5 ± 4.0 | 3.18 | ✅ mean 95%, std 39% |
+| **13c** | λ_sig 0.3→0.1 | 78.2 | 12.3 | 25.6 ± 4.6 | 2.72 | ✅ best W₁ so far, μ still high |
+| **13d** | LR_γ 0.5→5.0 (10×) | 63.1 | 18.5 | 38.6 ± 8.1 | 13.4 | ❌ γ overshot, worst |
+| **13e** | LR_γ 0.5→1.5 (3×) | 62.9 | 11.8 | **24.8 ± 5.1** | **2.28** | 🏆 best overall |
+| **13f** | λ_bg 2.0→5.0 | 85.2 | 11.8 | 25.8 ± 4.3 | 2.91 | ≈ 13e, μ less stable |
+
+(13c-faster-gamma and 13c-more-iterations were never executed — their conclusions were folded into the 13c reduce-sigma-weight run.)
+
+### Takeaways
+
+1. **Mean matching works** — 92–96% of target across every post-fix variant.
+2. **Spread is stuck at ~40–50% of target** (std ~4–5 vs 10.2) regardless of tuning → **model gap, not hyperparameters**: real PLE scans are fitted with **Voigt** profiles (Gaussian broadening from spectral diffusion), our simulator is **Lorentzian-only** and cannot produce the observed spread.
+3. **μ is inconsistent** (63 → 100 across variants) — weakly identified; consistent with the known FWHM degeneracy between μ and γ.
+
+### Next step (proposed)
+
+Switch the **simulator** to a **pseudo-Voigt** line shape — `src/fitting.py` already implements pseudo-Voigt fitting (4-param: center, raw_γ, raw_σ, logit_w) with Olivero-Longbothum Voigt FWHM. First test: can the pseudo-Voigt simulator reproduce the target std (10.2) at all, e.g. by sweeping the Gaussian width component? If yes → re-run joint optimization with the Voigt-aware pipeline. This directly targets the std gap that tuning could not close.
