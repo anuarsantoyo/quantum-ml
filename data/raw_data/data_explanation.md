@@ -57,3 +57,49 @@ Notes:
 The histogram of valid **column-1** values is the experimental FWHM distribution that
 the MC pipeline (`simulate → kde → kde_to_bin_counts → L2`) aims to reproduce.
 Column 2 (fit error) can later be used to filter low-quality fits and/or weight the loss.
+
+
+## True Parameters from experiments
+
+All results for both measurement sessions (1 nW and 3 nW red laser power).
+Each of the 7 transmission settings maps to a collection efficiency `x_coll_eff`:
+
+| Transmission | `x_coll_eff` |
+|---|---|
+| `Trans05` | 0.05 |
+| `Trans10` | 0.10 |
+| `Trans20` | 0.20 |
+| `Trans40` | 0.40 |
+| `Trans60` | 0.60 |
+| `Trans80` | 0.80 |
+| `Trans100` | 1.00 |
+
+Fitted parameters per session:
+
+- `pho_normal_mean` — mean of the normal photon-count distribution
+- `pho_normal_std` — standard deviation of the normal photon-count distribution
+- `pho_noise_poisson_mean` — mean of the Poisson noise distribution
+
+### 1 nW session
+
+| Transmission | `x_coll_eff` | `pho_normal_mean` | `pho_normal_std` | `pho_noise_poisson_mean` |
+|---|---|---|---|---|
+| `Trans05` | 0.05 | 9.393 | 2.576 | 2.232 |
+| `Trans10` | 0.10 | 12.372 | 3.445 | 2.122 |
+| `Trans20` | 0.20 | 17.316 | 4.141 | 2.286 |
+| `Trans40` | 0.40 | 38.405 | 7.198 | 2.351 |
+| `Trans60` | 0.60 | 61.374 | 9.851 | 2.593 |
+| `Trans80` | 0.80 | 79.365 | 12.627 | 2.758 |
+| `Trans100` | 1.00 | 70.817 | 17.221 | 2.636 |
+
+### 3 nW session
+
+| Transmission | `x_coll_eff` | `pho_normal_mean` | `pho_normal_std` | `pho_noise_poisson_mean` |
+|---|---|---|---|---|
+| `Trans05` | 0.05 | 13.204 | 3.724 | 2.186 |
+| `Trans10` | 0.10 | 24.476 | 5.639 | 2.158 |
+| `Trans20` | 0.20 | 34.279 | 8.319 | 2.264 |
+| `Trans40` | 0.40 | 84.892 | 24.013 | 2.475 |
+| `Trans60` | 0.60 | 103.203 | 23.95 | 2.741 |
+| `Trans80` | 0.80 | 137.537 | 32.107 | 2.911 |
+| `Trans100` | 1.00 | 175.707 | 40.975 | 3.087 |

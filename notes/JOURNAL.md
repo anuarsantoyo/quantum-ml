@@ -66,11 +66,11 @@ data/         # Datasets (gitignored)
 I started reading the papaer in detail, I am getting a much better idea of the whole problem and the approach to solve it.
 
 Here is a summary of the Monte Carlo Method in General
-![alt text](./journal/MCM.png)
+![alt text](./journal_content/MCM.png)
 
 
 Here is a Summary of one Monte Carlo Simulation
-![alt text](./journal/MCSimulation.png)
+![alt text](./journal_content/MCSimulation.png)
 
 
 ## Idea: Optimizing $\sigma$
@@ -279,7 +279,7 @@ On the other hand, the [Monte Carlo PyTorch idea](#idea-monte-carlo-with-pytorch
 
 Here a small sketch I used in the meeting for explanation of the idea:
 
-![alt text](./journal/differentiableMC_sketch.png)
+![alt text](./journal_content/differentiableMC_sketch.png)
 
 
 Parameter uncertainty was a big topic, he mentioned that that is even more interesting that the optimal values itself, so after seeing if the problem is backpro... differentiable (from now on). After seing if I can create a differentiable MC simulation I should see how to find the parameter uncertainty (which I believe should be so complicated in the context of ML)
@@ -825,4 +825,30 @@ Full re-read of the project (journal, README, notebooks, src/) to get a clear pi
 - The 17.07 survey already settled on empirical data bootstrap — the natural reading of "uncertainty calculation" on synthetic data is: implement the bootstrap loop on the 12c setup (re-generate/resample data, re-run the optimizer, look at the spread of recovered μ, γ) and validate coverage against the known truth. This pre-produces the machinery we will later run on real data.
 - The 13-series spread gap is a **simulator** problem, not a hyperparameter problem — the proposed pseudo-Voigt simulator change (journal 12.08) is still open and is likely a prerequisite for the final real-data fine-tuning to fully succeed.
 
-# 
+## Next steps
+
+From now on, everything that comes in The journal is going to be written by me or strongly controlled by me because with the agent it is very easy to generate summaries that I would never read again and there's the danger of this project developing in directions that are not fully understood by me. So I will have to avoid that by varying very strict regarding the journal inputs that I write.
+
+The current state is that I was able to create a model that optimizes very well. This model is the model 12C in the notebook.From there I just did a set of experiments with RDA experiments 13 to try to see if the model works with real data. This worked and on top of that I tried an agent approach to optimize the learning process but this was just an experiment to see if it works.
+
+My plan now is first to calculate the uncertainties and try to find out how to do it. And I will do that using the synthetic data set and the model of 12C. Once the uncertainties are calculated, everything that I need is done and I will focus on fitting and doing optimizations for the real data. But first I would like to have a complete finished product project on the synthetic data that I can test them.
+
+My next steps are:
+
+- Find out different ways of calculation uncertainties, I already had some ideas using Hessians, but more ideas need to be explored.
+- Gregor shared the real values of the data, incorporate that to the project somehow.
+
+## Uncertainty first results:
+
+Two first clear candidates appear, Hessian approach and the bootstrap method.
+After a quick research it appears that the Hessian is a bit unstable with the current situation  of using the W1 loss. Aparrently if I am able to change my loss calculation to a likelihood loss then I can take advantage of the math of Fisher information that gives me a lower bound. So I will try both approches first, the bootstrap method and converting the loss function to a likelihood function.
+
+
+I also added the values of the real parameters of each experiment, which Gregor gave to me. They can be found in 'data/raw_data/data_explanation.md'
+
+
+### Questions Gregor
+
+Today I have a meeting with Gregor this are some questions I would like to clrify:
+
+- There are many decisions I can take that both influence the uncertainty and the optimization quality. If I use the real information provided by Gregor I could fine tune it to the known data. Where is the line between overfitting and optimizing in this case? Should I do some kind of CV where I optimize the hyperparameters of the model to some of the experiments (e.g Laser 3nW 80% as test and the rest to train)
