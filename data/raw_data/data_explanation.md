@@ -103,3 +103,19 @@ Fitted parameters per session:
 | `Trans60` | 0.60 | 103.203 | 23.95 | 2.741 |
 | `Trans80` | 0.80 | 137.537 | 32.107 | 2.911 |
 | `Trans100` | 1.00 | 175.707 | 40.975 | 3.087 |
+
+### γ from the median (true-γ reference & initialization)
+
+For the 15-series, γ is initialized at — and compared against — the linewidth
+estimated from the **median FWHM at Trans100** (x_coll_eff = 1, full collection,
+least-broadened measurement of the line):
+
+γ ≈ median(FWHM @ Trans100) / 2   (Lorentzian FWHM = 2γ)
+
+| Session | median FWHM @ Trans100 | γ (median / 2) |
+|---|---|---|
+| **1 nW** | 17.0 MHz | **8.5 MHz** |
+| **3 nW** | 28.3 MHz | **14.1 MHz** |
+
+`σ_phys` (`pho_normal_std`) and λ (`pho_noise_poisson_mean`) remain per-experiment
+from the tables above.
