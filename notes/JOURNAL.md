@@ -846,9 +846,21 @@ After a quick research it appears that the Hessian is a bit unstable with the cu
 
 I also added the values of the real parameters of each experiment, which Gregor gave to me. They can be found in 'data/raw_data/data_explanation.md'
 
+I had the first results for both approaches, the bootstrap which we can find in the notebook 14 and also the Fisher information approach in notebook 12D.They both worked. They're just dummy versions for the moment.
+
 
 ### Questions Gregor
 
 Today I have a meeting with Gregor this are some questions I would like to clrify:
 
 - There are many decisions I can take that both influence the uncertainty and the optimization quality. If I use the real information provided by Gregor I could fine tune it to the known data. Where is the line between overfitting and optimizing in this case? Should I do some kind of CV where I optimize the hyperparameters of the model to some of the experiments (e.g Laser 3nW 80% as test and the rest to train)
+
+## Presentation
+
+### Summary
+
+I had my presentation, unfortunately I was not able to do a very nice presentation but at the last minute I was able to finish the notebooks with the calculation of uncertainties. I explained to Gregor first my approach of hyperparameter tuning using this agent idea just as something on the side and then I showed him the bootstrap idea and he mentioned a couple issues with that so that's why I jumped to the Fisher information idea from the notebook 12D. I was happy to hear that he is not an expert on Fisher information because I was not also completely in the topic and he was very happy to see the results and the covariance matrix that I showed him on my results of the 12D and he told me that this is the approach that we should follow. So the next steps are now simply going to be to train using Fisher information approach using the real data and from there hope that the real values fall within the uncertainties. We also talked a little bit about my fear of overfitting and trying to optimize several parameters based on the true values that he has already given me. I was afraid that this could be interpreted as some kind of cheating or overfitting. And he told me that I shouldn't worry about that for the moment, or at least this is what I am taking. As we are using the Fisher Information approach, which is giving us a lower bound, then this is mathematically solid. That there are other ways also in order to avoid this. But my original idea of maybe doing something like cross validation or similar, we can put aside for now. And the next step would be simply to try to optimize the model using the real data at the same time on all the data and to see if it works.
+
+### Next Step
+
+I will create a notebook where 14 models are trained.each for one real data that we have and thencompare them all at the same time with the other t so that I can see at the same time the result of each one of the models.
