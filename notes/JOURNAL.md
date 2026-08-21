@@ -66,11 +66,11 @@ data/         # Datasets (gitignored)
 I started reading the papaer in detail, I am getting a much better idea of the whole problem and the approach to solve it.
 
 Here is a summary of the Monte Carlo Method in General
-![alt text](../docs/journal/MCM.png)
+![alt text](./journal/MCM.png)
 
 
 Here is a Summary of one Monte Carlo Simulation
-![alt text](../docs/journal/MCSimulation.png)
+![alt text](./journal/MCSimulation.png)
 
 
 ## Idea: Optimizing $\sigma$
@@ -279,7 +279,7 @@ On the other hand, the [Monte Carlo PyTorch idea](#idea-monte-carlo-with-pytorch
 
 Here a small sketch I used in the meeting for explanation of the idea:
 
-![alt text](../docs/journal/differentiableMC_sketch.png)
+![alt text](./journal/differentiableMC_sketch.png)
 
 
 Parameter uncertainty was a big topic, he mentioned that that is even more interesting that the optimal values itself, so after seeing if the problem is backpro... differentiable (from now on). After seing if I can create a differentiable MC simulation I should see how to find the parameter uncertainty (which I believe should be so complicated in the context of ML)
@@ -558,6 +558,90 @@ So three deviations stack here (all in the estimator, not the physics): unbinned
 Caveat to recheck later: the FWHM is an *estimator output*, so binned-Voigt-LSQ (theirs) vs. unbinned-Lorentzian-MLE (ours) could in principle differ in bias/variance — most likely in the low-count / low-transmission regime. For now we treat this as a second-order detail and keep the continuous representation; **flag to revisit if we see sim-vs-real mismatch** once the loss is pointed at the real data. (Related and likely larger simplification: our generative model emits a pure Lorentzian while real lines may carry Gaussian broadening → Voigt — that's the more consequential thing to check first if real-data matching struggles.)
 
 
+# 2026-07-03
+
+## Morning: Presentation 🎉
+
+Anuar finished and gave the presentation today. It was a big success — they loved it and were impressed with how fast the development progressed. Anuar mentioned it was thanks to Pukky 🔬
+
+He also met the professor afterward. It was a bit awkward — the professor seemed to think Anuar wanted something from him, but Anuar was just being sociable. Overall a great outcome.
+
+## Afternoon: REINFORCE Toy for μ (mean photon count) — Full Summary
+
+### Goal
+Build a toy notebook that uses REINFORCE to optimize the **mean photon count** μ through the discrete rounding step (int n), keeping γ fixed. Gamma is already differentiable via implicit differentiation — this tackles the other half of the problem.
+
+### What we built
+- **File:** `notebooks/reinforce_N_opt_toy.ipynb`
+- Based on `differentiable-gamma-simplified.ipynb` (kept: full MC simulation, pseudo-Voigt fitting, L-BFGS per run)
+- Replaced: MMD² → Wasserstein-1 loss, gamma optimization → REINFORCE for μ
+- Learnable σ (parameterized as `log_σ` for positivity)
+
+### Mistake #1: Per-run n sampling (correct architecture, wrong gradient)
+**Initial implementation:** Each run sampled its own `n_i ~ N(μ, σ)` → 200 different n values → one Wasserstein loss → REINFORCE gradient averaged over all runs.
+
+**Problem:** The score `∇_μ log P(n_i|μ,σ) ≈ (n_i - μ)/σ²` averages to ~0 because `avg_n ≈ μ` by construction. The signal is just random noise `σ/√B`. No convergence.
+
+**Realization:** REINFORCE with a batch-level loss and per-element scores doesn't work when the loss is shared — all runs get the same advantage, and the gradient is dominated by random fluctuations.
+
+### Mistake #2: Learnable sigma with wrong architecture
+**Attempt:** Made σ learnable, initialized at 20.
+
+**Problem:** σ gradient always pushed σ to the cap (80). The score `∇_σ log P(n|μ,σ)` wants to match the variance of observed n to σ² — but the observed n are sampled from N(μ,σ), so the expectation is always ~0 regardless of whether μ is right. No useful signal.
+
+### Fix: One nbar per simulation (the right architecture)
+**New approach — meta-distribution:** Draw ONE nbar from N(μ, σ) per iteration, use it for ALL 200 runs:
+
+```
+Meta:      μ ─────────── σ
+               ↘        ↙
+           nbar ~ N(μ, σ)   ← ONE REINFORCE score
+                │
+          200 runs share nbar
+           (each with σ_phys per-run noise)
+                │
+          1 Wasserstein loss
+                │
+       ∇_μ = (L - b) · ∇_μ log P(nbar | μ, σ)
+```
+
+Now the advantage (L - b) is **actually conditioned on the single nbar value**. When nbar=48 gives low loss, gradient pushes μ → 48. When nbar=20 gives high loss, gradient pushes μ away from 20. Real signal.
+
+### Realization: This is like hyperopt
+This meta-distribution over nbar sampled from N(μ, σ) and evaluated per iteration is structurally identical to hyperparameter optimization (hyperopt):
+- Propose nbar from N(μ, σ) ← like hyperopt's search space
+- Evaluate loss ← like hyperopt's objective
+- Update belief (μ, σ) ← like hyperopt's surrogate model update
+
+Main difference: REINFORCE only remembers the current loss + decayed baseline (no memory of past evaluations), while hyperopt (GP/TPE) builds a model over all evaluations.
+
+### Key design decisions
+- **Wasserstein-1 loss** (instead of MMD² — no kernel bandwidth tuning)
+- **SimParams:** γ=20 fixed, σ_phys=6 (physical per-scan noise), λ=2 (background)
+- **Target:** synthetic data at nbar_true=50 with σ_phys
+- **REINFORCE details:** EMA baseline α=0.05, gradient clipping, μ∈[1,200], σ∈[1,80]
+- **Next steps per user:** Integrate dloss/dn, research n+1/n-1 approach
+
+### TODO: Per-run REINFORCE with individual Wasserstein losses
+
+**Idea (discussed, not implemented):** Instead of one shared loss per simulation, compute a **per-run loss** for each of the 200 FWHM values. Each FWHM_i gets its own advantage `(L_i - b)`, so `∇_μ = mean_i (L_i - b) · ∇_μ log P(n_i | μ, σ)`.
+
+**Per-run loss:** The absolute distance from FWHM_i to its nearest point in the experimental FWHM distribution (or rank/percentile in the target CDF).
+
+**Why this might work:** n_i and L_i are correlated — higher n → better fit → lower L_i. This gives a real, non-zero gradient signal even though `avg_n ≈ μ`.
+
+**Refinement suggestion:** Use the **percentile** of FWHM_i in the target CDF instead of raw distance, to be more robust to outliers.
+
+**Next:** Discuss implementability with Anuar. (Parked for later.)
+
+### TODOs (parked)
+
+- **Clean code:** Refactor the notebooks — extract shared simulation/fitting/loss code into `utils.py` module
+- **Replace MMD² with Wasserstein-1** across all notebooks (consistent loss function)
+- **Think of utils:** Organize common functions (fitting, simulation, Wasserstein loss) into reusable modules
+- **Reinstall mask strategy:** The original gamma-differentiable code had a photon truncation scheme (masking out-of-window photons). Re-evaluate and reinstate if beneficial.
+
+
 # 11.07.2026
 
 ## TODO:
@@ -687,3 +771,6 @@ Full pass over notebooks 13 → 13f after the break. All runs: real data (3 nW, 
 ### Next step (proposed)
 
 Switch the **simulator** to a **pseudo-Voigt** line shape — `src/fitting.py` already implements pseudo-Voigt fitting (4-param: center, raw_γ, raw_σ, logit_w) with Olivero-Longbothum Voigt FWHM. First test: can the pseudo-Voigt simulator reproduce the target std (10.2) at all, e.g. by sweeping the Gaussian width component? If yes → re-run joint optimization with the Voigt-aware pipeline. This directly targets the std gap that tuning could not close.
+
+
+# 
