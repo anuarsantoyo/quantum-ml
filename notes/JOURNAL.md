@@ -772,5 +772,57 @@ Full pass over notebooks 13 → 13f after the break. All runs: real data (3 nW, 
 
 Switch the **simulator** to a **pseudo-Voigt** line shape — `src/fitting.py` already implements pseudo-Voigt fitting (4-param: center, raw_γ, raw_σ, logit_w) with Olivero-Longbothum Voigt FWHM. First test: can the pseudo-Voigt simulator reproduce the target std (10.2) at all, e.g. by sweeping the Gaussian width component? If yes → re-run joint optimization with the Voigt-aware pipeline. This directly targets the std gap that tuning could not close.
 
+---
+
+# 21.08.2026
+
+## Status check — where we are and where we are going
+
+Full re-read of the project (journal, README, notebooks, src/) to get a clear picture of the current state and define the next steps.
+
+### Summary of what has been done
+
+**Project:** Differentiable Monte Carlo for NV-center PLE spectroscopy. Instead of grid-searching the physical parameters (μ = mean photon count, γ = Lorentzian HWHM) that reproduce the experimental FWHM distribution, we make the whole simulation pipeline differentiable and use gradient descent.
+
+**Arc of the project:**
+- **May–Jun:** Understood the paper's MC simulation; built the forward pipeline (Cauchy sampling → Lorentzian fit → FWHM distribution). Loss evolved from histogram-χ² to sample-based MMD², then to Wasserstein-1.
+- **28 Jun:** Made **γ differentiable end-to-end** — reparameterized Cauchy sampling (γ·tan(π(u−0.5)) with frozen noise) + implicit differentiation through the L-BFGS fit (implicit function theorem, no unrolling). Validated: γ=20 → recovered 20.5.
+- **03 Jul:** Presentation — success.
+- **16 Jul:** Made **μ differentiable via REINFORCE** (policy gradient through the discrete photon count, EMA baseline). Combined into **joint μ+γ+σ optimization** — matching FWHM *and* its uncertainty σ breaks the μ/γ degeneracy (different (μ,γ) give the same FWHM distribution). First real-data validation (notebook 13).
+- **17 Jul:** Uncertainty quantification deep dive → chose **empirical data bootstrap**: resample experimental FWHMs, re-run optimizer K=50–100 times, spread of recovered (μ,γ) = statistical uncertainty. Sequence: seed bootstrap first, then data bootstrap.
+- **12 Aug:** Full review of 13a–13f on real data. Best: **13e, W₁=2.28**, FWHM converged to 24.8 ± 5.1 vs target 26.9 ± 10.2. **Key finding:** mean matching works (92–96%), but the spread is stuck at ~40–50% of target regardless of hyperparameters → **model gap**: real lines are fitted with Voigt, our simulator is Lorentzian-only. μ is weakly identified (63→100 across variants).
+
+### What notebook 12c does — the current best method on synthetic data
+
+**12c = "Joint Optimization: FWHM + Sigma + Mean Matching"** — the state of the art on synthetic data. Saved results: **μ: 8 → 48.45 (true 50), γ: 5 → 19.62 (true 20)**, combined loss 38.56 → 1.48, final FWHM distribution 41.3 ± 10.4 vs target 42.3 ± 10.5.
+
+**Setup (synthetic):** target generated at the known truth (μ=50, γ=20, σ_phys=6, λ_bg=2), 200 runs; optimization starts at (μ=8, γ=5), 80 iterations, 200 simulated runs each (~7 min total).
+
+**Per run:**
+1. Draw frozen noise: photon count n ~ N(μ, 6), background ~ Poisson(λ=2), uniforms u.
+2. Build photons: signal detunings = γ·tan(π(u−0.5)) — the reparameterization that makes sampling differentiable in γ — truncated to the ±75 MHz window.
+3. Fit a Lorentzian via L-BFGS → FWHM, plus fit-uncertainty σ (from the Hessian) and dFWHM/dγ (implicit differentiation).
+
+**Loss (per batch, after sorting FWHMs and quantile-matching to the target):**
+- FWHM term: per-quantile |sim − target| (Wasserstein-1)
+- σ term: per-quantile |σ_sim − σ_target| (λ_sig = 0.3) ← breaks the μ/γ degeneracy
+- **Mean term (the 12c addition):** |mean FWHM − target mean| (λ_mean = 0.3) ← clean gradient for μ when per-quantile REINFORCE signal gets noisy
+
+**The two gradients:**
+- **μ:** REINFORCE — advantage (per-quantile loss − EMA baseline) × score (n−μ)/σ², LR 15 decaying to 4.5, clipped.
+- **γ:** implicit-diff gradient for the FWHM part + CRLB approximation dσ/dγ ≈ 2/√n for the σ part (λ_γ_sig = 0.3), LR 0.5.
+
+**Why this works:** matching only the FWHM distribution is degenerate (many (μ,γ) pairs give the same FWHM); matching FWHM + σ + mean pins down a unique solution.
+
+### Next steps — the plan
+
+1. **Go back to synthetic data** — i.e. the 12c framework, where we know the ground truth (μ=50, γ=20).
+2. **Explore uncertainty calculation** — quantify the uncertainty of the recovered (μ, γ). On synthetic data we can *calibrate* the method (does the 68% interval contain the true value 68% of the time?) — impossible on real data where there is no ground truth.
+3. **Once the uncertainty method is clear → the theoretical part of the project is done.**
+4. **Then the only remaining work is fine-tuning to fit the real data** — closing the gap the 13-series exposed (spread, Voigt-vs-Lorentzian, μ identifiability).
+
+**Notes for this phase:**
+- The 17.07 survey already settled on empirical data bootstrap — the natural reading of "uncertainty calculation" on synthetic data is: implement the bootstrap loop on the 12c setup (re-generate/resample data, re-run the optimizer, look at the spread of recovered μ, γ) and validate coverage against the known truth. This pre-produces the machinery we will later run on real data.
+- The 13-series spread gap is a **simulator** problem, not a hyperparameter problem — the proposed pseudo-Voigt simulator change (journal 12.08) is still open and is likely a prerequisite for the final real-data fine-tuning to fully succeed.
 
 # 
