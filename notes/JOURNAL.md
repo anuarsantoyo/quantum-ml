@@ -869,23 +869,25 @@ I will create a notebook where 14 models are trained.each for one real data that
 
 ## Real-data sweep: Fisher (CRB) uncertainties vs transparency (notebooks 15a–15n)
 
-Applied the Fisher-information uncertainty approach (from 12D) to all 14 real datasets: differentiable MC optimized per experiment (2 powers × 7 transmissions), uncertainties = CRB std from the inverse Fisher matrix at the recovered parameters. Figures: `fig_15_*.png` (+ `_dist` variants). **Note:** `FISHER_SEEDS` reduced from 5 (12D) to 1 to speed up the runs for quicker debugging — CRB estimates are quick/dirty, rerun with more seeds before trusting the numbers.
+Applied the Fisher-information uncertainty approach (from 12D) to all 14 real datasets: differentiable MC optimized per experiment (2 powers × 7 transmissions), uncertainties = CRB std from the inverse Fisher matrix at the recovered parameters. Figures: `fig_15_*.png` (+ `_dist` variants).
 
-| Power | Trans | μ_true | μ_rec | σ_μ (CRB) | σ_γ (CRB) | Δμ |
+**Step 1 (documented):** rerun with `FISHER_SEEDS` 1 → 5 (full, as 12D) on all 14 notebooks. Optimization fully seeded → recovered (μ, γ) **identical** to the 1-seed run in all 14; only the Fisher estimate changed. Effect: individual σ values shift ±10–30% (largest: 15j σ_γ 2.4→0.8, 15a σ_μ 68.3→52.4, 15h σ_γ 4.2→3.1), no qualitative change — trend stands. Table below: 1-seed → 5-seed values.
+
+| Power | Trans | μ_true | μ_rec | σ_μ (1→5) | σ_γ (1→5) | Δμ (σ, 5s) |
 |-------|-------|--------|-------|-----------|-----------|-----|
-| 1 nW | 5%  | 9.393  | 9.04  | 68.3 | 72.3 | 0.01σ |
-| 1 nW | 10% | 12.372 | 11.25 | 20.4 | 7.5  | 0.05σ |
-| 1 nW | 20% | 17.316 | 8.75  | 9.2  | 0.9  | 0.93σ |
-| 1 nW | 40% | 38.405 | 18.20 | 19.6 | 2.0  | 1.03σ |
-| 1 nW | 60% | 61.374 | 27.60 | 16.7 | 1.3  | 2.02σ |
-| 1 nW | 80% | 79.365 | 36.15 | 28.6 | 1.3  | 1.51σ |
-| 1 nW | 100%| 70.817 | 34.17 | 41.7 | 1.5  | 0.88σ |
-| 3 nW | 5%  | 13.204 | 9.41  | 14.3 | 4.2  | 0.27σ |
-| 3 nW | 10% | 24.476 | 10.59 | 13.9 | 2.4  | 1.00σ |
-| 3 nW | 20% | 34.279 | 13.42 | 20.9 | 2.4  | 1.00σ |
-| 3 nW | 40% | 84.892 | 39.89 | 57.0 | 1.7  | 0.79σ |
-| 3 nW | 60% | 103.203| 45.98 | 60.3 | 2.2  | 0.95σ |
-| 3 nW | 80% | 137.537| 63.85 | 71.0 | 1.5  | 1.04σ |
-| 3 nW | 100%| —      | —     | —    | —    | not run |
+| 1 nW | 5%  | 9.393  | 9.04  | 68.3→52.4 | 72.3→68.5 | 0.01σ |
+| 1 nW | 10% | 12.372 | 11.25 | 20.4→21.1 | 7.5→4.2   | 0.05σ |
+| 1 nW | 20% | 17.316 | 8.75  | 9.2→8.9   | 0.9→1.3   | 0.96σ |
+| 1 nW | 40% | 38.405 | 18.20 | 19.6→17.4 | 2.0→1.8   | 1.16σ |
+| 1 nW | 60% | 61.374 | 27.60 | 16.7→17.6 | 1.3→0.9   | 1.92σ |
+| 1 nW | 80% | 79.365 | 36.15 | 28.6→29.2 | 1.3→1.4   | 1.48σ |
+| 1 nW | 100%| 70.817 | 34.17 | 41.7→38.5 | 1.5→1.5   | 0.95σ |
+| 3 nW | 5%  | 13.204 | 9.41  | 14.3→12.2 | 4.2→3.1   | 0.31σ |
+| 3 nW | 10% | 24.476 | 10.59 | 13.9→13.1 | 2.4→1.8   | 1.06σ |
+| 3 nW | 20% | 34.279 | 13.42 | 20.9→22.0 | 2.4→0.8   | 0.95σ |
+| 3 nW | 40% | 84.892 | 39.89 | 57.0→58.5 | 1.7→1.9   | 0.77σ |
+| 3 nW | 60% | 103.203| 45.98 | 60.3→55.5 | 2.2→2.1   | 1.03σ |
+| 3 nW | 80% | 137.537| 63.85 | 71.0→67.3 | 1.5→1.4   | 1.09σ |
+| 3 nW | 100%| 175.707| 83.45 | 89.4→87.7 | 1.4→1.5   | 1.05σ |
 
-**Trend:** σ_γ decreases strongly with transparency — collapses 1–2 orders of magnitude from 5% → 20% transmission, then plateaus at ~1–2 MHz (1 nW: 72.3 → 0.9; 3 nW: 4.2 → 1.5). σ_μ stays weakly identified at all transmissions (no clean trend; ~50–60% relative at 3 nW). Recovered μ runs biased low at high transmission (up to 2σ). **TODO:** 15n (3 nW, 100%) not executed yet.
+**Trend (unchanged by the step):** σ_γ decreases strongly with transparency — collapses 1–2 orders of magnitude from 5% → 20% transmission, then plateaus at ~1–2 MHz (1 nW: 72.3 → 0.9; 3 nW: 4.2 → 1.5). σ_μ stays weakly identified at all transmissions (no clean trend; ~50–60% relative at 3 nW). Recovered μ runs biased low at high transmission (up to ~2σ). 15n (3 nW, 100%) included (run by Anuar 07:14–07:25 at 1 seed, rerun at 5).
