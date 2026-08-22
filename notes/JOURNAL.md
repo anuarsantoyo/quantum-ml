@@ -869,7 +869,7 @@ I will create a notebook where 14 models are trained.each for one real data that
 
 ## Real-data sweep: Fisher (CRB) uncertainties vs transparency (notebooks 15a–15n)
 
-Applied the Fisher-information uncertainty approach (from 12D) to all 14 real datasets: differentiable MC optimized per experiment (2 powers × 7 transmissions), uncertainties = CRB std from the inverse Fisher matrix at the recovered parameters. Figures: `fig_15_*.png` (+ `_dist` variants).
+Applied the Fisher-information uncertainty approach (from 12D) to all 14 real datasets: differentiable MC optimized per experiment (2 powers × 7 transmissions), uncertainties = CRB std from the inverse Fisher matrix at the recovered parameters. Figures: `fig_15_*.png` (+ `_dist` variants). **Note:** `FISHER_SEEDS` reduced from 5 (12D) to 1 to speed up the runs for quicker debugging — CRB estimates are quick/dirty, rerun with more seeds before trusting the numbers.
 
 | Power | Trans | μ_true | μ_rec | σ_μ (CRB) | σ_γ (CRB) | Δμ |
 |-------|-------|--------|-------|-----------|-----------|-----|
