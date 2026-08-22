@@ -864,3 +864,28 @@ I had my presentation, unfortunately I was not able to do a very nice presentati
 ### Next Step
 
 I will create a notebook where 14 models are trained.each for one real data that we have and thencompare them all at the same time with the other t so that I can see at the same time the result of each one of the models.
+
+# 22.08.2026
+
+## Real-data sweep: Fisher (CRB) uncertainties vs transparency (notebooks 15a–15n)
+
+Applied the Fisher-information uncertainty approach (from 12D) to all 14 real datasets: differentiable MC optimized per experiment (2 powers × 7 transmissions), uncertainties = CRB std from the inverse Fisher matrix at the recovered parameters. Figures: `fig_15_*.png` (+ `_dist` variants).
+
+| Power | Trans | μ_true | μ_rec | σ_μ (CRB) | σ_γ (CRB) | Δμ |
+|-------|-------|--------|-------|-----------|-----------|-----|
+| 1 nW | 5%  | 9.393  | 9.04  | 68.3 | 72.3 | 0.01σ |
+| 1 nW | 10% | 12.372 | 11.25 | 20.4 | 7.5  | 0.05σ |
+| 1 nW | 20% | 17.316 | 8.75  | 9.2  | 0.9  | 0.93σ |
+| 1 nW | 40% | 38.405 | 18.20 | 19.6 | 2.0  | 1.03σ |
+| 1 nW | 60% | 61.374 | 27.60 | 16.7 | 1.3  | 2.02σ |
+| 1 nW | 80% | 79.365 | 36.15 | 28.6 | 1.3  | 1.51σ |
+| 1 nW | 100%| 70.817 | 34.17 | 41.7 | 1.5  | 0.88σ |
+| 3 nW | 5%  | 13.204 | 9.41  | 14.3 | 4.2  | 0.27σ |
+| 3 nW | 10% | 24.476 | 10.59 | 13.9 | 2.4  | 1.00σ |
+| 3 nW | 20% | 34.279 | 13.42 | 20.9 | 2.4  | 1.00σ |
+| 3 nW | 40% | 84.892 | 39.89 | 57.0 | 1.7  | 0.79σ |
+| 3 nW | 60% | 103.203| 45.98 | 60.3 | 2.2  | 0.95σ |
+| 3 nW | 80% | 137.537| 63.85 | 71.0 | 1.5  | 1.04σ |
+| 3 nW | 100%| —      | —     | —    | —    | not run |
+
+**Trend:** σ_γ decreases strongly with transparency — collapses 1–2 orders of magnitude from 5% → 20% transmission, then plateaus at ~1–2 MHz (1 nW: 72.3 → 0.9; 3 nW: 4.2 → 1.5). σ_μ stays weakly identified at all transmissions (no clean trend; ~50–60% relative at 3 nW). Recovered μ runs biased low at high transmission (up to 2σ). **TODO:** 15n (3 nW, 100%) not executed yet.
