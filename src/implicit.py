@@ -74,10 +74,22 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
     H_theta_gamma = (grad_hi - grad_lo) / (2 * eps_g)  # (n_params,)
 
     # ---- Step 3: Hessian H_theta_theta at theta_star ----
+    def _hessian(t_val, photons):
+        t = t_val.detach().clone().requires_grad_()
+        gt = torch.autograd.grad(nll_fn(t, photons), t, create_graph=True)[0]
+        H = torch.zeros(n_params, n_params, dtype=torch.float32)
+        for i in range(n_params):
+            gi = gt[i]
+            for j in range(n_params):
+                retain = not (i == n_params - 1 and j == n_params - 1)
+                H[i, j] = torch.autograd.grad(
+                    gi, t, retain_graph=retain, create_graph=False)[0][j].detach()
+        return H
+
     t_for_hess = theta_star.detach().clone().requires_grad_()
     loss_for_hess = nll_fn(t_for_hess, photons_t)
-    H_theta_theta = torch.zeros(n_params, n_params, dtype=torch.float32)
     grad_t = torch.autograd.grad(loss_for_hess, t_for_hess, create_graph=True)[0]
+    H_theta_theta = torch.zeros(n_params, n_params, dtype=torch.float32)
     for i in range(n_params):
         gi = grad_t[i]
         for j in range(n_params):
@@ -144,27 +156,22 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
         termA = (ds_dtheta @ dtheta_dgamma.detach()).item()
 
         # ---- term B: direct data-dependence channel (theta* fixed, gamma varies) ----
-        g_leaf = torch.tensor(gamma_val, dtype=torch.float32, requires_grad=True)
-        p_g = build_photons(g_leaf, u_t, b_t)      # differentiable in gamma
-        t_fix = theta_star.detach().clone().requires_grad_()
-        loss_g = nll_fn(t_fix, p_g)
-        grad_g = torch.autograd.grad(loss_g, t_fix, create_graph=True)[0]
-        H_rows_g = []
-        for i in range(n_params):
-            gi = grad_g[i]
-            H_rows_g.append(torch.stack([
-                torch.autograd.grad(gi, t_fix, retain_graph=True, create_graph=True)[0][j]
-                for j in range(n_params)
-            ]))
-        H_g = torch.stack(H_rows_g)
-        H_inv_g = torch.linalg.solve(
-            H_g + reg * torch.eye(n_params, dtype=torch.float32),
-            torch.eye(n_params, dtype=torch.float32))
-        dF_fixed = dF_dtheta.detach()   # FWHM depends on theta only -> no direct gamma term
-        sigma_g = torch.sqrt(
-            ((dF_fixed.unsqueeze(0) @ H_inv_g @ dF_fixed.unsqueeze(1)).squeeze().clamp_min(1e-30))
-            / max(len(photons_t), 1))
-        termB = torch.autograd.grad(sigma_g, g_leaf, retain_graph=True)[0].item()
+        # Cheap exact form: dsigma/dH . dH/dgamma = -(1/(2 sigma N)) sum_ij M_ij dH_ij/dgamma
+        # with M = H^-1 dF dF^T H^-1; dH/dgamma via central FD of the DETACHED Hessian
+        # (same internal-FD style as the existing H_theta_gamma; no third-order autograd,
+        #  no per-parameter probing -> stays expandable to new parameters).
+        eps_h = 1e-2
+        photons_hi = build_photons(
+            torch.tensor(gamma_val + eps_h, dtype=torch.float32), u_t, b_t)
+        photons_lo = build_photons(
+            torch.tensor(gamma_val - eps_h, dtype=torch.float32), u_t, b_t)
+        H_hi = _hessian(theta_star, photons_hi)
+        H_lo = _hessian(theta_star, photons_lo)
+        dH_dgamma = (H_hi - H_lo) / (2 * eps_h)
+        M_mat = H_inv @ dF_dtheta.unsqueeze(1) @ dF_dtheta.unsqueeze(0) @ H_inv
+        termB = -(1.0 / (2.0 * sigma_fwhm * max(len(photons_t), 1))) * (M_mat * dH_dgamma).sum().item()
+        if not math.isfinite(termB):
+            termB = 0.0
 
         ds_dgamma = termA + termB
         if not math.isfinite(ds_dgamma):
