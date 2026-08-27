@@ -918,3 +918,42 @@ Same pipeline as the 15-series (2D KDE likelihood, REINFORCE μ / implicit-diff 
 **Hypothesis:** at high transmission σ_phys is large (12–41), smearing the FWHM distribution and flattening the 2D KDE likelihood along the μ–γ degeneracy; the single-run optimizer (1 seed per notebook) falls into a wrong basin (γ → ≈½γ_true, μ → ≈50–60% of truth). The 16-series also shows the real-data μ-bias at high trans (15-series) is **at least partly a model/optimization property, not only data mismatch**.
 
 **Candidate fixes (deferred, per plan):** 12c-style mean-matching term to anchor the location; more iterations / multiple restarts; stronger γ gradient signal. Next: discuss which to try first.
+
+
+
+# 23.08.2026
+
+## Current State
+
+The current state is the following. I have managed to test my model in the real data and they showed promising results but they're not nowhere close to be optimal. So what I did is I ran my model using synthetic data, but using the parameters of the true values. The idea being is that if my model is not able to optimize to the data that the same model generated, then I am having some issues with the model and not with the data. So I will focus on making models that perfectly fit the synthetic generated data by the two parameters, and then I can try to apply it to the real parameters.
+
+## First Steps
+
+So the first thing that I'm going to do is create a notebook where all the 14 experiments I ran are showed directly inside one notebook in order to avoid cluttering my projects. From there, I will work on the general optimization, so improving loss function particularly so that the points more or less are strongly attracted to the optimal values. I must mention that at the current time, all of the experiments optimize correctly as their final values, even though very biased, optimized in the correct direction. What we're trying to do is to minimize the bias.
+
+Once this notebook is generated with the general optimization structure ready and the correct loss function calculations, then we will go to the next step, which will be hyperparameter tuning. In order to do hyperparameter tuning, I have a new idea that I will explain now.
+
+## New Idea for Hyperparameter Tuning
+
+The area is the following. My goal is for all of the ending optimized points of each of the 14 experiments to be as close as possible to the two parameters that generated their respective synthetic data. This is a great situation for using hyperparameter tuning, specifically the algorithm TPE. Other algorithms could also be experienced like variance matrix adaptation. The thing is that HyperOpt by itself only uses math and distributions and probability distributions to try the different hyper parameters. In our case, we have many hyper parameters like learning rates, different values of bandwidth, et cetera, et cetera, but particularly a big amount of learning rates. As a comment, one step would also be defining all the hyper parameters that we have to optimize. Close comment. So as the HyperOpt is not able to incorporate also physical knowledge, my idea is to take advantage of an agentic system to bring in physical context and understanding of the experiment.
+
+So the workflow of my new agentic hyper parameter optimization tool follows. My HyperOpt algorithm using trials from before would generate a probability distribution from where the best next trials would be. This probability distribution would be given to the agents as context together with the whole context of the project, our past results described by worlds with a physical meaning and with the combination of the physical context and the probability distribution, the agent then would be able to propose a new trial based not only on the distribution math, but also on the physical context.
+
+The interesting question is how should we give the information of the probability distribution to the agent? Should we do some type of statistics summary? The idea that I have right now is to sample a large amount of possible next trials, for example, 30, have the agent analyze which type of points they are, use the physical context, and allowing it only to choose one of the 30 proposals. So that way the agent doesn't stray off over relying on the confidence of its knowledge, and it's obliged to remain with the probability distribution, but we give it the chance of choosing the best one based on the knowledge it has. This is very important because each experiment or each trial that we're going to be doing, it's going to be very time intensive because each trial represents the 14 experiments that we have.
+
+Another idea would be to use covariance matrix adaptation as the search area is nicely defined as a covariance matrix.
+
+## Objective Function
+
+Now I will briefly talk about the objective function. The objective function would simply be the mean squared error of the final optimization point with the true value of each of the 14 experiments. And we also have a great advantage is that with this objective function, we can also calculate an uncertainty using the standard deviation. So an idea could also be that when giving the information to the TPE algorithm that the kernel estimate that it generates around this trial is also influenced not only by the value of the objective function, but also by the uncertainty of the objective function. So this is something that we could also incorporate in the building of the probability distribution.
+
+## Next Concrete Steps
+
+So the next concrete steps are the following. First, generate a compact notebook where the 14 experiments are run and optimize the loss function for it to have a general good idea of how to optimize. Second, define all the hyperparameters that we're going to be optimizing. And third, create the agentic system that optimizes the hyperparameters.
+
+
+![alt text](journal_content/image.png)
+![alt text](journal_content/image-1.png)
+![alt text](journal_content/image-2.png)
+![alt text](journal_content/image-3.png)
+![alt text](journal_content/image-4.png)
