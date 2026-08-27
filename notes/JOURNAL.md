@@ -66,11 +66,11 @@ data/         # Datasets (gitignored)
 I started reading the papaer in detail, I am getting a much better idea of the whole problem and the approach to solve it.
 
 Here is a summary of the Monte Carlo Method in General
-![alt text](../docs/journal/MCM.png)
+![alt text](./journal_content/MCM.png)
 
 
 Here is a Summary of one Monte Carlo Simulation
-![alt text](../docs/journal/MCSimulation.png)
+![alt text](./journal_content/MCSimulation.png)
 
 
 ## Idea: Optimizing $\sigma$
@@ -279,7 +279,7 @@ On the other hand, the [Monte Carlo PyTorch idea](#idea-monte-carlo-with-pytorch
 
 Here a small sketch I used in the meeting for explanation of the idea:
 
-![alt text](../docs/journal/differentiableMC_sketch.png)
+![alt text](./journal_content/differentiableMC_sketch.png)
 
 
 Parameter uncertainty was a big topic, he mentioned that that is even more interesting that the optimal values itself, so after seeing if the problem is backpro... differentiable (from now on). After seing if I can create a differentiable MC simulation I should see how to find the parameter uncertainty (which I believe should be so complicated in the context of ML)
@@ -558,6 +558,90 @@ So three deviations stack here (all in the estimator, not the physics): unbinned
 Caveat to recheck later: the FWHM is an *estimator output*, so binned-Voigt-LSQ (theirs) vs. unbinned-Lorentzian-MLE (ours) could in principle differ in bias/variance — most likely in the low-count / low-transmission regime. For now we treat this as a second-order detail and keep the continuous representation; **flag to revisit if we see sim-vs-real mismatch** once the loss is pointed at the real data. (Related and likely larger simplification: our generative model emits a pure Lorentzian while real lines may carry Gaussian broadening → Voigt — that's the more consequential thing to check first if real-data matching struggles.)
 
 
+# 2026-07-03
+
+## Morning: Presentation 🎉
+
+Anuar finished and gave the presentation today. It was a big success — they loved it and were impressed with how fast the development progressed. Anuar mentioned it was thanks to Pukky 🔬
+
+He also met the professor afterward. It was a bit awkward — the professor seemed to think Anuar wanted something from him, but Anuar was just being sociable. Overall a great outcome.
+
+## Afternoon: REINFORCE Toy for μ (mean photon count) — Full Summary
+
+### Goal
+Build a toy notebook that uses REINFORCE to optimize the **mean photon count** μ through the discrete rounding step (int n), keeping γ fixed. Gamma is already differentiable via implicit differentiation — this tackles the other half of the problem.
+
+### What we built
+- **File:** `notebooks/reinforce_N_opt_toy.ipynb`
+- Based on `differentiable-gamma-simplified.ipynb` (kept: full MC simulation, pseudo-Voigt fitting, L-BFGS per run)
+- Replaced: MMD² → Wasserstein-1 loss, gamma optimization → REINFORCE for μ
+- Learnable σ (parameterized as `log_σ` for positivity)
+
+### Mistake #1: Per-run n sampling (correct architecture, wrong gradient)
+**Initial implementation:** Each run sampled its own `n_i ~ N(μ, σ)` → 200 different n values → one Wasserstein loss → REINFORCE gradient averaged over all runs.
+
+**Problem:** The score `∇_μ log P(n_i|μ,σ) ≈ (n_i - μ)/σ²` averages to ~0 because `avg_n ≈ μ` by construction. The signal is just random noise `σ/√B`. No convergence.
+
+**Realization:** REINFORCE with a batch-level loss and per-element scores doesn't work when the loss is shared — all runs get the same advantage, and the gradient is dominated by random fluctuations.
+
+### Mistake #2: Learnable sigma with wrong architecture
+**Attempt:** Made σ learnable, initialized at 20.
+
+**Problem:** σ gradient always pushed σ to the cap (80). The score `∇_σ log P(n|μ,σ)` wants to match the variance of observed n to σ² — but the observed n are sampled from N(μ,σ), so the expectation is always ~0 regardless of whether μ is right. No useful signal.
+
+### Fix: One nbar per simulation (the right architecture)
+**New approach — meta-distribution:** Draw ONE nbar from N(μ, σ) per iteration, use it for ALL 200 runs:
+
+```
+Meta:      μ ─────────── σ
+               ↘        ↙
+           nbar ~ N(μ, σ)   ← ONE REINFORCE score
+                │
+          200 runs share nbar
+           (each with σ_phys per-run noise)
+                │
+          1 Wasserstein loss
+                │
+       ∇_μ = (L - b) · ∇_μ log P(nbar | μ, σ)
+```
+
+Now the advantage (L - b) is **actually conditioned on the single nbar value**. When nbar=48 gives low loss, gradient pushes μ → 48. When nbar=20 gives high loss, gradient pushes μ away from 20. Real signal.
+
+### Realization: This is like hyperopt
+This meta-distribution over nbar sampled from N(μ, σ) and evaluated per iteration is structurally identical to hyperparameter optimization (hyperopt):
+- Propose nbar from N(μ, σ) ← like hyperopt's search space
+- Evaluate loss ← like hyperopt's objective
+- Update belief (μ, σ) ← like hyperopt's surrogate model update
+
+Main difference: REINFORCE only remembers the current loss + decayed baseline (no memory of past evaluations), while hyperopt (GP/TPE) builds a model over all evaluations.
+
+### Key design decisions
+- **Wasserstein-1 loss** (instead of MMD² — no kernel bandwidth tuning)
+- **SimParams:** γ=20 fixed, σ_phys=6 (physical per-scan noise), λ=2 (background)
+- **Target:** synthetic data at nbar_true=50 with σ_phys
+- **REINFORCE details:** EMA baseline α=0.05, gradient clipping, μ∈[1,200], σ∈[1,80]
+- **Next steps per user:** Integrate dloss/dn, research n+1/n-1 approach
+
+### TODO: Per-run REINFORCE with individual Wasserstein losses
+
+**Idea (discussed, not implemented):** Instead of one shared loss per simulation, compute a **per-run loss** for each of the 200 FWHM values. Each FWHM_i gets its own advantage `(L_i - b)`, so `∇_μ = mean_i (L_i - b) · ∇_μ log P(n_i | μ, σ)`.
+
+**Per-run loss:** The absolute distance from FWHM_i to its nearest point in the experimental FWHM distribution (or rank/percentile in the target CDF).
+
+**Why this might work:** n_i and L_i are correlated — higher n → better fit → lower L_i. This gives a real, non-zero gradient signal even though `avg_n ≈ μ`.
+
+**Refinement suggestion:** Use the **percentile** of FWHM_i in the target CDF instead of raw distance, to be more robust to outliers.
+
+**Next:** Discuss implementability with Anuar. (Parked for later.)
+
+### TODOs (parked)
+
+- **Clean code:** Refactor the notebooks — extract shared simulation/fitting/loss code into `utils.py` module
+- **Replace MMD² with Wasserstein-1** across all notebooks (consistent loss function)
+- **Think of utils:** Organize common functions (fitting, simulation, Wasserstein loss) into reusable modules
+- **Reinstall mask strategy:** The original gamma-differentiable code had a photon truncation scheme (masking out-of-window photons). Re-evaluate and reinstate if beneficial.
+
+
 # 11.07.2026
 
 ## TODO:
@@ -567,3 +651,309 @@ Caveat to recheck later: the FWHM is an *estimator output*, so binned-Voigt-LSQ 
 
 ## Planing presentation
 After the successful presentation on the 03.07.2026. I have done more (to be added) and this is how I would like to present it. 
+
+# 16.07.2026
+
+## Major milestone: joint optimization + real data working
+
+### What we achieved
+
+**μ optimization (REINFORCE):**
+- Policy gradient approach for optimizing μ through non-differentiable sampling
+- Per-run advantage with exponential moving average baseline
+- Works reliably — μ converges from any starting point
+
+**γ optimization (Implicit Differentiation):**
+- Differentiate through L-BFGS Lorentzian fit via the implicit function theorem
+- No backprop through optimizer iterations, only Hessian at the optimum
+- Gives dFWHM/dγ per run
+
+**Joint μ + γ + σ optimization:**
+- Joint optimization without sigma is degenerate: different (μ, γ) give same FWHM
+- Solution: match both FWHM distribution AND its uncertainty σ
+- μ: REINFORCE with combined FWHM + sigma reward
+- γ: implicit diff for FWHM + CRLB approximation for sigma (dσ/dγ ≈ 2/√n)
+
+**Real data validation — Notebook 13:**
+- Loaded real experimental data (3 nW, 40% transmission, 3913 FWHM values)
+- Optimization converged: FWHM loss 23.9 → 1.6
+- μ converged to 49.6 (synthetic true: 50.0)
+- The differentiable pipeline works on real measurements
+
+### Project structure cleaned
+- All notebooks numbered (01 → 13) telling a clear story
+- Core code extracted into src/ modules (samplers, fitting, losses, implicit, utils)
+- Presentations updated
+
+### Key files
+- `notebooks/12-joint-opt-with-sigma.ipynb` — main working notebook
+- `notebooks/13-real-data-optimization.ipynb` — real data validation
+- `src/implicit.py` — implicit differentiation through fit
+- `src/fitting.py` — Lorentzian fitting with uniform_bg flag
+
+---
+
+# 17.07.2026
+
+## Deep dive on uncertainty quantification — paper discussion
+
+Revisited the project after a break. Reviewed presentation from today and latest notebook results (13a–13f). Best result so far: notebook 13e, W₁=2.28, FWHM converged to 24.8 ± 5.1 vs target 26.9 ± 10.2 (3 nW, 40% transmission data).
+
+**Key insight from physics discussion:**
+- μ (mean photon count) and γ (Cauchy HWHM) are precisely what the whole method aims to recover — there's no independent ground truth for the real data
+- The paper's "true" 29 MHz FWHM at 3 nW is a Voigt FWHM — our γ is a Cauchy HWHM in the differentiable simulation, not directly comparable
+- Real data validation means validating the FWHM distribution match (mean: 24.8 vs target 26.9), not parameter recovery against unknown ground truth
+
+The presentation was updated with two new items:
+1. "test our approach on all experiment data to get a starting point"
+2. "compute uncertainties" as a next step
+
+## Uncertainty quantification methods survey
+
+Deep research on approaches for confidence intervals in our kind of problem. Searched literature on:
+- Wilks' theorem / likelihood ratio confidence regions (particle physics standard)
+- Profile likelihood (used at CERN, in astrophysics — Cowan lectures, Nielsen et al. Sci Rep 2016)
+- Bootstrap methods (Efron 1979, review by Simpson et al. J. R. Soc. Interface 2022)
+- Fisher Information / Cramér-Rao bound
+- MCMC (too expensive)
+- Finite-difference Hessian (too brittle for noisy landscape)
+- Delta method (requires closed-form estimator)
+
+**Discussion of options (with Pukky):**
+
+| Method | What it measures | Our noise? | Cost | Paper-viable? |
+|--------|-----------------|-----------|------|---------------|
+| Finite-diff Hessian | Local curvature | ❌ Too brittle | 30 min | ❌ |
+| Profile likelihood | Stat. uncertainty | ✅ Robust | ~2h | ✅ Physics std |
+| Bootstrap (seed) | Optimizer noise | ✅ | 80 min | ⚠️ Wrong Q |
+| Bootstrap (data) | Stat. uncertainty | ✅ | ~40 min parallel | ✅ Robust |
+| MCMC | Full posterior | ✅ | Days | ❌ Expensive |
+
+**Key criticism of seed bootstrap:** it measures optimizer variability, not statistical uncertainty. If the optimizer has systematic bias, seed bootstrap gives tight, confident, wrong error bars.
+
+**Key finding from external review (shared by Anuar):** Empirical data bootstrap is the strongest approach. Resample the 3200 experimental FWHMs with replacement, re-run full optimizer on the resampled data, repeat K=50-100. The spread of recovered (μ, γ) directly measures statistical uncertainty — "if I repeated the experiment, what would I get?" Uses real experimental noise, no model assumptions.
+
+**Caveat from Pukky:** Data bootstrap assumes the 3200 FWHM scans are i.i.d. — spectral diffusion could introduce correlations between consecutive scans. In practice NV spectroscopy correlation times are usually shorter than scan time, making the assumption reasonable.
+
+**Decision:** Go with empirical data bootstrap. Sequence:
+1. ✅ Seed bootstrap first — confirm optimizer stability
+2. Then data bootstrap (K=50-100) — statistical uncertainty
+3. Optionally parametric bootstrap — calibrate coverage
+
+---
+
+# 12.08.2026
+
+## Review of the 13-series — real-data optimization experiments
+
+Full pass over notebooks 13 → 13f after the break. All runs: real data (3 nW, 40% transmission, 3725 FWHM values), target distribution **26.9 ± 10.2 MHz**, joint μ (REINFORCE, LR 15) + γ (implicit diff + CRLB σ-gradient), Lorentzian fit, N_RUNS=200, N_ITER=80, μ₀=30, γ₀=15.
+
+### Experiment log
+
+| Exp | Change vs base | μ_final | γ_final | FWHM final | W₁ | Verdict |
+|---|---|---|---|---|---|---|
+| **13** (base) | λ_sig=0.3, LR_γ=0.5 | 70.4 | 5.1 | 10.8 ± 2.0 | — | ❌ loss diverged (54→74.8), γ collapsed |
+| **13a** | diagnose only | — | — | — | — | found quantile bug + too-narrow dist |
+| **13b** | quantile-matching fix | 100.4 | 12.4 | 25.5 ± 4.0 | 3.18 | ✅ mean 95%, std 39% |
+| **13c** | λ_sig 0.3→0.1 | 78.2 | 12.3 | 25.6 ± 4.6 | 2.72 | ✅ best W₁ so far, μ still high |
+| **13d** | LR_γ 0.5→5.0 (10×) | 63.1 | 18.5 | 38.6 ± 8.1 | 13.4 | ❌ γ overshot, worst |
+| **13e** | LR_γ 0.5→1.5 (3×) | 62.9 | 11.8 | **24.8 ± 5.1** | **2.28** | 🏆 best overall |
+| **13f** | λ_bg 2.0→5.0 | 85.2 | 11.8 | 25.8 ± 4.3 | 2.91 | ≈ 13e, μ less stable |
+
+(13c-faster-gamma and 13c-more-iterations were never executed — their conclusions were folded into the 13c reduce-sigma-weight run.)
+
+### Takeaways
+
+1. **Mean matching works** — 92–96% of target across every post-fix variant.
+2. **Spread is stuck at ~40–50% of target** (std ~4–5 vs 10.2) regardless of tuning → **model gap, not hyperparameters**: real PLE scans are fitted with **Voigt** profiles (Gaussian broadening from spectral diffusion), our simulator is **Lorentzian-only** and cannot produce the observed spread.
+3. **μ is inconsistent** (63 → 100 across variants) — weakly identified; consistent with the known FWHM degeneracy between μ and γ.
+
+### Next step (proposed)
+
+Switch the **simulator** to a **pseudo-Voigt** line shape — `src/fitting.py` already implements pseudo-Voigt fitting (4-param: center, raw_γ, raw_σ, logit_w) with Olivero-Longbothum Voigt FWHM. First test: can the pseudo-Voigt simulator reproduce the target std (10.2) at all, e.g. by sweeping the Gaussian width component? If yes → re-run joint optimization with the Voigt-aware pipeline. This directly targets the std gap that tuning could not close.
+
+---
+
+# 21.08.2026
+
+## Status check — where we are and where we are going
+
+Full re-read of the project (journal, README, notebooks, src/) to get a clear picture of the current state and define the next steps.
+
+### Summary of what has been done
+
+**Project:** Differentiable Monte Carlo for NV-center PLE spectroscopy. Instead of grid-searching the physical parameters (μ = mean photon count, γ = Lorentzian HWHM) that reproduce the experimental FWHM distribution, we make the whole simulation pipeline differentiable and use gradient descent.
+
+**Arc of the project:**
+- **May–Jun:** Understood the paper's MC simulation; built the forward pipeline (Cauchy sampling → Lorentzian fit → FWHM distribution). Loss evolved from histogram-χ² to sample-based MMD², then to Wasserstein-1.
+- **28 Jun:** Made **γ differentiable end-to-end** — reparameterized Cauchy sampling (γ·tan(π(u−0.5)) with frozen noise) + implicit differentiation through the L-BFGS fit (implicit function theorem, no unrolling). Validated: γ=20 → recovered 20.5.
+- **03 Jul:** Presentation — success.
+- **16 Jul:** Made **μ differentiable via REINFORCE** (policy gradient through the discrete photon count, EMA baseline). Combined into **joint μ+γ+σ optimization** — matching FWHM *and* its uncertainty σ breaks the μ/γ degeneracy (different (μ,γ) give the same FWHM distribution). First real-data validation (notebook 13).
+- **17 Jul:** Uncertainty quantification deep dive → chose **empirical data bootstrap**: resample experimental FWHMs, re-run optimizer K=50–100 times, spread of recovered (μ,γ) = statistical uncertainty. Sequence: seed bootstrap first, then data bootstrap.
+- **12 Aug:** Full review of 13a–13f on real data. Best: **13e, W₁=2.28**, FWHM converged to 24.8 ± 5.1 vs target 26.9 ± 10.2. **Key finding:** mean matching works (92–96%), but the spread is stuck at ~40–50% of target regardless of hyperparameters → **model gap**: real lines are fitted with Voigt, our simulator is Lorentzian-only. μ is weakly identified (63→100 across variants).
+
+### What notebook 12c does — the current best method on synthetic data
+
+**12c = "Joint Optimization: FWHM + Sigma + Mean Matching"** — the state of the art on synthetic data. Saved results: **μ: 8 → 48.45 (true 50), γ: 5 → 19.62 (true 20)**, combined loss 38.56 → 1.48, final FWHM distribution 41.3 ± 10.4 vs target 42.3 ± 10.5.
+
+**Setup (synthetic):** target generated at the known truth (μ=50, γ=20, σ_phys=6, λ_bg=2), 200 runs; optimization starts at (μ=8, γ=5), 80 iterations, 200 simulated runs each (~7 min total).
+
+**Per run:**
+1. Draw frozen noise: photon count n ~ N(μ, 6), background ~ Poisson(λ=2), uniforms u.
+2. Build photons: signal detunings = γ·tan(π(u−0.5)) — the reparameterization that makes sampling differentiable in γ — truncated to the ±75 MHz window.
+3. Fit a Lorentzian via L-BFGS → FWHM, plus fit-uncertainty σ (from the Hessian) and dFWHM/dγ (implicit differentiation).
+
+**Loss (per batch, after sorting FWHMs and quantile-matching to the target):**
+- FWHM term: per-quantile |sim − target| (Wasserstein-1)
+- σ term: per-quantile |σ_sim − σ_target| (λ_sig = 0.3) ← breaks the μ/γ degeneracy
+- **Mean term (the 12c addition):** |mean FWHM − target mean| (λ_mean = 0.3) ← clean gradient for μ when per-quantile REINFORCE signal gets noisy
+
+**The two gradients:**
+- **μ:** REINFORCE — advantage (per-quantile loss − EMA baseline) × score (n−μ)/σ², LR 15 decaying to 4.5, clipped.
+- **γ:** implicit-diff gradient for the FWHM part + CRLB approximation dσ/dγ ≈ 2/√n for the σ part (λ_γ_sig = 0.3), LR 0.5.
+
+**Why this works:** matching only the FWHM distribution is degenerate (many (μ,γ) pairs give the same FWHM); matching FWHM + σ + mean pins down a unique solution.
+
+### Next steps — the plan
+
+1. **Go back to synthetic data** — i.e. the 12c framework, where we know the ground truth (μ=50, γ=20).
+2. **Explore uncertainty calculation** — quantify the uncertainty of the recovered (μ, γ). On synthetic data we can *calibrate* the method (does the 68% interval contain the true value 68% of the time?) — impossible on real data where there is no ground truth.
+3. **Once the uncertainty method is clear → the theoretical part of the project is done.**
+4. **Then the only remaining work is fine-tuning to fit the real data** — closing the gap the 13-series exposed (spread, Voigt-vs-Lorentzian, μ identifiability).
+
+**Notes for this phase:**
+- The 17.07 survey already settled on empirical data bootstrap — the natural reading of "uncertainty calculation" on synthetic data is: implement the bootstrap loop on the 12c setup (re-generate/resample data, re-run the optimizer, look at the spread of recovered μ, γ) and validate coverage against the known truth. This pre-produces the machinery we will later run on real data.
+- The 13-series spread gap is a **simulator** problem, not a hyperparameter problem — the proposed pseudo-Voigt simulator change (journal 12.08) is still open and is likely a prerequisite for the final real-data fine-tuning to fully succeed.
+
+## Next steps
+
+From now on, everything that comes in The journal is going to be written by me or strongly controlled by me because with the agent it is very easy to generate summaries that I would never read again and there's the danger of this project developing in directions that are not fully understood by me. So I will have to avoid that by varying very strict regarding the journal inputs that I write.
+
+The current state is that I was able to create a model that optimizes very well. This model is the model 12C in the notebook.From there I just did a set of experiments with RDA experiments 13 to try to see if the model works with real data. This worked and on top of that I tried an agent approach to optimize the learning process but this was just an experiment to see if it works.
+
+My plan now is first to calculate the uncertainties and try to find out how to do it. And I will do that using the synthetic data set and the model of 12C. Once the uncertainties are calculated, everything that I need is done and I will focus on fitting and doing optimizations for the real data. But first I would like to have a complete finished product project on the synthetic data that I can test them.
+
+My next steps are:
+
+- Find out different ways of calculation uncertainties, I already had some ideas using Hessians, but more ideas need to be explored.
+- Gregor shared the real values of the data, incorporate that to the project somehow.
+
+## Uncertainty first results:
+
+Two first clear candidates appear, Hessian approach and the bootstrap method.
+After a quick research it appears that the Hessian is a bit unstable with the current situation  of using the W1 loss. Aparrently if I am able to change my loss calculation to a likelihood loss then I can take advantage of the math of Fisher information that gives me a lower bound. So I will try both approches first, the bootstrap method and converting the loss function to a likelihood function.
+
+
+I also added the values of the real parameters of each experiment, which Gregor gave to me. They can be found in 'data/raw_data/data_explanation.md'
+
+I had the first results for both approaches, the bootstrap which we can find in the notebook 14 and also the Fisher information approach in notebook 12D.They both worked. They're just dummy versions for the moment.
+
+
+### Questions Gregor
+
+Today I have a meeting with Gregor this are some questions I would like to clrify:
+
+- There are many decisions I can take that both influence the uncertainty and the optimization quality. If I use the real information provided by Gregor I could fine tune it to the known data. Where is the line between overfitting and optimizing in this case? Should I do some kind of CV where I optimize the hyperparameters of the model to some of the experiments (e.g Laser 3nW 80% as test and the rest to train)
+
+## Presentation
+
+### Summary
+
+I had my presentation, unfortunately I was not able to do a very nice presentation but at the last minute I was able to finish the notebooks with the calculation of uncertainties. I explained to Gregor first my approach of hyperparameter tuning using this agent idea just as something on the side and then I showed him the bootstrap idea and he mentioned a couple issues with that so that's why I jumped to the Fisher information idea from the notebook 12D. I was happy to hear that he is not an expert on Fisher information because I was not also completely in the topic and he was very happy to see the results and the covariance matrix that I showed him on my results of the 12D and he told me that this is the approach that we should follow. So the next steps are now simply going to be to train using Fisher information approach using the real data and from there hope that the real values fall within the uncertainties. We also talked a little bit about my fear of overfitting and trying to optimize several parameters based on the true values that he has already given me. I was afraid that this could be interpreted as some kind of cheating or overfitting. And he told me that I shouldn't worry about that for the moment, or at least this is what I am taking. As we are using the Fisher Information approach, which is giving us a lower bound, then this is mathematically solid. That there are other ways also in order to avoid this. But my original idea of maybe doing something like cross validation or similar, we can put aside for now. And the next step would be simply to try to optimize the model using the real data at the same time on all the data and to see if it works.
+
+### Next Step
+
+I will create a notebook where 14 models are trained.each for one real data that we have and thencompare them all at the same time with the other t so that I can see at the same time the result of each one of the models.
+
+# 22.08.2026
+
+## Real-data sweep: Fisher (CRB) uncertainties vs transparency (notebooks 15a–15n)
+
+Applied the Fisher-information uncertainty approach (from 12D) to all 14 real datasets: differentiable MC optimized per experiment (2 powers × 7 transmissions), uncertainties = CRB std from the inverse Fisher matrix at the recovered parameters. Figures: `fig_15_*.png` (+ `_dist` variants).
+
+**Step 1 (documented):** rerun with `FISHER_SEEDS` 1 → 5 (full, as 12D) on all 14 notebooks. Optimization fully seeded → recovered (μ, γ) **identical** to the 1-seed run in all 14; only the Fisher estimate changed. Effect: individual σ values shift ±10–30% (largest: 15j σ_γ 2.4→0.8, 15a σ_μ 68.3→52.4, 15h σ_γ 4.2→3.1), no qualitative change — trend stands. Table below: 1-seed → 5-seed values.
+
+| Power | Trans | μ_true | μ_rec | σ_μ (1→5) | σ_γ (1→5) | Δμ (σ, 5s) |
+|-------|-------|--------|-------|-----------|-----------|-----|
+| 1 nW | 5%  | 9.393  | 9.04  | 68.3→52.4 | 72.3→68.5 | 0.01σ |
+| 1 nW | 10% | 12.372 | 11.25 | 20.4→21.1 | 7.5→4.2   | 0.05σ |
+| 1 nW | 20% | 17.316 | 8.75  | 9.2→8.9   | 0.9→1.3   | 0.96σ |
+| 1 nW | 40% | 38.405 | 18.20 | 19.6→17.4 | 2.0→1.8   | 1.16σ |
+| 1 nW | 60% | 61.374 | 27.60 | 16.7→17.6 | 1.3→0.9   | 1.92σ |
+| 1 nW | 80% | 79.365 | 36.15 | 28.6→29.2 | 1.3→1.4   | 1.48σ |
+| 1 nW | 100%| 70.817 | 34.17 | 41.7→38.5 | 1.5→1.5   | 0.95σ |
+| 3 nW | 5%  | 13.204 | 9.41  | 14.3→12.2 | 4.2→3.1   | 0.31σ |
+| 3 nW | 10% | 24.476 | 10.59 | 13.9→13.1 | 2.4→1.8   | 1.06σ |
+| 3 nW | 20% | 34.279 | 13.42 | 20.9→22.0 | 2.4→0.8   | 0.95σ |
+| 3 nW | 40% | 84.892 | 39.89 | 57.0→58.5 | 1.7→1.9   | 0.77σ |
+| 3 nW | 60% | 103.203| 45.98 | 60.3→55.5 | 2.2→2.1   | 1.03σ |
+| 3 nW | 80% | 137.537| 63.85 | 71.0→67.3 | 1.5→1.4   | 1.09σ |
+| 3 nW | 100%| 175.707| 83.45 | 89.4→87.7 | 1.4→1.5   | 1.05σ |
+
+**Trend (unchanged by the step):** σ_γ decreases strongly with transparency — collapses 1–2 orders of magnitude from 5% → 20% transmission, then plateaus at ~1–2 MHz (1 nW: 72.3 → 0.9; 3 nW: 4.2 → 1.5). σ_μ stays weakly identified at all transmissions (no clean trend; ~50–60% relative at 3 nW). Recovered μ runs biased low at high transmission (up to ~2σ). 15n (3 nW, 100%) included (run by Anuar 07:14–07:25 at 1 seed, rerun at 5).
+
+## 16-series: closed-loop synthetic diagnostic (notebooks 16a–16n)
+
+Same pipeline as the 15-series (2D KDE likelihood, REINFORCE μ / implicit-diff γ, Fisher CRB, `FISHER_SEEDS=5`), but the target FWHM distribution is **generated by our own simulator at the true values** (μ_true, γ_true, σ_phys, λ), with N_TARGET mirroring each real experiment's row count. Optimization starts at 0.5×true. If the model can't recover its own truth → pure model/optimization gap.
+
+| nb | exp      | μ_true | μ_rec | Δμσ | γ_true | γ_rec | Δγσ | σ_μ | σ_γ |
+|----|----------|--------|-------|-----|--------|-------|-----|------|------|
+| 16a | 1nW 05%  | 9.393  | 10.91 | 0.19 | 8.5 | 7.14 | 0.84 | 8.0 | 1.6 |
+| 16b | 1nW 10%  | 12.372 | 13.39 | 0.10 | 8.5 | 8.28 | 0.09 | 10.3 | 2.4 |
+| 16c | 1nW 20%  | 17.316 | 17.84 | 0.06 | 8.5 | 9.43 | 0.60 | 9.1 | 1.6 |
+| 16d | 1nW 40%  | 38.405 | 38.75 | 0.02 | 8.5 | 9.43 | 1.28 | 14.5 | 0.7 |
+| 16e | 1nW 60%  | 61.374 | 59.59 | 0.10 | 8.5 | 8.08 | 1.03 | 18.1 | 0.4 |
+| 16f | 1nW 80%  | 79.365 | 67.80 | 0.73 | 8.5 | 6.52 | 10.24 | 15.9 | 0.2 |
+| 16g | 1nW 100% | 70.817 | 61.32 | 0.40 | 8.5 | 7.04 | 4.76 | 23.7 | 0.3 |
+| 16h | 3nW 05%  | 13.204 | 12.37 | 0.07 | 14.1 | 10.51 | 1.86 | 11.6 | 1.9 |
+| 16i | 3nW 10%  | 24.476 | 24.68 | 0.02 | 14.1 | 13.88 | 0.14 | 12.7 | 1.5 |
+| 16j | 3nW 20%  | 34.279 | 34.49 | 0.01 | 14.1 | 14.58 | 0.37 | 15.3 | 1.3 |
+| 16k | 3nW 40%  | 84.892 | 59.89 | 0.72 | 14.1 | 11.73 | 2.13 | 34.7 | 1.1 |
+| 16l | 3nW 60%  | 103.203 | 74.86 | 1.05 | 14.1 | 10.27 | 15.66 | 26.9 | 0.2 |
+| 16m | 3nW 80%  | 137.537 | 77.28 | 0.05 | 14.1 | 2.85 | 6.96 | 1317 | 1.6 |
+| 16n | 3nW 100% | 175.707 | 91.16 | 1.52 | 14.1 | 7.63 | 75.41 | 55.5 | 0.09 |
+
+**Diagnosis:** the model is healthy on its own data at low/mid transmission (all within ~2σ, most ≪1σ). At high transmission (60–100%) it **systematically fails**: γ biased low (16n: 7.6 vs 14.1, 75σ; 16l: 10.3 vs 14.1, 16σ; 16f: 6.5 vs 8.5, 10σ), μ biased low (16n: 91 vs 176). Two pathological Fisher signatures: 16m near-singular (σ_μ = 1317) and 16n over-confident (σ_γ = 0.09 at half-truth γ) — the likelihood is peaked at the wrong (μ, γ).
+
+**Hypothesis:** at high transmission σ_phys is large (12–41), smearing the FWHM distribution and flattening the 2D KDE likelihood along the μ–γ degeneracy; the single-run optimizer (1 seed per notebook) falls into a wrong basin (γ → ≈½γ_true, μ → ≈50–60% of truth). The 16-series also shows the real-data μ-bias at high trans (15-series) is **at least partly a model/optimization property, not only data mismatch**.
+
+**Candidate fixes (deferred, per plan):** 12c-style mean-matching term to anchor the location; more iterations / multiple restarts; stronger γ gradient signal. Next: discuss which to try first.
+
+
+
+# 23.08.2026
+
+## Current State
+
+The current state is the following. I have managed to test my model in the real data and they showed promising results but they're not nowhere close to be optimal. So what I did is I ran my model using synthetic data, but using the parameters of the true values. The idea being is that if my model is not able to optimize to the data that the same model generated, then I am having some issues with the model and not with the data. So I will focus on making models that perfectly fit the synthetic generated data by the two parameters, and then I can try to apply it to the real parameters.
+
+## First Steps
+
+So the first thing that I'm going to do is create a notebook where all the 14 experiments I ran are showed directly inside one notebook in order to avoid cluttering my projects. From there, I will work on the general optimization, so improving loss function particularly so that the points more or less are strongly attracted to the optimal values. I must mention that at the current time, all of the experiments optimize correctly as their final values, even though very biased, optimized in the correct direction. What we're trying to do is to minimize the bias.
+
+Once this notebook is generated with the general optimization structure ready and the correct loss function calculations, then we will go to the next step, which will be hyperparameter tuning. In order to do hyperparameter tuning, I have a new idea that I will explain now.
+
+## New Idea for Hyperparameter Tuning
+
+The area is the following. My goal is for all of the ending optimized points of each of the 14 experiments to be as close as possible to the two parameters that generated their respective synthetic data. This is a great situation for using hyperparameter tuning, specifically the algorithm TPE. Other algorithms could also be experienced like variance matrix adaptation. The thing is that HyperOpt by itself only uses math and distributions and probability distributions to try the different hyper parameters. In our case, we have many hyper parameters like learning rates, different values of bandwidth, et cetera, et cetera, but particularly a big amount of learning rates. As a comment, one step would also be defining all the hyper parameters that we have to optimize. Close comment. So as the HyperOpt is not able to incorporate also physical knowledge, my idea is to take advantage of an agentic system to bring in physical context and understanding of the experiment.
+
+So the workflow of my new agentic hyper parameter optimization tool follows. My HyperOpt algorithm using trials from before would generate a probability distribution from where the best next trials would be. This probability distribution would be given to the agents as context together with the whole context of the project, our past results described by worlds with a physical meaning and with the combination of the physical context and the probability distribution, the agent then would be able to propose a new trial based not only on the distribution math, but also on the physical context.
+
+The interesting question is how should we give the information of the probability distribution to the agent? Should we do some type of statistics summary? The idea that I have right now is to sample a large amount of possible next trials, for example, 30, have the agent analyze which type of points they are, use the physical context, and allowing it only to choose one of the 30 proposals. So that way the agent doesn't stray off over relying on the confidence of its knowledge, and it's obliged to remain with the probability distribution, but we give it the chance of choosing the best one based on the knowledge it has. This is very important because each experiment or each trial that we're going to be doing, it's going to be very time intensive because each trial represents the 14 experiments that we have.
+
+Another idea would be to use covariance matrix adaptation as the search area is nicely defined as a covariance matrix.
+
+## Objective Function
+
+Now I will briefly talk about the objective function. The objective function would simply be the mean squared error of the final optimization point with the true value of each of the 14 experiments. And we also have a great advantage is that with this objective function, we can also calculate an uncertainty using the standard deviation. So an idea could also be that when giving the information to the TPE algorithm that the kernel estimate that it generates around this trial is also influenced not only by the value of the objective function, but also by the uncertainty of the objective function. So this is something that we could also incorporate in the building of the probability distribution.
+
+## Next Concrete Steps
+
+So the next concrete steps are the following. First, generate a compact notebook where the 14 experiments are run and optimize the loss function for it to have a general good idea of how to optimize. Second, define all the hyperparameters that we're going to be optimizing. And third, create the agentic system that optimizes the hyperparameters.
+
+
+![alt text](journal_content/image.png)
+![alt text](journal_content/image-1.png)
+![alt text](journal_content/image-2.png)
+![alt text](journal_content/image-3.png)
+![alt text](journal_content/image-4.png)
