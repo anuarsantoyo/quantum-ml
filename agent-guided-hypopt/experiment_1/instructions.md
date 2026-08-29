@@ -1,6 +1,8 @@
-# instructions.md — the trial loop (DRAFT v1)
+# instructions.md — the PAGHO trial loop (DRAFT v1)
 
-Role: you are the agent running ONE trial of the qm-ml hyperparameter campaign.
+PAGHO = Physics-informed Agent-Guided Hyperparameter Optimization — experiment_1 (qm-ml synthetic benchmark).
+
+Role: you are the agent running ONE trial of the PAGHO campaign.
 One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
 
 ## Before each trial

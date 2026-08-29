@@ -1,4 +1,7 @@
-# context.md — qm-ml hyperparameter campaign (DRAFT v1)
+# context.md — PAGHO · experiment_1 (DRAFT v1)
+
+**PAGHO** = Physics-informed Agent-Guided Hyperparameter Optimization (official name, Anuar 2026-08-29).
+This folder (`agent-guided-hypopt/experiment_1/`) defines experiment_1 of the method: the qm-ml synthetic benchmark.
 
 > Draft for discussion. Refine with Anuar before trial_002.
 
@@ -60,3 +63,8 @@ kernel-density (KDE) likelihood.
   unless approved by Anuar (or expressed as categorical knobs in the space, once agreed)
 - 18b verdict may redirect the *model* work — check before trial_002, but the tuning
   objective (synthetic MSE) is independent of it
+
+## Method name
+- Official: **PAGHO** — Physics-informed Agent-Guided Hyperparameter Optimization.
+- Folder: `agent-guided-hypopt/` (container) → `experiment_1/` (this campaign).
+- The physics lives HERE; the method itself is domain-neutral (algorithm proposes, agent guides).
