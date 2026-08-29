@@ -1,66 +1,97 @@
-# instructions.md — the PAGHO trial loop (DRAFT v1)
+# instructions.md — PAGHO: the agent loop
 
-PAGHO = Physics-informed Agent-Guided Hyperparameter Optimization — experiment_1 (qm-ml synthetic benchmark).
+> **PAGHO** = Physics-informed Agent-Guided Hyperparameter Optimization.
+> This file is the **operational manual for the agent**. Read it together with `context.md`
+> (physics + model background) and the experiment's `trial_00` notebook (experiment specifics
+> and current state). It is deliberately **generic**: copy-pasteable into any experiment folder.
+> *DRAFT — being reviewed with Anuar (2026-08-29).*
 
-Role: you are the agent running ONE trial of the PAGHO campaign.
-One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
+---
 
-## Before each trial
-1. Read `context.md`, this file, and **all previous trial_XXX.ipynb notebooks**
-   (cell 1 prints their "**Key insight:**" lines — the memory index; read fully if needed).
-2. Read `trials.json` — structured history only (config, objective, uncertainty, summary).
+## 1. Your role
 
-## The loop (template.ipynb cells)
-1. **Setup** (cell 1) — load trials.json + memory index; note current best + ranges.
+You are the agent running **one trial** of a PAGHO campaign. One trial ≈ 1 hour — expensive.
+Be sample-efficient: every pick must be defensible in writing. You are the *physics-informed
+selection layer* on top of a numerical optimizer:
+
+- the **algorithm** (`pagho.py`) proposes candidates from the structured history (`trials.json`);
+- **you** decide which candidate actually runs, using physics reasoning + the full narrative
+  history (the trial notebooks).
+
+## 2. The three sources of knowledge
+
+| File | Content | Role |
+|---|---|---|
+| `context.md` | physics, model, failure modes | *background* — stable |
+| `trial_00.ipynb` | this experiment: objective, benchmark, space, current state | *experiment anchor* — read FIRST |
+| `trial_XXX.ipynb` | each trial's reasoning + results + reflection | *memory* — the full story |
+
+- `trials.json` is **not** memory: it is the structured input for the algorithm
+  (config, objective, uncertainty, one-line summary per trial).
+
+## 3. Before each trial
+
+1. Read `context.md` (skim — stable).
+2. Read `trial_00.ipynb` (the current state — where the experiment stands).
+3. Read all previous `trial_XXX.ipynb` notebooks: start at their **Key insight** line (the
+   template's setup cell prints them all — the memory index), read fully where depth is needed.
+4. Read `trials.json` (structured history only).
+
+## 4. The loop (template.ipynb cells)
+
+1. **Setup** (cell 1) — loads history + memory index; shows current best and parameter ranges.
 2. **Propose** (cell 2) — `pagho.propose(trials, space, 10)` → 10 candidates + EI scores.
-3. **Analyze** (cell 4, markdown) — assess each candidate with physics reasoning
-   (context.md failure modes) + history. Rank all 10. Note disagreements with the EI ranking.
+3. **Analyze** (cell 4, markdown) — assess each candidate with physics reasoning (context.md
+   failure modes) + history. Rank all 10. Note disagreements with the EI ranking.
 4. **Select** (cell 5, markdown) — pick ONE: why, which hypothesis it tests, what would
    confirm/refute it. Set `INDEX` in cell 6.
-5. **Run** (cell 7, ~1h) — evaluate via `pagho.run_trial(config)`; progress shown.
-6. **Results** (cell 8) — per-exp table, plots, objective + uncertainty
+5. **Run** (cell 7, ~1h) — `pagho.run_trial(config)`; progress shown. Fail fast: if obviously
+   broken, abort and record the failure.
+6. **Results** (cell 8) — per-experiment table, plots, objective + uncertainty
    (`pagho.compute_objective`), comparison to previous trials.
-7. **Reflect** (cell 9, markdown) — hypothesis right? learned? next hypothesis?
-   Ends with the **Key insight** sentence — copy it into the title cell.
+7. **Reflect** (cell 9, markdown) — hypothesis right? what was learned? **ideas worth keeping?**
+   next hypothesis? Ends with the **Key insight** sentence.
 8. **Record** (cell 10) — append `{trial_id, config, objective, uncertainty, summary,
-   key_insight, notebook}` to trials.json; update current best.
+   key_insight, notebook}` to `trials.json`; update current best.
 
-## Conventions
-- Title cell starts with "**Key insight:** <TBD — filled after trial>" — fill it at the end;
-  it must match the reflection's Key insight and the trials.json summary.
-- Notebooks are the full memory. `trials.json` is data for the algorithm only.
+## 5. Conventions
+
+- **Title cell:** `# Trial {N} — <hypothesis>` + `**Key insight:** <TBD — filled after trial>`.
+  Fill the Key insight at the end; it must match cell 9 and the `trials.json` summary.
+- **Current state at trial start:** the agent writes a short state summary near the top (before
+  running), so each notebook is self-explanatory about where the campaign stood.
+- **Ideas worth keeping:** the reflection (cell 9) collects ideas for future trials — even ones
+  not acted on.
+- **Notebooks are the full memory.** `trials.json` is data for the algorithm only.
+- **Never "Run All"** — markdown cells 4, 5, 9 are written by the agent between execution
+  phases. Watch the ⛔ STOP markers.
+- **Execution is IN PLACE:** `papermill trial_XXX.ipynb trial_XXX.ipynb --log-output` — results
+  land directly in the notebook; one file = the record. If a run fails mid-way, partial outputs
+  stay in the notebook; record `objective: null` + error in `trials.json` and reflect on the cause.
 - **Paths:** trials run with cwd = repo root (data/src resolve); the notebook's own folder is
-  `NOTEBOOK_DIR` (pagho.py, trials.json, sibling trial notebooks). Set by cell 1.
+  `NOTEBOOK_DIR` (pagho.py, trials.json, sibling notebooks). Set by the template's setup cell.
 
-## Execution (Anuar's convention, 2026-08-29)
-- Trial notebooks are executed **IN PLACE** — no `-executed` copies:
-  `papermill trial_XXX.ipynb trial_XXX.ipynb --log-output`
-- Results, plots, and reflection live directly in the trial notebook (one file = the record).
-- If a run fails mid-way, partial outputs stay in the notebook — that's fine: record the
-  failure in trials.json (objective: null) and reflect on the cause.
-- Dev/exploration notebooks (17/18 series style) may keep the source + executed pair;
-  trials never do.
-- **Never "Run All"** — markdown cells 4–5 and 9 are written by the agent between
-  execution phases. Watch the ⛔ STOP markers.
-- If a trial fails mid-run: record it (`objective: null`, summary = error), keep the
-  notebook, reflect on the cause. Fail fast — don't burn the hour on a broken candidate.
+## 6. Authority
 
-## Authority
-- Hyperparameter choices: your call, with written reasoning.
+- **Hyperparameter choices:** your call, with written reasoning.
 - **Structural changes** (score function, likelihood, bandwidths, model): PROPOSE in the
   notebook, do NOT run them without Anuar's explicit OK.
-- Trial protocol (benchmark, seeds, objective) is FIXED — do not change it per trial;
-  propose protocol changes to Anuar instead.
+- **Protocol** (objective, benchmark, seeds, space): fixed per experiment — defined in
+  `trial_00`. Do not change it per trial; propose protocol changes to Anuar.
 
-## Algorithm swapping (why each experiment folder has its own pagho.py)
+## 7. The algorithm contract (how algorithms swap)
+
 - ALL scripts live in ONE module per experiment: `pagho.py` (algorithm + harness).
-- The interface `propose(trials, space, n_candidates) -> [{config, score}]` is the contract.
-  experiment_1 ships the TPE+EI draft; a future experiment_2 can ship GPBO or CMA-ES
-  against the same contract, same benchmark → clean A/B. Decision TPE vs GPBO: pending.
-- The agent considers `score` but decides with physics reasoning on top.
+- Contract: `propose(trials, space, n_candidates=10, seed=None) -> [{"config", "score"}]`.
+  `score` = Expected Improvement (EI) from the surrogate. Consider it, but decide with physics.
+- An experiment can ship any algorithm against this contract (TPE, GPBO, CMA-ES) — swapping
+  `pagho.py` is the swap mechanism. Decision TPE vs GPBO: pending.
+- `run_trial(config)` and `compute_objective(results)` define the trial and the metric — they
+  must stay identical across trials of one experiment (a drifted metric poisons `trials.json`).
 
-## Open items (decide with Anuar before trial_002)
-- Exact objective combination (MSE_μ + MSE_γ? normalized?) and uncertainty definition
-- RUNTIME_CAP value (trial ~1h) — feasibility constraint in the search space
-- Whether structural knobs enter the space as categoricals, or a first structure probe runs
-- Whether n_runs/n_iter are tuned or fixed as protocol
+## 8. Failure handling
+
+- Trial fails mid-run → record (`objective: null`, summary = error), keep the notebook,
+  reflect on the cause. Do not silently skip.
+- Candidate obviously broken before the hour is spent → abort it, record why.
+- Any doubt about structural changes or protocol → ask Anuar.
