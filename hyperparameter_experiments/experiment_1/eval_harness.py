@@ -1,5 +1,16 @@
 """eval_harness — trial evaluation (DRAFT v1).
 
+Path bootstrap: works when imported from the experiment folder or repo root.
+"""
+import os, sys
+_REPO = os.getcwd()
+while _REPO != os.path.dirname(_REPO) and not os.path.isdir(os.path.join(_REPO, 'src')):
+    _REPO = os.path.dirname(_REPO)
+if _REPO not in sys.path:
+    sys.path.insert(0, _REPO)
+
+"""eval_harness — trial evaluation (DRAFT v1).
+
 One shared place for the ~1h trial + the objective, so every trial notebook
 computes the SAME metric (consistency across copies is critical — a drifted
 metric silently poisons trials.json for the surrogate).

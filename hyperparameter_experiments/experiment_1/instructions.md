@@ -27,6 +27,8 @@ One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
 - Title cell starts with "**Key insight:** <TBD — filled after trial>" — fill it at the end;
   it must match the reflection's Key insight and the trials.json summary.
 - Notebooks are the full memory. `trials.json` is data for the algorithm only.
+- **Paths:** trials run with cwd = repo root (data/src resolve); the notebook's own folder is
+  `NOTEBOOK_DIR` (tpe_custom, trials.json, sibling trial notebooks). Set by cell 1.
 - **Never "Run All"** — markdown cells 4–5 and 9 are written by the agent between
   execution phases. Watch the ⛔ STOP markers.
 - If a trial fails mid-run: record it (`objective: null`, summary = error), keep the
@@ -38,6 +40,12 @@ One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
   notebook, do NOT run them without Anuar's explicit OK.
 - Trial protocol (benchmark, seeds, objective) is FIXED — do not change it per trial;
   propose protocol changes to Anuar instead.
+
+## Algorithm swapping (why each experiment folder has its own tpe_custom.py)
+- The interface `propose(trials, space, n_candidates) -> [{config, score}]` is the contract.
+  experiment_1 ships the TPE+EI draft; a future experiment_2 can ship GPBO or CMA-ES
+  against the same contract, same benchmark → clean A/B. Decision TPE vs GPBO: pending.
+- The agent considers `score` but decides with physics reasoning on top.
 
 ## Open items (decide with Anuar before trial_002)
 - Exact objective combination (MSE_μ + MSE_γ? normalized?) and uncertainty definition
