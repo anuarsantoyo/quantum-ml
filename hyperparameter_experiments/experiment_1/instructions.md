@@ -29,6 +29,15 @@ One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
 - Notebooks are the full memory. `trials.json` is data for the algorithm only.
 - **Paths:** trials run with cwd = repo root (data/src resolve); the notebook's own folder is
   `NOTEBOOK_DIR` (tpe_custom, trials.json, sibling trial notebooks). Set by cell 1.
+
+## Execution (Anuar's convention, 2026-08-29)
+- Trial notebooks are executed **IN PLACE** — no `-executed` copies:
+  `papermill trial_XXX.ipynb trial_XXX.ipynb --log-output`
+- Results, plots, and reflection live directly in the trial notebook (one file = the record).
+- If a run fails mid-way, partial outputs stay in the notebook — that's fine: record the
+  failure in trials.json (objective: null) and reflect on the cause.
+- Dev/exploration notebooks (17/18 series style) may keep the source + executed pair;
+  trials never do.
 - **Never "Run All"** — markdown cells 4–5 and 9 are written by the agent between
   execution phases. Watch the ⛔ STOP markers.
 - If a trial fails mid-run: record it (`objective: null`, summary = error), keep the
