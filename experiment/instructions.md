@@ -1,38 +1,46 @@
-# instructions.md — the trial loop (DRAFT v0)
+# instructions.md — the trial loop (DRAFT v1)
 
 Role: you are the agent running ONE trial of the qm-ml hyperparameter campaign.
 One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
 
 ## Before each trial
 1. Read `context.md`, this file, and **all previous trial_XXX.ipynb notebooks**
-   (scan their "**Key insight:**" header first; read fully only if needed).
-2. Read `trials.json` — structured history only (config, objective, uncertainty, one-line summary).
+   (cell 1 prints their "**Key insight:**" lines — the memory index; read fully if needed).
+2. Read `trials.json` — structured history only (config, objective, uncertainty, summary).
 
-## The loop
-1. **Propose** — run `tpe_custom.propose(trials, space, 10)` → 10 candidates from the surrogate.
-2. **Analyze** — assess each candidate with physics reasoning (context.md failure modes) and
-   notebook history. Rank all 10. Note explicitly when your ranking disagrees with the algorithm's.
-3. **Select** — pick ONE. Write the reasoning: why this one, which hypothesis it tests, what to watch.
-4. **Run** — evaluate the candidate (~1h). Show results + plots in this notebook.
-5. **Reflect** — was the hypothesis right? what was learned? what should the next trial test?
-6. **Record** — append `{trial_id, config, objective, uncertainty, summary}` to `trials.json`,
-   update the current best. One-line summary only; the full story lives in this notebook.
+## The loop (template.ipynb cells)
+1. **Setup** (cell 1) — load trials.json + memory index; note current best + ranges.
+2. **Propose** (cell 2) — `tpe_custom.propose(trials, space, 10)` → 10 candidates + EI scores.
+3. **Analyze** (cell 4, markdown) — assess each candidate with physics reasoning
+   (context.md failure modes) + history. Rank all 10. Note disagreements with the EI ranking.
+4. **Select** (cell 5, markdown) — pick ONE: why, which hypothesis it tests, what would
+   confirm/refute it. Set `INDEX` in cell 6.
+5. **Run** (cell 7, ~1h) — evaluate via `eval_harness.run_trial(config)`; progress shown.
+6. **Results** (cell 8) — per-exp table, plots, objective + uncertainty
+   (`eval_harness.compute_objective`), comparison to previous trials.
+7. **Reflect** (cell 9, markdown) — hypothesis right? learned? next hypothesis?
+   Ends with the **Key insight** sentence — copy it into the title cell.
+8. **Record** (cell 10) — append `{trial_id, config, objective, uncertainty, summary,
+   key_insight, notebook}` to trials.json; update current best.
 
 ## Conventions
-- First content cell after the title: "**Key insight:** ..." — one line, the takeaway for scanners.
-- Last analysis cell: "**Next hypothesis:** ..." — what the next trial should test.
+- Title cell starts with "**Key insight:** <TBD — filled after trial>" — fill it at the end;
+  it must match the reflection's Key insight and the trials.json summary.
 - Notebooks are the full memory. `trials.json` is data for the algorithm only.
-- If a trial fails mid-run: record it (`objective: null`, summary = error), keep the notebook,
-  reflect on the cause. Fail fast — don't burn the hour on an obviously broken candidate.
+- **Never "Run All"** — markdown cells 4–5 and 9 are written by the agent between
+  execution phases. Watch the ⛔ STOP markers.
+- If a trial fails mid-run: record it (`objective: null`, summary = error), keep the
+  notebook, reflect on the cause. Fail fast — don't burn the hour on a broken candidate.
 
 ## Authority
 - Hyperparameter choices: your call, with written reasoning.
-- **Structural changes** (score function, likelihood, bandwidths, model): PROPOSE in the notebook,
-  do NOT run them without Anuar's explicit OK.
-- Do not start trial_002 before the 18b real-data verdict is in (it may change the objective).
+- **Structural changes** (score function, likelihood, bandwidths, model): PROPOSE in the
+  notebook, do NOT run them without Anuar's explicit OK.
+- Trial protocol (benchmark, seeds, objective) is FIXED — do not change it per trial;
+  propose protocol changes to Anuar instead.
 
 ## Open items (decide with Anuar before trial_002)
-- Objective definition (RMSE combo? NLL? + Fisher term?)
-- Synthetic vs real benchmark for trials
-- Full 14-exp trial vs reduced benchmark (runtime)
-- Noise model: single seeded run (deterministic) vs multi-seed std → what "uncertainty" means
+- Exact objective combination (MSE_μ + MSE_γ? normalized?) and uncertainty definition
+- RUNTIME_CAP value (trial ~1h) — feasibility constraint in the search space
+- Whether structural knobs enter the space as categoricals, or a first structure probe runs
+- Whether n_runs/n_iter are tuned or fixed as protocol

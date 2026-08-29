@@ -1,4 +1,4 @@
-# context.md — qm-ml hyperparameter campaign (DRAFT v0)
+# context.md — qm-ml hyperparameter campaign (DRAFT v1)
 
 > Draft for discussion. Refine with Anuar before trial_002.
 
@@ -31,20 +31,32 @@ kernel-density (KDE) likelihood.
 2. **Attractor**: REINFORCE drives μ toward the kernel-weighted mean E_B[n] = n̄
 3. **Low-count γ noise**: n_target ≲ 500 (T05 exps) → γ gradients noisy; the anneal freezes γ there
 4. **KDE skewness**: 3nW T40 target cloud is pathologically skewed → Scott bandwidth inflated → flat NLL
-5. **⚠️ 18b (real data, verdict pending 2026-08-29)**: the real-data likelihood optimum appears to sit
-   at ~half the reference μ. If confirmed, the *likelihood*, not the hyperparameters, is the problem.
-6. λ_mean anchor: pure harm in every metric (17d)
+5. **18b (real data, verdict 2026-08-29)**: early sign — the real-data likelihood optimum may sit at
+   ~half the reference μ. PENDING — relevant for the *model*, not the tuning objective (see below).
 
-## Data
-- 14 real PLE experiments: 1nW/3nW × Trans05–100 → `data/raw_data/fwhm_1nW_240221/`, `fwhm_3nW_210221/`
-- Reference "true" values from Gregor's fits (`data_explanation.md`); γ_true = median FWHM @ Trans100 / 2
-- Synthetic benchmark: targets drawn at true params (SYNTH_SEED = 12345) with the real n_target counts
+## Trial definition (decided 2026-08-29)
+- **Synthetic benchmark**: targets drawn at true params (SYNTH_SEED = 12345), 14 experiments
+  (1nW/3nW × Trans05–100), real n_target counts. Same seeds as the 17-series.
+- **Objective = MSE of recovered (μ, γ) vs true values over the 14 exps** (lower is better).
+  Exact combination (MSE_μ + MSE_γ? normalized?) — TBD with Anuar.
+- **Uncertainty = sampling uncertainty of the MSE over the 14 exps**
+  (SE across per-exp squared errors, or bootstrap) — consumed by the search algorithm.
+- **NO Fisher/CRB in the objective** (Anuar: optimization only).
+- ⚠️ **Runtime**: trial cost ≈ n_runs × n_iter (17f 200×200 = ~3h on 4 CPUs). Target ~1h →
+  feasibility cap in the search space (RUNTIME_CAP in tpe_custom.py) or fixed protocol. TBD.
 
-## Metrics (objective — definition TBD with Anuar)
-- μ/γ RMSE, bias, rel-RMSE over the 14 exps; NLL; Fisher σ_μ, σ_γ (CRB at fitted point, M=500)
-- Current reference: 17f synthetic → μ RMSE 1.40 (rel 5.8%), γ RMSE 2.27 (rel 20.2%)
+## Algorithm (TPE + EI, placeholder in tpe_custom.py)
+- Proposes 10 candidates per trial with an EI score; the agent considers the score
+  but decides with physics reasoning on top.
+- Structural choices (anneal on/off, score_type, ...) may later enter the space as
+  categorical knobs, or a first "structure probe" trial runs before the campaign — TBD.
+
+## Metrics / current reference
+- 17f synthetic: μ RMSE 1.40 (rel 5.8%), γ RMSE 2.27 (rel 20.2%)
 
 ## Constraints & rules
 - ~1h per trial, 10–30 trials total, 4 CPUs — every trial must be defensible in writing
-- **Structural changes** (score, likelihood, bandwidths, model) are OUT of scope for trials unless approved by Anuar
-- **18b verdict may redirect the objective** — check status before trial_002
+- **Structural changes** (score, likelihood, bandwidths, model) are OUT of scope for trials
+  unless approved by Anuar (or expressed as categorical knobs in the space, once agreed)
+- 18b verdict may redirect the *model* work — check before trial_002, but the tuning
+  objective (synthetic MSE) is independent of it
