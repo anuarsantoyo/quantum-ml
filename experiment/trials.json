@@ -1,0 +1,21 @@
+{
+  "trials": [
+    {
+      "trial_id": "trial_001",
+      "config": {
+        "n_runs": 200,
+        "n_iter": 200,
+        "lr_mu": 15.0,
+        "lr_gamma": 0.5,
+        "sigma_ref": 10.0,
+        "clip": 10.0,
+        "gamma_anneal": 0.5,
+        "h_s_min": 0.05
+      },
+      "objective": null,
+      "uncertainty": null,
+      "summary": "Baseline: 17f config on real data (18b). Verdict pending 2026-08-29 — do not judge until it lands.",
+      "key_insight": "Baseline. The real-data likelihood optimum may sit at ~half the reference μ (18b pending)."
+    }
+  ]
+}
