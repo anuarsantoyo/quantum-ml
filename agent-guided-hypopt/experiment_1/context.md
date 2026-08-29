@@ -1,9 +1,9 @@
 # Context — physics background and model description
 
 > **What this file is.** The complete physics and model background for this project, written so that
-> an agent with no prior knowledge can understand *what we are recovering, why it is hard, and how our
-> model works* — purely from this file. It is deliberately **generic**: it can be copied into any
-> experiment folder of this project without modification.
+> **anyone joining the project — agent or human — can understand** *what we are recovering, why it is
+> hard, and how our model works* purely from this file. It is deliberately **generic**: it can be
+> copied into any experiment folder of this project without modification.
 >
 > **What is NOT here.** The concrete experimental protocol (objective, benchmark, data files,
 > parameter tables, current results) belongs to the experiment — see that experiment's `trial_00`
@@ -198,8 +198,8 @@ We jointly optimize $(\mu, \gamma)$ with gradient estimates computed from the ke
 
 ## 5. Known failure modes and physics insights (durable lessons)
 
-These are *stable* insights about the model — knowledge, not state. They are the physics intuition
-the agent should apply when judging candidates.
+These are *stable* insights about the model — knowledge, not state. They are the physics intuition to
+apply when judging configurations or interpreting results.
 
 1. **Optimizer starvation.** μ-score divided by $\sigma_{\text{prop}}^2$ → tiny steps at high μ;
    optimizer stops far from the NLL minimum (hundreds of iterations short). *Fix: fixed σ_ref
