@@ -12,14 +12,14 @@ One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
 
 ## The loop (template.ipynb cells)
 1. **Setup** (cell 1) — load trials.json + memory index; note current best + ranges.
-2. **Propose** (cell 2) — `tpe_custom.propose(trials, space, 10)` → 10 candidates + EI scores.
+2. **Propose** (cell 2) — `pagho.propose(trials, space, 10)` → 10 candidates + EI scores.
 3. **Analyze** (cell 4, markdown) — assess each candidate with physics reasoning
    (context.md failure modes) + history. Rank all 10. Note disagreements with the EI ranking.
 4. **Select** (cell 5, markdown) — pick ONE: why, which hypothesis it tests, what would
    confirm/refute it. Set `INDEX` in cell 6.
-5. **Run** (cell 7, ~1h) — evaluate via `eval_harness.run_trial(config)`; progress shown.
+5. **Run** (cell 7, ~1h) — evaluate via `pagho.run_trial(config)`; progress shown.
 6. **Results** (cell 8) — per-exp table, plots, objective + uncertainty
-   (`eval_harness.compute_objective`), comparison to previous trials.
+   (`pagho.compute_objective`), comparison to previous trials.
 7. **Reflect** (cell 9, markdown) — hypothesis right? learned? next hypothesis?
    Ends with the **Key insight** sentence — copy it into the title cell.
 8. **Record** (cell 10) — append `{trial_id, config, objective, uncertainty, summary,
@@ -30,7 +30,7 @@ One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
   it must match the reflection's Key insight and the trials.json summary.
 - Notebooks are the full memory. `trials.json` is data for the algorithm only.
 - **Paths:** trials run with cwd = repo root (data/src resolve); the notebook's own folder is
-  `NOTEBOOK_DIR` (tpe_custom, trials.json, sibling trial notebooks). Set by cell 1.
+  `NOTEBOOK_DIR` (pagho.py, trials.json, sibling trial notebooks). Set by cell 1.
 
 ## Execution (Anuar's convention, 2026-08-29)
 - Trial notebooks are executed **IN PLACE** — no `-executed` copies:
@@ -52,7 +52,8 @@ One trial ≈ 1h. Be sample-efficient: every pick must be defensible in writing.
 - Trial protocol (benchmark, seeds, objective) is FIXED — do not change it per trial;
   propose protocol changes to Anuar instead.
 
-## Algorithm swapping (why each experiment folder has its own tpe_custom.py)
+## Algorithm swapping (why each experiment folder has its own pagho.py)
+- ALL scripts live in ONE module per experiment: `pagho.py` (algorithm + harness).
 - The interface `propose(trials, space, n_candidates) -> [{config, score}]` is the contract.
   experiment_1 ships the TPE+EI draft; a future experiment_2 can ship GPBO or CMA-ES
   against the same contract, same benchmark → clean A/B. Decision TPE vs GPBO: pending.

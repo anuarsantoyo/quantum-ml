@@ -46,9 +46,9 @@ kernel-density (KDE) likelihood.
   (SE across per-exp squared errors, or bootstrap) — consumed by the search algorithm.
 - **NO Fisher/CRB in the objective** (Anuar: optimization only).
 - ⚠️ **Runtime**: trial cost ≈ n_runs × n_iter (17f 200×200 = ~3h on 4 CPUs). Target ~1h →
-  feasibility cap in the search space (RUNTIME_CAP in tpe_custom.py) or fixed protocol. TBD.
+  feasibility cap in the search space (RUNTIME_CAP in pagho.py) or fixed protocol. TBD.
 
-## Algorithm (TPE + EI, placeholder in tpe_custom.py)
+## Algorithm (TPE + EI, placeholder in pagho.py)
 - Proposes 10 candidates per trial with an EI score; the agent considers the score
   but decides with physics reasoning on top.
 - Structural choices (anneal on/off, score_type, ...) may later enter the space as
