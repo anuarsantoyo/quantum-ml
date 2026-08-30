@@ -31,4 +31,4 @@ agent-guided-hypopt/
 
 | Experiment | Description |
 |---|---|
-| experiment_1 | Origin: 17/18-series lineage (synthetic 17g win, real-data 18b/18c verdicts). Algorithm: TPE. Model: KDE+REINFORCE inversion, Lorentzian-width (TPA) line shape. Status: baseline = z-form γ-score config; protocol anchor (trial_00) pending model analysis (2026-08-30). |
+| experiment_1 | Origin: 17/18-series lineage (synthetic 17g win, real-data 18b/18c verdicts). Algorithm: TPE. Model: KDE+REINFORCE inversion, Lorentzian-width (TPA) line shape. **Real machinery built 2026-08-30**: pagho.py (real TPE+EI propose, run_trial harness port, compute_objective), protocol anchor trial_00.ipynb, registry with baseline_17g (obj 0.001578 ± 0.000859). Budget ~3.5h/trial (cap 40k). Space provisional pending model analysis. |

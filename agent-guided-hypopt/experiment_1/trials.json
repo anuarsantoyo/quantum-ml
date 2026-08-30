@@ -1,7 +1,29 @@
 {
+  "protocol": {
+    "experiment": "experiment_1 \u2014 TPE \u00b7 KDE+REINFORCE inversion \u00b7 Lorentzian-width (TPA) \u00b7 synthetic benchmark",
+    "benchmark": "14 synthetic exps (1nW/3nW \u00d7 Trans05-100), true params from Gregor's fits; targets at true values, SYNTH_SEED=12345 (identical across trials); deterministic runs SEED=42",
+    "objective": "combined relative MSE of (mu,gamma) over 28 per-exp errors + sampling SE; lower is better; no Fisher",
+    "space": "DEFAULT_SPACE in pagho.py (n_runs, n_iter, lr_mu, lr_gamma, sigma_ref, clip, gamma_anneal, h_s_min)",
+    "runtime_cap": "n_runs*n_iter <= 40000 (~3.5h full benchmark; BUDGET_HOURS=3.5)",
+    "fixed_structural": [
+      "z-form gamma-score (GAMMA_SCALE=True, H_REF=1.0)",
+      "sigma_ref mu-score",
+      "LAMBDA_MEAN=0",
+      "mu LR linear decay no floor",
+      "mu in [1,200], gamma in [0.1,100] clamp",
+      "4 workers"
+    ],
+    "baseline_trial_id": "baseline_17g",
+    "authority": "hyperparameters = agent's call within protocol; structural changes (score/likelihood/model) need Anuar's OK",
+    "open_decisions": [
+      "budget 3.5h vs reduced benchmark vs tighter space",
+      "space revision after model analysis",
+      "re-run baseline through harness for same-machinery anchor"
+    ]
+  },
   "trials": [
     {
-      "trial_id": "trial_001",
+      "trial_id": "baseline_17g",
       "config": {
         "n_runs": 200,
         "n_iter": 200,
@@ -12,10 +34,11 @@
         "gamma_anneal": 0.5,
         "h_s_min": 0.05
       },
-      "objective": null,
-      "uncertainty": null,
-      "summary": "Baseline: 17f config on real data (18b). Verdict pending 2026-08-29 — do not judge until it lands.",
-      "key_insight": "Baseline. The real-data likelihood optimum may sit at ~half the reference μ (18b pending)."
+      "objective": 0.001578,
+      "uncertainty": 0.000859,
+      "summary": "Baseline: z-form gamma-score config (17g), computed from the executed 17g notebook (synthetic, 14 exps). mu rel-RMSE 3.6%, gamma rel-RMSE 4.3%. Objective to beat.",
+      "key_insight": "The 1/H^2 amplification was the gamma disease; one-power-of-bandwidth + fixed H_REF cures it on synthetic. Remaining: 3nW T05 gamma outlier (+2.14), mu bias at 3nW high-T.",
+      "notebook": "notebooks/17g-lambda0-gammascale.ipynb (executed in place, pre-harness)"
     }
   ]
 }
