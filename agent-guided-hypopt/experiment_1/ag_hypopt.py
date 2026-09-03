@@ -92,9 +92,12 @@ N_EXP_PARALLEL = 1
 BUDGET_HOURS = 3.5
 CALLS_PER_HOUR = 160_000   # total fit calls across all workers, measured 2026-08-29 (18c)
 
-# Baseline config (17g = current best on synthetic): what every trial must beat.
+# Vanilla defaults merged under every trial config (missing keys are filled
+# from here). TEST PHASE (2026-09-03): cheap budget 100x100 (~1h/trial) to
+# exercise the AG-HYPOPT loop; bump to 200x200 (17g anchor, ~3.5h) for the real
+# campaign. Structural choices stay frozen (z-form gamma, H_REF=1, LAMBDA_MEAN=0).
 BASELINE_CONFIG = dict(
-    n_runs=200, n_iter=200, lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
+    n_runs=100, n_iter=100, lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
     clip=10.0, gamma_anneal=0.5, h_s_min=0.05,
 )
 
@@ -792,6 +795,8 @@ def compute_objective(run):
         rel_mu = ((r['mu_final'] - r['mu_true']) / r['mu_true']) ** 2
         rel_g = ((r['gamma_final'] - r['gamma_true']) / r['gamma_true']) ** 2
         rows.append(dict(exp=r['exp'], rel_sq_mu=rel_mu, rel_sq_gamma=rel_g,
+                         mu_true=r['mu_true'], mu_final=r['mu_final'],
+                         gamma_true=r['gamma_true'], gamma_final=r['gamma_final'],
                          mu_err=r['mu_final'] - r['mu_true'],
                          gamma_err=r['gamma_final'] - r['gamma_true']))
     errs = np.array([v for row in rows for v in (row['rel_sq_mu'], row['rel_sq_gamma'])])
@@ -813,15 +818,39 @@ def compute_objective(run):
     return objective, uncertainty, breakdown
 
 def format_report(breakdown):
-    """Compact table for the trial notebook / Telegram (no pandas needed)."""
-    lines = [f"{'exp':<12} {'μ_true':>8} {'μ_final':>8} {'Δμ':>8} | "
-             f"{'γ_true':>6} {'γ_final':>8} {'Δγ':>8}"]
+    """Per-experiment report table printed in the trial notebook cell."""
+    lines = [f"{'exp':<12}{'μ_true':>8}{'μ_fit':>8}{'Δμ%':>8} | "
+             f"{'γ_true':>8}{'γ_fit':>8}{'Δγ%':>8}"]
     for r in breakdown['rows']:
-        lines.append(f"{r['exp']:<12} ...")  # detailed rows live in the notebook
+        lines.append(
+            f"{r['exp']:<12}{r['mu_true']:>8.2f}{r['mu_final']:>8.2f}"
+            f"{r['mu_err'] / r['mu_true'] * 100:>+8.1f} | "
+            f"{r['gamma_true']:>8.2f}{r['gamma_final']:>8.2f}"
+            f"{r['gamma_err'] / r['gamma_true'] * 100:>+8.1f}")
     m, g = breakdown['mu'], breakdown['gamma']
-    lines.append(f"μ: RMSE {m['rmse']:.3f} (rel {m['rel_rmse']*100:.1f}%) | "
-                 f"γ: RMSE {g['rmse']:.3f} (rel {g['rel_rmse']*100:.1f}%)")
+    lines.append("")
+    lines.append(f"μ: RMSE {m['rmse']:.3f} (rel {m['rel_rmse']*100:.1f}%, "
+                 f"bias {m['bias']:+.3f}) | "
+                 f"γ: RMSE {g['rmse']:.3f} (rel {g['rel_rmse']*100:.1f}%, "
+                 f"bias {g['bias']:+.3f})")
     return "\n".join(lines)
+
+def objective(config, experiments=None, verbose=True):
+    """Packed trial objective: run the frozen vanilla benchmark on `config`.
+
+    config: dict of tunables — all keys optional, missing ones fall back to the
+        BASELINE_CONFIG vanilla defaults. Campaign tunables (space.json):
+        sigma_ref, lr_mu, lr_gamma, gamma_anneal, clip. (n_runs/n_iter may be
+        overridden too, e.g. for smoke tests.)
+    Returns (loss, uncertainty, report):
+        loss         combined relative MSE of (mu, gamma) over the benchmark
+        uncertainty  standard error across the per-experiment errors
+        report       printable per-experiment table (RMSE/rel-RMSE/bias summary)
+    Deterministic per (config, benchmark): SEED=42 + SYNTH_SEED fixed.
+    """
+    run = run_trial(config, experiments=experiments, verbose=verbose)
+    loss, uncertainty, breakdown = compute_objective(run)
+    return loss, uncertainty, format_report(breakdown)
 
 
 if __name__ == '__main__':

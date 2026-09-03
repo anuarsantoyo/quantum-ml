@@ -3,8 +3,8 @@
     "experiment": "experiment_1 \u2014 TPE \u00b7 KDE+REINFORCE inversion \u00b7 Lorentzian-width (TPA) \u00b7 synthetic benchmark",
     "benchmark": "14 synthetic exps (1nW/3nW \u00d7 Trans05-100), true params from Gregor's fits; targets at true values, SYNTH_SEED=12345 (identical across trials); deterministic runs SEED=42",
     "objective": "combined relative MSE of (mu,gamma) over 28 per-exp errors + sampling SE; lower is better; no Fisher",
-    "space": "space.json (parameters + dependencies) consumed by the AGHyperopt class (n_runs, n_iter, lr_mu, lr_gamma, sigma_ref, clip, gamma_anneal, h_s_min)",
-    "runtime_cap": "n_runs*n_iter <= 40000 (~3.5h full benchmark; BUDGET_HOURS=3.5)",
+    "space": "space.json \u2014 5 tunables: sigma_ref [5,25], lr_mu [5,30], lr_gamma [0.2,1.0], gamma_anneal [0,0.75], clip [5,20]; n_runs/n_iter fixed (not tuned)",
+    "runtime_cap": "n_runs*n_iter <= 40000 (~3.5h full budget). TEST PHASE 2026-09-03: fixed cheap budget 100x100 (~1h/trial) to exercise the loop; feasibility inert",
     "fixed_structural": [
       "z-form gamma-score (GAMMA_SCALE=True, H_REF=1.0)",
       "sigma_ref mu-score",
@@ -19,7 +19,8 @@
       "budget 3.5h vs reduced benchmark vs tighter space",
       "space revision after model analysis",
       "re-run baseline through harness for same-machinery anchor"
-    ]
+    ],
+    "test_phase_note": "TEST PHASE 2026-09-03: cheap model budget (n_runs=n_iter=100, ~1h/trial) to exercise AG-HYPOPT; baseline_17g anchor is at 200x200, so absolute objectives are not directly comparable until re-anchored at the new budget"
   },
   "trials": [
     {
