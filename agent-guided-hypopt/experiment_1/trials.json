@@ -3,7 +3,7 @@
     "experiment": "experiment_1 \u2014 TPE \u00b7 KDE+REINFORCE inversion \u00b7 Lorentzian-width (TPA) \u00b7 synthetic benchmark",
     "benchmark": "14 synthetic exps (1nW/3nW \u00d7 Trans05-100), true params from Gregor's fits; targets at true values, SYNTH_SEED=12345 (identical across trials); deterministic runs SEED=42",
     "objective": "combined relative MSE of (mu,gamma) over 28 per-exp errors + sampling SE; lower is better; no Fisher",
-    "space": "DEFAULT_SPACE in pagho.py (n_runs, n_iter, lr_mu, lr_gamma, sigma_ref, clip, gamma_anneal, h_s_min)",
+    "space": "space.json (parameters + dependencies) consumed by the AGHyperopt class (n_runs, n_iter, lr_mu, lr_gamma, sigma_ref, clip, gamma_anneal, h_s_min)",
     "runtime_cap": "n_runs*n_iter <= 40000 (~3.5h full benchmark; BUDGET_HOURS=3.5)",
     "fixed_structural": [
       "z-form gamma-score (GAMMA_SCALE=True, H_REF=1.0)",

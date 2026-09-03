@@ -176,7 +176,7 @@ gradient-based optimization instead of grid search, plus honest uncertainties. T
    approach tractable.
 5. **Systematic improvement** (Aug, 15–18 series): real-data sweep (15), closed-loop synthetic
    diagnostic (16), improvement playground (17: λ_mean anchor, σ_ref fix), failure analysis (18).
-6. **Now:** the current best optimizer (17f) validated on real data (18b), and PAGHO (the
+6. **Now:** the current best optimizer (17f) validated on real data (18b), and AG-HYPOPT (the
    agent-guided hyperparameter campaign) to tune it.
 
 ### Where the loss function came from (why it is what it is)

@@ -1,6 +1,6 @@
-# instructions.md — PAGHO: how to run a trial
+# instructions.md — AG-HYPOPT: how to run a trial
 
-PAGHO = Physics-informed Agent-Guided Hyperparameter Optimization.
+AG-HYPOPT = Agent-Guided Hyperparameter Optimization.
 
 ## Recipe
 1. **Find the last trial** — look at the trial notebooks (`trial_00.ipynb` = experiment
@@ -17,4 +17,4 @@ PAGHO = Physics-informed Agent-Guided Hyperparameter Optimization.
 - Protocol (objective, benchmark, space) is fixed — defined in `trial_00`.
 
 Everything else lives where it belongs:
-physics → `context.md` | process → the trial notebook | algorithm contract → `pagho.py`
+physics → `context.md` | process → the trial notebook | algorithm contract → `ag_hypopt.py` (AGHyperopt) + `space.json` | trial harness → `template.ipynb`
