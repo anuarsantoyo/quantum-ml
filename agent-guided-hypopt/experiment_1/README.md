@@ -33,6 +33,7 @@ uncertainty of that objective. Trials are assumed valid and completed before
 | $\lambda$ | `lcb_lambda` | 0.5 | weight of the uncertainty in the adjusted loss |
 | $\beta$ | `bandwidth_beta` | 0.5 | exponent for uncertainty-scaled kernel bandwidths |
 | $w_0$ | `prior_weight` | 1.0 | weight of the uniform prior component in each density |
+| $s_{\text{explore}}$ | `explore_slots` | 2 | fully-uniform (entirely random) candidate slots reserved in every trials-phase batch |
 | $\alpha$ | (Laplace) | 1 | Laplace smoothing count for categorical models |
 
 ## 2. The two phases
@@ -239,10 +240,13 @@ This phase deliberately ignores the trials: with fewer than `n_initial`
 completed trials there is nothing to fit, and the uniform draws give the first
 trials good coverage of the whole box.
 
-### 4.2 Trials phase: sampling from the good model
+### 4.2 Trials phase: model draws + reserved random slots
 
-One candidate is built by sampling every active parameter from its good
-density (section 3.5), in dependency order:
+The batch has two parts: `n_model = n - n_explore` model-informed candidates
+followed by `n_explore = clamp(explore_slots, 0, n)` entirely random ones.
+
+**Model draws.** One candidate is built by sampling every active parameter
+from its good density (section 3.5), in dependency order:
 
 $$
 x_p \sim g_p(x), \qquad p = 1,\dots,d_{\text{active}}.
@@ -250,7 +254,17 @@ $$
 
 The candidate is the assembled vector $x = (x_1, \dots, x_{d_{\text{active}}})$.
 If the draw is infeasible it is discarded and redrawn. This loop repeats until
-`n` feasible candidates exist (bounded by an attempt counter).
+`n_model` feasible candidates exist (bounded by an attempt counter). Because
+the good set is the *source* of candidates, these draws cluster where good
+trials live; the bad density plays no role in generating them (it enters only
+through the EI score, section 4.3, which is reported but never used to order
+the batch).
+
+**Explore slots.** The last `n_explore` candidates are independent fully-uniform
+draws over the declared space (the same sampler as the uniform phase, section
+4.1). They guarantee that every trials-phase batch still contains entirely
+random members, no matter how peaked the good densities get. They carry
+`ei = None`, `origin = 'explore'`, and the table shows `-` for them.
 
 ### 4.3 Scoring each candidate: expected improvement (EI)
 
@@ -298,11 +312,11 @@ Candidates are returned and printed in **draw order, never sorted by EI**, so
 the printed table does not steer the agent toward candidate 1. Each candidate is
 
 ```
-{ 'params': { ... }, 'ei': float | None, 'origin': 'uniform' | 'trials' }
+{ 'params': { ... }, 'ei': float | None, 'origin': 'uniform' | 'trials' | 'explore' }
 ```
 
-Row `N` of the printed table equals `proposed_trials[N-1]`. In the uniform
-phase `ei` is `None` and the table shows `-`.
+Row `N` of the printed table equals `proposed_trials[N-1]`. `ei` is `None`
+(and the table shows `-`) for uniform-phase candidates and for explore slots.
 
 ## 5. Where uncertainty enters (summary)
 

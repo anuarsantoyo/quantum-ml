@@ -9,7 +9,8 @@ harness live in ag_hypopt.py + src/). Sections:
   3. Algorithm            — AGHyperopt: uncertainty-aware tree-structured Parzen
                             Estimator (worst-case good/bad split, variable-
                             bandwidth KDEs, uniform prior, two phases:
-                            uniform draws until n_initial, then trials-based proposals). Template contract:
+                            uniform draws until n_initial, then trials-based proposals
+                            (batches reserve explore_slots fully-random members)). Template contract:
                                 opt = AGHyperopt()
                                 opt.fit(SPACE_PATH, TRIALS_PATH)
                                 cands = opt.propose_trials(10)   # prints table, returns batch
@@ -278,11 +279,16 @@ class AGHyperopt:
     - a uniform prior component in every density (stable EI everywhere + soft exploration)
     - tree-structured (conditional) params from the space dependencies
     - propose_trials returns the batch in draw order (never sorted), so the table does not bias the agent.
+    - every trials-phase batch reserves explore_slots fully-uniform candidates, so a guaranteed
+      entirely-random member is always present once the model is being used.
 
     Parameters
     ----------
     n_initial: completed trials needed before switching from uniform random draws
         to trials-based proposals (default 5).
+    explore_slots: number of fully-uniform (entirely random) candidate slots reserved in
+        every trials-phase batch (default 2). Bounded to [0, n_candidates]. In the uniform
+        phase all candidates are random already, so the slots only apply to the trials phase.
     space: path to JSON or dict. Two accepted shapes:
         {'parameters': {name: {type, low, high | values}}, 'dependencies': {...}}
         or a plain parameters map (dependencies empty).
@@ -291,14 +297,14 @@ class AGHyperopt:
     """
 
     def __init__(self, n_initial=5, space=None, quantile=0.25, lcb_lambda=0.5,
-                 bandwidth_beta=0.5, prior_weight=1.0, explore_frac=0.1,
+                 bandwidth_beta=0.5, prior_weight=1.0, explore_slots=2,
                  feasible=None, seed=42):
         self.n_initial = n_initial
         self.quantile = quantile
         self.lcb_lambda = lcb_lambda
         self.bandwidth_beta = bandwidth_beta
         self.prior_weight = prior_weight
-        self.explore_frac = explore_frac
+        self.explore_slots = explore_slots
         self.seed = seed
 
         self._set_space(space)
@@ -500,7 +506,8 @@ class AGHyperopt:
         uniform phase: independent uniform draws from the declared space
             (ei = None, origin = 'uniform').
         trials phase: draws informed by the fitted trials, uncertainties included
-            in the Good/Bad split (ei computed, origin = 'trials').
+            in the Good/Bad split (ei computed, origin = 'trials'); the last
+            explore_slots candidates are entirely random (origin = 'explore', ei = None).
 
         The batch is never sorted: it is returned and printed in draw order, so
         the table does not push the agent toward any specific candidate.
@@ -570,14 +577,22 @@ class AGHyperopt:
         return order
 
     def _trials_propose(self, n_candidates):
-        """n_candidates draws from the fitted Good model (draw order, no sort)."""
+        """Model draws + reserved explore slots (draw order, no sort).
+
+        The first (n_candidates - n_explore) candidates are drawn from the fitted
+        Good model; the last n_explore are entirely random (fully-uniform draws
+        from the declared space). n_explore = clamp(explore_slots, 0, n_candidates).
+        """
         if not self.is_fitted:
             raise RuntimeError('fit() did not produce densities (trials phase)')
+        n_explore = int(max(0, min(self.explore_slots, n_candidates)))
+        n_model = n_candidates - n_explore
         rng = np.random.default_rng()
         out = []
         attempts = 0
         max_attempts = 200 * n_candidates
-        while len(out) < n_candidates and attempts < max_attempts:
+        # ---- model-informed draws (Good model) ----
+        while len(out) < n_model and attempts < max_attempts:
             attempts += 1
             cfg = self._sample_one(rng)
             if not cfg:
@@ -586,6 +601,14 @@ class AGHyperopt:
                 continue
             lg, ll, ei = self._score(cfg)
             out.append({'params': cfg, 'ei': float(ei), 'origin': 'trials'})
+        # ---- reserved entirely-random slots ----
+        attempts = 0
+        while len(out) < n_candidates and attempts < max_attempts:
+            attempts += 1
+            cfg = self._sample_uniform_declared(rng)
+            if self.feasible is not None and not self.feasible(cfg):
+                continue
+            out.append({'params': cfg, 'ei': None, 'origin': 'explore'})
         return out
 
 
