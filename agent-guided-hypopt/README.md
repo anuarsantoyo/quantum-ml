@@ -12,7 +12,7 @@ agent-guided-hypopt/
 └── experiment_N/      ← one experiment = one benchmark + one algorithm + one model snapshot
     ├── context.md         physics/model knowledge (frozen)
     ├── instructions.md    AG-HYPOPT recipe card (frozen)
-    ├── ag_hypopt.py       AGHyperopt (TPE class) (frozen)
+    ├── ag_hypopt.py       AGHyperopt (TPE) + trial harness (frozen)
     ├── space.json         declared space + conditional dependencies (frozen)
     ├── template.ipynb     trial worksheet (frozen): its last cell generates the next trial
     ├── trial_01.ipynb     ships unexecuted: the first trial with results
@@ -32,4 +32,4 @@ agent-guided-hypopt/
 
 | Experiment | Description |
 |---|---|
-| experiment_1 | Origin: 17/18-series lineage (synthetic 17g win, real-data 18b/18c verdicts). Algorithm: TPE. Model: KDE+REINFORCE inversion, Lorentzian-width (TPA) line shape. **Real machinery built 2026-08-30**: ag_hypopt.py (AGHyperopt TPE class: LCB split, magic-clipped variable-bandwidth KDEs, uniform-prior exploration, conditional tree), space.json (declared space), trial harness in template.ipynb (self-generating chain: trial_01 ships unexecuted), registry with baseline_17g (obj 0.001578 ± 0.000859). Budget ~3.5h/trial (cap 40k). Space provisional pending model analysis. |
+| experiment_1 | Origin: 17/18-series lineage (synthetic 17g win, real-data 18b/18c verdicts). Algorithm: TPE. Model: KDE+REINFORCE inversion, Lorentzian-width (TPA) line shape. **Real machinery built 2026-08-30**: ag_hypopt.py (AGHyperopt TPE class: LCB split, magic-clipped variable-bandwidth KDEs, uniform-prior exploration, conditional tree), space.json (declared space), trial harness in ag_hypopt.py (run_trial/compute_objective, restored 17g port); self-generating chain in template.ipynb (trial_01 ships unexecuted), registry with baseline_17g (obj 0.001578 ± 0.000859). Budget ~3.5h/trial (cap 40k). Space provisional pending model analysis. |
