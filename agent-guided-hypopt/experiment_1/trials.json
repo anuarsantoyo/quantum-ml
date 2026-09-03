@@ -57,6 +57,24 @@
       "summary": "trial_01 (2\u00d7 lr_mu, \u03c3_ref 8.2, mild \u03b3-anneal, h_s_min up) ran the 14-exp benchmark in 70 min: objective 0.0049 \u00b1 0.0021 \u2014 3.1\u00d7 worse than baseline, driven by sign-coherent \u03bc overshoot on all 14 exps (rel-RMSE 8.6% vs 3.6%); 3nW T05 \u03b3 overshoot unchanged at +2.16.",
       "key_insight": "\u03bc overshoot that grows with drive plus a T05 \u03b3 overshoot that ignores both drive and anneal refute convergence starvation \u2014 these residuals are score/estimator artifacts, not hyperparameters to tune away.",
       "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "n_runs": 109,
+        "n_iter": 348,
+        "lr_mu": 36.36562701439183,
+        "lr_gamma": 0.29634872459805506,
+        "sigma_ref": 16.08072287078099,
+        "clip": 6.628636117031653,
+        "gamma_anneal": 0.5041800697798587,
+        "h_s_min": 0.056246756767801664
+      },
+      "objective": 0.003112189736407147,
+      "uncertainty": 0.0017951903337801243,
+      "summary": "trial_02 (per-step \u03bc speed \u2248 baseline via 36.4\u00d7(10/\u03c3_ref 16.1)\u00b2, 1.74\u00d7 horizon, n_iter 348) ran the 14-exp benchmark in 186 min: objective 0.0031\u00b10.0018 \u2014 2.0\u00d7 baseline (0.001578), 1.6\u00d7 better than trial_01 (0.0049); \u03bc still overshot all 14 exps (rel-RMSE 7.4% vs 3.6%), bias now concentrated in low-statistics Trans05/Trans10; \u03b3 rel-RMSE 2.6% (best so far), 3nW T05 \u03b3 13.83 vs truth 14.1 (\u22120.27, trial_01's +2.16 attractor resolved).",
+      "key_insight": "Gentler-longer \u03bc drive cured the high-T transient overshoot but left a drive-independent positive \u03bc bias at low n_target \u2014 the \u03bc score's fixed point sits above truth, so \u03bc recovery needs a structural score change (\u03c3_ref normalization / sample-size correction), not more hyperparameter tuning; \u03b3 needed no such fix.",
+      "notebook": "trial_02.ipynb"
     }
   ]
 }
