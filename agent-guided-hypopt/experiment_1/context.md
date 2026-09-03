@@ -6,8 +6,9 @@
 > into any experiment folder of this project without modification.
 >
 > **What is NOT here.** The concrete experimental protocol (objective, benchmark, data files,
-> parameter tables, current results) belongs to the experiment — see that experiment's `trial_00`
-> notebook. The optimization loop and agent workflow are described in `instructions.md`.
+> parameter tables, current results) belongs to the experiment: see that experiment's
+> `trials.json` (protocol summary + registry) and its `template.ipynb` trial worksheet. The
+> optimization loop and agent workflow are described in `instructions.md`.
 >
 > *Version 3 — rewritten 2026-08-29 from a full re-read of the repository, the source code and the paper.*
 
@@ -356,8 +357,8 @@ interpreting results.
    optimizer, μ repeatedly lands at ~**half** the calibration reference μ. Two explanations:
    (a) the real-data likelihood genuinely prefers a lower μ (model-data mismatch — the real FWHM
    cloud is much broader than the model produces at the reference μ), or (b) the reference itself
-   is off. The Fisher width at the fitted point discriminates. *Active investigation — resolution
-   belongs to the experiment's trial_00.*
+   is off. The Fisher width at the fitted point discriminates. *Active investigation: follow-up
+   belongs to the experiment's trial campaign.*
 8. **μ is weakly identified.** Across the 15-series, μ recovered at all transmissions with
    σ_μ ~ 20–90 (50–60 % relative at 3 nW) — the data constrain γ far better than μ. σ_γ collapses
    1–2 orders of magnitude from Trans05 → Trans20 and plateaus (~1–2 MHz); σ_μ shows no clean
