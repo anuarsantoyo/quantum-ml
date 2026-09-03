@@ -40,6 +40,21 @@
       "summary": "Baseline: z-form gamma-score config (17g), computed from the executed 17g notebook (synthetic, 14 exps). mu rel-RMSE 3.6%, gamma rel-RMSE 4.3%. Objective to beat.",
       "key_insight": "The 1/H^2 amplification was the gamma disease; one-power-of-bandwidth + fixed H_REF cures it on synthetic. Remaining: 3nW T05 gamma outlier (+2.14), mu bias at 3nW high-T.",
       "notebook": "notebooks/17g-lambda0-gammascale.ipynb (executed in place, pre-harness)"
+    },
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "clip": 6.247760360260092,
+        "gamma_anneal": 0.5788158108647133,
+        "lr_gamma": 0.650093094592597,
+        "lr_mu": 22.742081065538873,
+        "sigma_ref": 12.249936502126333
+      },
+      "objective": 0.002198513829523369,
+      "uncertainty": 0.0013311547297205463,
+      "summary": "Machinery test PASS at the 100x100 budget: MSE 0.0022 \u00b1 0.0013, \u03bc/\u03b3 rel-RMSE 4.2%/5.2%, only the Trans05 endpoints outlying; loss not comparable to the 200x200 baseline_17g anchor yet.",
+      "key_insight": "The simplified packed objective + trial loop is proven end-to-end and loop-ready; loss numbers only become meaningful once re-anchored at a matched budget.",
+      "notebook": "trial_01.ipynb"
     }
   ]
 }
