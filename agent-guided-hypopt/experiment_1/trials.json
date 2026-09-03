@@ -39,6 +39,24 @@
       "summary": "Baseline: z-form gamma-score config (17g), computed from the executed 17g notebook (synthetic, 14 exps). mu rel-RMSE 3.6%, gamma rel-RMSE 4.3%. Objective to beat.",
       "key_insight": "The 1/H^2 amplification was the gamma disease; one-power-of-bandwidth + fixed H_REF cures it on synthetic. Remaining: 3nW T05 gamma outlier (+2.14), mu bias at 3nW high-T.",
       "notebook": "notebooks/17g-lambda0-gammascale.ipynb (executed in place, pre-harness)"
+    },
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "n_runs": 109,
+        "n_iter": 127,
+        "lr_mu": 30.28257727087576,
+        "lr_gamma": 0.7466281223519423,
+        "sigma_ref": 8.225435580672036,
+        "clip": 12.515671626550454,
+        "gamma_anneal": 0.11423407703487631,
+        "h_s_min": 0.13926407501554722
+      },
+      "objective": 0.004914522506639274,
+      "uncertainty": 0.00207255016618265,
+      "summary": "trial_01 (2\u00d7 lr_mu, \u03c3_ref 8.2, mild \u03b3-anneal, h_s_min up) ran the 14-exp benchmark in 70 min: objective 0.0049 \u00b1 0.0021 \u2014 3.1\u00d7 worse than baseline, driven by sign-coherent \u03bc overshoot on all 14 exps (rel-RMSE 8.6% vs 3.6%); 3nW T05 \u03b3 overshoot unchanged at +2.16.",
+      "key_insight": "\u03bc overshoot that grows with drive plus a T05 \u03b3 overshoot that ignores both drive and anneal refute convergence starvation \u2014 these residuals are score/estimator artifacts, not hyperparameters to tune away.",
+      "notebook": "trial_01.ipynb"
     }
   ]
 }
