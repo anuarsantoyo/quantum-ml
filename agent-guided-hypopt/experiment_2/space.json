@@ -1,0 +1,10 @@
+{
+  "parameters": {
+    "sigma_ref":    {"type": "float", "low": 5.0,  "high": 25.0},
+    "lr_mu":        {"type": "float", "low": 5.0,  "high": 30.0},
+    "lr_gamma":     {"type": "float", "low": 0.2,  "high": 1.0},
+    "gamma_anneal": {"type": "float", "low": 0.0,  "high": 0.75},
+    "clip":         {"type": "float", "low": 5.0,  "high": 20.0}
+  },
+  "dependencies": {}
+}
