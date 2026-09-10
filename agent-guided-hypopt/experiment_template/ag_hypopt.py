@@ -70,12 +70,9 @@ EXPERIMENTS = [
     dict(name='3nW Trans100', power='3nW', mu_true=175.707, sigma_prop=40.975, lam=3.087, gamma_true=14.1, n_target=2516),
 ]
 
-# Reduced benchmark: the 1st, 3rd, 5th, 7th transmissions (Trans05/20/60/100)
-# at both powers = 8 of the 14 experiments, so trials run faster.
-BENCHMARK_SUBSET = [
-    '1nW Trans05', '1nW Trans20', '1nW Trans60', '1nW Trans100',
-    '3nW Trans05', '3nW Trans20', '3nW Trans60', '3nW Trans100',
-]
+# Reduced benchmark option (open decision): None = full 14; or a list of names.
+# Kept as protocol knob so trial_00 can flip it without touching code.
+BENCHMARK_SUBSET = None
 
 SYNTH_SEED = 12345    # target generation seed (identical targets every trial)
 SEED = 42             # per-step noise seed base (deterministic runs)
