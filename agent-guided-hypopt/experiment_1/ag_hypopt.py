@@ -8,13 +8,12 @@ harness live in ag_hypopt.py + src/). Sections:
                             AGHyperopt class); benchmark()/runtime_cap()/feasible()
   3. Algorithm            — AGHyperopt: uncertainty-aware tree-structured Parzen
                             Estimator (worst-case good/bad split, variable-
-                            bandwidth KDEs, uniform prior, two phases:
-                            uniform draws until n_initial, then trials-based proposals
-                            (batches reserve explore_slots fully-random members)). Template contract:
+                            bandwidth KDEs, uniform prior, reserved exploration,
+                            LHS cold start). Template contract:
                                 opt = AGHyperopt()
                                 opt.fit(SPACE_PATH, TRIALS_PATH)
                                 cands = opt.propose_trials(10)   # prints table, returns batch
-  4. Harness: frozen experiment objective, synthetic targets at true
+  4. Harness              — faithful 17g/18c port: synthetic targets at true
                             params, per-photon fit + implicit diff, 2D KDE
                             likelihood, REINFORCE mu-score (sigma_ref) + z-form
                             gamma-score (H_REF), anneal, clip, deterministic
@@ -77,29 +76,24 @@ BENCHMARK_SUBSET = None
 SYNTH_SEED = 12345    # target generation seed (identical targets every trial)
 SEED = 42             # per-step noise seed base (deterministic runs)
 
-# Fixed structural choices (frozen, NOT tunable this campaign):
+# Fixed structural choices (17g/18c verdicts — NOT tunable this campaign):
 GAMMA_SCALE = True    # z-form γ-score (bandwidth-normalized, fixed reference)
 H_REF = 1.0           # fixed reference bandwidth for the γ-score
 LAMBDA_MEAN = 0.0     # mean-matching anchor weight (0.0 = disabled)
 
-# Parallelism: 4 workers, one experiment at a time.
+# Parallelism (measured: 4 workers @ 17f speed ≈ 160k fit-calls/hour)
 N_WORKERS = 4
 N_EXP_PARALLEL = 1
 
-# Runtime budget: an n_runs*n_iter = 40k trial (~3.5h at the measured speed) is
-# feasible for the full 14-exp benchmark (40k inner steps x 14 exps / 4 workers).
-# BUDGET_HOURS is a protocol decision; lowering it requires a reduced benchmark.
+# Runtime budget: must make BASELINE_CONFIG (200x200=40k, ~3.5h at measured speed) feasible.
+# Full 14-exp benchmark at 17f speed: 40k inner steps x 14 exps / 4 workers ~= 3.5h (18c measured).
+# BUDGET_HOURS is a protocol decision — lowering it requires a reduced benchmark or smaller space.
 BUDGET_HOURS = 3.5
-CALLS_PER_HOUR = 160_000   # total fit calls across all workers (measured)
+CALLS_PER_HOUR = 160_000   # total fit calls across all workers, measured 2026-08-29 (18c)
 
-# Defaults merged under every trial config (missing keys are filled from here).
-# Only the space.json tunables (sigma_ref, lr_mu, lr_gamma, gamma_anneal, clip)
-# are proposed; the rest are fixed by this experiment. Current budget
-# n_runs x n_iter = 100 x 100 (~1h/trial); bump to 200 x 200 for the full budget
-# once the loop is validated. Structural choices stay frozen (z-form gamma,
-# H_REF=1, LAMBDA_MEAN=0).
-DEFAULT_CONFIG = dict(
-    n_runs=100, n_iter=100, lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
+# Baseline config (17g = current best on synthetic): what every trial must beat.
+BASELINE_CONFIG = dict(
+    n_runs=200, n_iter=200, lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
     clip=10.0, gamma_anneal=0.5, h_s_min=0.05,
 )
 
@@ -122,6 +116,26 @@ def feasible(config, cap=None):
 def _budget_feasible(config):
     """Default feasibility for AGHyperopt: enforce the runtime budget."""
     return feasible(config)
+
+def _lhs_sample(space, n, rng):
+    """Latin hypercube spread over the space (cold start)."""
+    out = []
+    for _ in range(n):
+        c = {}
+        for k, s in space.items():
+            u = (rng.permutation(n)[len(out)] + rng.uniform(0, 1)) / n
+            if s["type"] == "int":
+                lo, hi = s["low"], s["high"]
+                c[k] = int(round(lo + u * (hi - lo)))
+            elif s["type"] == "float":
+                c[k] = float(s["low"] + u * (s["high"] - s["low"]))
+            elif s["type"] == "choice":
+                c[k] = str(rng.choice(s["values"]))
+            else:
+                raise ValueError(f"unknown type {s['type']} for {k}")
+        out.append(c)
+    return out
+
 
 def load_space_config(space_config):
     """Normalize space_config (path, full dict, or plain parameter map).
@@ -283,17 +297,10 @@ class AGHyperopt:
     - variable-bandwidth KDEs: magic-clipped Scott bandwidth, then uncertainty scaling
     - a uniform prior component in every density (stable EI everywhere + soft exploration)
     - tree-structured (conditional) params from the space dependencies
-    - propose_trials returns the batch in draw order (never sorted), so the table does not bias the agent.
-    - every trials-phase batch reserves explore_slots fully-uniform candidates, so a guaranteed
-      entirely-random member is always present once the model is being used.
+    - propose_candidates returns a batch ranked by EI, with reserved fully-uniform slots.
 
     Parameters
     ----------
-    n_initial: completed trials needed before switching from uniform random draws
-        to trials-based proposals (default 5).
-    explore_slots: number of fully-uniform (entirely random) candidate slots reserved in
-        every trials-phase batch (default 2). Bounded to [0, n_candidates]. In the uniform
-        phase all candidates are random already, so the slots only apply to the trials phase.
     space: path to JSON or dict. Two accepted shapes:
         {'parameters': {name: {type, low, high | values}}, 'dependencies': {...}}
         or a plain parameters map (dependencies empty).
@@ -301,15 +308,14 @@ class AGHyperopt:
         (e.g. n_runs*n_iter > runtime_cap).
     """
 
-    def __init__(self, n_initial=5, space=None, quantile=0.25, lcb_lambda=0.5,
-                 bandwidth_beta=0.5, prior_weight=1.0, explore_slots=2,
+    def __init__(self, space=None, quantile=0.25, lcb_lambda=0.5,
+                 bandwidth_beta=0.5, prior_weight=1.0, explore_frac=0.1,
                  feasible=None, seed=42):
-        self.n_initial = n_initial
         self.quantile = quantile
         self.lcb_lambda = lcb_lambda
         self.bandwidth_beta = bandwidth_beta
         self.prior_weight = prior_weight
-        self.explore_slots = explore_slots
+        self.explore_frac = explore_frac
         self.seed = seed
 
         self._set_space(space)
@@ -340,18 +346,11 @@ class AGHyperopt:
                 raise ValueError(f"self-dependency for '{child}'")
 
     def _discover_params(self, trials):
-        """Parameter universe for the proposal models.
-
-        If a space is declared it is authoritative: params are exactly the
-        declared ones, so keys recorded in trials but not declared (e.g. fixed
-        defaults that landed in a config) never become proposal params. Without
-        a declared space, the universe is the union of keys seen in the trials.
-        """
-        if self.parameters_:
-            return sorted(self.parameters_.keys())
         params = set()
         for t in trials:
             params.update(t['params'].keys())
+        if self.parameters_:
+            params.update(self.parameters_.keys())
         return sorted(params)
 
     def _param_meta(self, param):
@@ -391,46 +390,38 @@ class AGHyperopt:
                                 self.bandwidth_beta)
 
     def fit(self, space=None, trials=None):
-        """Load space + trials and decide the proposal phase. Returns self.
+        """Build density models from the trial history. Returns self.
 
-        Template contract: fit(SPACE_PATH, TRIALS_PATH). Both arguments may be
-        paths or preloaded dicts/lists; fit(trials) alone is accepted (space then
-        falls back to the constructor's space).
-
-        Phase rule (trials are assumed valid and completed; that check happens
-        elsewhere):
-            len(trials) <  n_initial  -> phase 'uniform' (random proposals)
-            len(trials) >= n_initial  -> phase 'trials'  (proposals from trials)
-
-        In the trials phase the Good/Bad split is uncertainty-aware: the ranking
-        uses loss_adj = objective + lcb_lambda * uncertainty.
+        Template contract: fit(SPACE_PATH, TRIALS_PATH) — both arguments may be
+        paths or preloaded dicts/lists. Backward compatible: fit(trials) alone
+        is accepted (space then falls back to the constructor's space).
         """
         if trials is None:
             trials, space = space, None
         if space is not None:
             self._set_space(space)
         trials = load_trials(trials)
-        self.history_ = trials
-        self.n_completed_ = len(trials)
-        self.phase = 'uniform' if len(trials) < self.n_initial else 'trials'
+        completed = [t for t in trials if t.get('loss') is not None]
+        self.history_ = completed
         self.is_fitted = False
-        if self.phase != 'trials' or len(trials) < 2:
+        if len(completed) < 2:
+            # too few trials for a Good/Bad split: propose_candidates cold-starts (LHS)
             return self
 
-        losses = np.array([t['loss'] for t in trials], dtype=float)
-        uncs = np.array([t.get('uncertainty', 0.0) for t in trials], dtype=float)
+        losses = np.array([t['loss'] for t in completed], dtype=float)
+        uncs = np.array([t.get('uncertainty', 0.0) for t in completed], dtype=float)
         loss_adj = losses + self.lcb_lambda * uncs
-        n = len(trials)
+        n = len(completed)
         n_good = int(round(self.quantile * n))
         n_good = max(1, min(n - 1, n_good))
         order = np.argsort(loss_adj, kind='stable')
         good_idx = order[:n_good]
         bad_idx = order[n_good:]
 
-        self.good_trials_ = [trials[i] for i in good_idx.tolist()]
-        self.bad_trials_ = [trials[i] for i in bad_idx.tolist()]
+        self.good_trials_ = [completed[i] for i in good_idx.tolist()]
+        self.bad_trials_ = [completed[i] for i in bad_idx.tolist()]
 
-        params = self._discover_params(trials)
+        params = self._discover_params(completed)
         self.params_ = params
         self.good_models_, self.bad_models_ = {}, {}
         for param in params:
@@ -474,6 +465,29 @@ class AGHyperopt:
                 cfg[param] = x
         return cfg
 
+    def _sample_uniform_cfg(self, rng):
+        """Fully-uniform config over declared/observed bounds (reserved exploration)."""
+        cfg = {}
+        for param in self._sample_order():
+            dep = self.dependencies_.get(param)
+            if dep is not None and cfg.get(dep['parent']) != dep['parent_value']:
+                continue
+            meta = self.param_meta_.get(param)
+            if meta is None:
+                continue
+            if meta['type'] == 'choice':
+                if not meta['values']:
+                    continue
+                cfg[param] = str(rng.choice(meta['values']))
+            else:
+                lo, hi = meta['low'], meta['high']
+                x = rng.uniform(lo, hi) if hi > lo else lo
+                if meta['type'] == 'int':
+                    x = int(round(x))
+                    x = int(max(int(lo), min(int(hi), x)))
+                cfg[param] = x
+        return cfg
+
     def _joint_log_density(self, cfg, which):
         """Product of per-param densities over active params; inactive factor = 1."""
         models = self.good_models_ if which == 'g' else self.bad_models_
@@ -504,134 +518,105 @@ class AGHyperopt:
         return lg, ll, float(ei)
 
     def _print_table(self, batch):
-        """Compact candidate table: ID | ei | params JSON (same order as the list)."""
-        phase = getattr(self, 'phase', 'uniform')
-        print(f'phase = {phase}  ({self.n_completed_}/{self.n_initial} trials)')
-        print(f"{'ID':>2} | {'ei':>6} | params")
+        print(f"{'ID':>2} | {'EI':>7} | {'slot':<8} | params")
         for i, c in enumerate(batch, 1):
-            ei = '-' if c.get('ei') is None else f"{c['ei']:.4f}"
-            print(f"{i:>2} | {ei:>6} | {json.dumps(c['params'])}")
+            slot = 'explore' if c.get('explore') else ''
+            print(f"{i:>2} | {c['ei']:.4f} | {slot:<8} | {json.dumps(c['params'])}")
 
-    def propose_trials(self, n_candidates=10):
-        """Propose n_candidates configs for the current phase (template contract).
+    def propose_trials(self, n_candidates=10, n_draws=1000):
+        """Propose a batch of candidate configs (template contract).
 
-        uniform phase: independent uniform draws from the declared space
-            (ei = None, origin = 'uniform').
-        trials phase: draws informed by the fitted trials, uncertainties included
-            in the Good/Bad split (ei computed, origin = 'trials'); the last
-            explore_slots candidates are entirely random (origin = 'explore', ei = None).
-
-        The batch is never sorted: it is returned and printed in draw order, so
-        the table does not push the agent toward any specific candidate.
-
-        Returns [{'params', 'ei', 'origin'}, ...]  (row N == list[N-1]).
+        Cold start (fewer than COLD_START_MIN_TRIALS completed trials): LHS spread.
+        Otherwise: draw from the Good model, rank by EI, with reserved explore slots.
+        Prints a candidate table (ID | EI | explore | params) and returns the batch
+        [{'params', 'ei', 'g_density', 'l_density', 'explore'}] sorted by ei desc.
         """
-        if getattr(self, 'phase', None) is None:
-            raise RuntimeError('call fit(space, trials) before propose_trials()')
-        if self.phase == 'uniform':
-            batch = self._uniform_propose(n_candidates)
-        else:
-            batch = self._trials_propose(n_candidates)
-        self._print_table(batch)
-        return batch
-
-    def _uniform_propose(self, n_candidates):
-        """n_candidates independent uniform draws from the declared space."""
-        rng = np.random.default_rng()
-        out = []
-        attempts = 0
-        max_attempts = 200 * n_candidates
-        while len(out) < n_candidates and attempts < max_attempts:
-            attempts += 1
-            cfg = self._sample_uniform_declared(rng)
-            if self.feasible is not None and not self.feasible(cfg):
-                continue
-            out.append({'params': cfg, 'ei': None, 'origin': 'uniform'})
-        return out
-
-    def _sample_uniform_declared(self, rng):
-        """One config sampled uniformly from the declared space (deps-aware)."""
-        cfg = {}
-        for param in self._declared_order():
-            dep = self.dependencies_.get(param)
-            if dep is not None and cfg.get(dep['parent']) != dep['parent_value']:
-                continue
-            spec = (self.parameters_ or {}).get(param)
-            if spec is None:
-                continue
-            if spec.get('type') == 'choice':
-                vals = spec.get('values') or []
-                if not vals:
-                    continue
-                cfg[param] = str(rng.choice(list(vals)))
-            else:
-                lo = float(spec.get('low', 0.0))
-                hi = float(spec.get('high', 1.0))
-                x = float(rng.uniform(lo, hi)) if hi > lo else lo
-                if spec.get('type') == 'int':
-                    x = int(round(x))
-                    x = int(max(int(lo), min(int(hi), x)))
-                cfg[param] = x
-        return cfg
-
-    def _declared_order(self):
-        """Declared params in dependency order (parents before children)."""
-        deps = self.dependencies_
-        order = []
-        remaining = set((self.parameters_ or {}).keys())
-        while remaining:
-            ready = [p for p in remaining
-                     if p not in deps or deps[p]['parent'] not in remaining]
-            if not ready:
-                raise ValueError('dependency cycle detected among params')
-            order.extend(sorted(ready))
-            remaining -= set(ready)
-        return order
-
-    def _trials_propose(self, n_candidates):
-        """Model draws + reserved explore slots (draw order, no sort).
-
-        The first (n_candidates - n_explore) candidates are drawn from the fitted
-        Good model; the last n_explore are entirely random (fully-uniform draws
-        from the declared space). n_explore = clamp(explore_slots, 0, n_candidates).
-        """
+        if len(self.history_) < COLD_START_MIN_TRIALS:
+            batch = self._cold_start(n_candidates)
+            self._print_table(batch)
+            return batch
         if not self.is_fitted:
-            raise RuntimeError('fit() did not produce densities (trials phase)')
-        n_explore = int(max(0, min(self.explore_slots, n_candidates)))
-        n_model = n_candidates - n_explore
-        rng = np.random.default_rng()
-        out = []
+            raise RuntimeError("fit() did not produce densities")
+        if n_draws < n_candidates:
+            raise ValueError("n_draws must be >= n_candidates")
+        rng = np.random.default_rng(self.seed)
+
+        pool = []
         attempts = 0
-        max_attempts = 200 * n_candidates
-        # ---- model-informed draws (Good model) ----
-        while len(out) < n_model and attempts < max_attempts:
+        max_attempts = 50 * n_draws
+        while len(pool) < n_draws and attempts < max_attempts:
             attempts += 1
             cfg = self._sample_one(rng)
-            if not cfg:
+            if self.feasible is not None and not self.feasible(cfg):
                 continue
+            pool.append(cfg)
+
+        scored = []
+        for cfg in pool:
+            lg, ll, ei = self._score(cfg)
+            scored.append({'params': cfg, 'ei': ei,
+                           'g_density': float(np.exp(np.clip(lg, -700.0, 700.0))),
+                           'l_density': float(np.exp(np.clip(ll, -700.0, 700.0))),
+                           'explore': False})
+        scored.sort(key=lambda c: c['ei'], reverse=True)
+
+        n_explore = max(1, int(round(self.explore_frac * n_candidates)))
+        n_explore = min(n_explore, n_candidates)
+        batch = scored[:n_candidates - n_explore]
+
+        reserved = []
+        attempts = 0
+        while len(reserved) < n_explore and attempts < 50 * n_explore:
+            attempts += 1
+            cfg = self._sample_uniform_cfg(rng)
             if self.feasible is not None and not self.feasible(cfg):
                 continue
             lg, ll, ei = self._score(cfg)
-            out.append({'params': cfg, 'ei': float(ei), 'origin': 'trials'})
-        # ---- reserved entirely-random slots ----
+            reserved.append({'params': cfg, 'ei': ei,
+                             'g_density': float(np.exp(np.clip(lg, -700.0, 700.0))),
+                             'l_density': float(np.exp(np.clip(ll, -700.0, 700.0))),
+                             'explore': True})
+        if len(reserved) < n_explore:
+            for c in reversed(scored):
+                if len(reserved) >= n_explore:
+                    break
+                c['explore'] = True
+                reserved.append(c)
+
+        batch = batch + reserved
+        batch.sort(key=lambda c: c['ei'], reverse=True)
+        self._print_table(batch)
+        return batch
+
+    def _cold_start(self, n_candidates):
+        """LHS spread over the declared space (used until enough trials exist)."""
+        if self.parameters_ is None:
+            raise ValueError("space required for the cold-start phase")
+        rng = np.random.default_rng(self.seed)
+        out = []
         attempts = 0
+        max_attempts = 200 * n_candidates
         while len(out) < n_candidates and attempts < max_attempts:
             attempts += 1
-            cfg = self._sample_uniform_declared(rng)
-            if self.feasible is not None and not self.feasible(cfg):
+            c = _lhs_sample(self.parameters_, 1, rng)[0]
+            if self.feasible is not None and not self.feasible(c):
                 continue
-            out.append({'params': cfg, 'ei': None, 'origin': 'explore'})
+            score = 0.5 + 0.4 * (len(out) + 1) / n_candidates + 0.1 * rng.uniform()
+            out.append({'params': c, 'ei': float(min(score, 1.0)),
+                        'g_density': None, 'l_density': None, 'explore': False})
         return out
 
 
+# backward-compatible alias (old sklearn-style name)
 AGHyperopt.propose_candidates = AGHyperopt.propose_trials
 
 
+COLD_START_MIN_TRIALS = 4
 # ============================================================
 # 4. HARNESS — run one trial + objective
 # ============================================================
 def _kde_scores(sim_f, sim_s, sim_n, sim_df, sim_ds, data_f, data_s, h_f, h_s, mu, sigma_prop, cfg):
-    """2D KDE negative log-likelihood + per-data-point scores (frozen machinery)."""
+    """2D KDE negative log-likelihood + per-data-point scores (identical to 17g)."""
     d_f = data_f[:, None] - sim_f[None, :]
     d_s = data_s[:, None] - sim_s[None, :]
     W = torch.exp(-0.5 * (d_f / h_f) ** 2 - 0.5 * (d_s / h_s) ** 2)
@@ -671,7 +656,7 @@ def _parallel_map(pool, tasks):
     return list(pool.map(_run_one, tasks, chunksize=8))
 
 def _run_experiment(exp, cfg, pool):
-    """One experiment: joint μ + γ optimization (frozen machinery, config-driven)."""
+    """One experiment: joint μ + γ optimization (17g machinery, config-driven)."""
     mu_true, sigma_prop = exp['mu_true'], exp['sigma_prop']
     lam, gamma_true = exp['lam'], exp['gamma_true']
     mu_init, gamma_init = 0.5 * mu_true, 0.5 * gamma_true
@@ -754,11 +739,11 @@ def _run_experiment(exp, cfg, pool):
 def run_trial(config, experiments=None, verbose=True):
     """Run one trial on the benchmark. Returns dict with per-experiment results.
 
-    config keys (all optional, defaults from DEFAULT_CONFIG):
+    config keys (all optional, defaults from BASELINE_CONFIG):
         n_runs, n_iter, lr_mu, lr_gamma, sigma_ref, clip, gamma_anneal, h_s_min
     Deterministic per (config, benchmark): SEED + SYNTH_SEED fixed.
     """
-    cfg = dict(DEFAULT_CONFIG)
+    cfg = dict(BASELINE_CONFIG)
     cfg.update({k: v for k, v in config.items() if v is not None})
     cfg['n_runs'] = int(cfg['n_runs'])
     cfg['n_iter'] = int(cfg['n_iter'])
@@ -804,8 +789,6 @@ def compute_objective(run):
         rel_mu = ((r['mu_final'] - r['mu_true']) / r['mu_true']) ** 2
         rel_g = ((r['gamma_final'] - r['gamma_true']) / r['gamma_true']) ** 2
         rows.append(dict(exp=r['exp'], rel_sq_mu=rel_mu, rel_sq_gamma=rel_g,
-                         mu_true=r['mu_true'], mu_final=r['mu_final'],
-                         gamma_true=r['gamma_true'], gamma_final=r['gamma_final'],
                          mu_err=r['mu_final'] - r['mu_true'],
                          gamma_err=r['gamma_final'] - r['gamma_true']))
     errs = np.array([v for row in rows for v in (row['rel_sq_mu'], row['rel_sq_gamma'])])
@@ -827,39 +810,15 @@ def compute_objective(run):
     return objective, uncertainty, breakdown
 
 def format_report(breakdown):
-    """Per-experiment report table printed in the trial notebook cell."""
-    lines = [f"{'exp':<12}{'μ_true':>8}{'μ_fit':>8}{'Δμ%':>8} | "
-             f"{'γ_true':>8}{'γ_fit':>8}{'Δγ%':>8}"]
+    """Compact table for the trial notebook / Telegram (no pandas needed)."""
+    lines = [f"{'exp':<12} {'μ_true':>8} {'μ_final':>8} {'Δμ':>8} | "
+             f"{'γ_true':>6} {'γ_final':>8} {'Δγ':>8}"]
     for r in breakdown['rows']:
-        lines.append(
-            f"{r['exp']:<12}{r['mu_true']:>8.2f}{r['mu_final']:>8.2f}"
-            f"{r['mu_err'] / r['mu_true'] * 100:>+8.1f} | "
-            f"{r['gamma_true']:>8.2f}{r['gamma_final']:>8.2f}"
-            f"{r['gamma_err'] / r['gamma_true'] * 100:>+8.1f}")
+        lines.append(f"{r['exp']:<12} ...")  # detailed rows live in the notebook
     m, g = breakdown['mu'], breakdown['gamma']
-    lines.append("")
-    lines.append(f"μ: RMSE {m['rmse']:.3f} (rel {m['rel_rmse']*100:.1f}%, "
-                 f"bias {m['bias']:+.3f}) | "
-                 f"γ: RMSE {g['rmse']:.3f} (rel {g['rel_rmse']*100:.1f}%, "
-                 f"bias {g['bias']:+.3f})")
+    lines.append(f"μ: RMSE {m['rmse']:.3f} (rel {m['rel_rmse']*100:.1f}%) | "
+                 f"γ: RMSE {g['rmse']:.3f} (rel {g['rel_rmse']*100:.1f}%)")
     return "\n".join(lines)
-
-def objective(config, experiments=None, verbose=True):
-    """Packed trial objective: run the frozen vanilla benchmark on `config`.
-
-    config: dict of tunables — all keys optional, missing ones fall back to the
-        DEFAULT_CONFIG defaults. Campaign tunables (space.json):
-        sigma_ref, lr_mu, lr_gamma, gamma_anneal, clip. (n_runs/n_iter may be
-        overridden too, e.g. for smoke tests.)
-    Returns (loss, uncertainty, report):
-        loss         combined relative MSE of (mu, gamma) over the benchmark
-        uncertainty  standard error across the per-experiment errors
-        report       printable per-experiment table (RMSE/rel-RMSE/bias summary)
-    Deterministic per (config, benchmark): SEED=42 + SYNTH_SEED fixed.
-    """
-    run = run_trial(config, experiments=experiments, verbose=verbose)
-    loss, uncertainty, breakdown = compute_objective(run)
-    return loss, uncertainty, format_report(breakdown)
 
 
 if __name__ == '__main__':
@@ -870,7 +829,7 @@ if __name__ == '__main__':
     assert len(cands) == 4 and all('params' in c for c in cands), 'propose_trials contract broken'
 
     tiny = [EXPERIMENTS[0]]
-    cfg = dict(DEFAULT_CONFIG, n_runs=4, n_iter=3)
+    cfg = dict(BASELINE_CONFIG, n_runs=4, n_iter=3)
     run = run_trial(cfg, experiments=tiny, verbose=True)
     obj, unc, bd = compute_objective(run)
     print(f"\nSMOKE objective={obj:.6f} +/- {unc:.6f} | "
