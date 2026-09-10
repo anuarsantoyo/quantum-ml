@@ -1,0 +1,24 @@
+{
+  "protocol": {
+    "experiment": "experiment_1 \u2014 TPE \u00b7 KDE+REINFORCE inversion \u00b7 Lorentzian-width (TPA) \u00b7 synthetic benchmark",
+    "benchmark": "14 synthetic exps (1nW/3nW \u00d7 Trans05-100), true params from Gregor's fits; targets at true values, SYNTH_SEED=12345 (identical across trials); deterministic runs SEED=42",
+    "objective": "combined relative MSE of (mu,gamma) over 28 per-exp errors + sampling SE; lower is better; no Fisher",
+    "space": "space.json \u2014 5 tunables: sigma_ref [5,25], lr_mu [5,30], lr_gamma [0.2,1.0], gamma_anneal [0,0.75], clip [5,20]; n_runs/n_iter fixed (not tuned)",
+    "fixed_structural": [
+      "z-form gamma-score (GAMMA_SCALE=True, H_REF=1.0)",
+      "sigma_ref mu-score",
+      "LAMBDA_MEAN=0",
+      "mu LR linear decay no floor",
+      "mu in [1,200], gamma in [0.1,100] clamp",
+      "4 workers"
+    ],
+    "authority": "hyperparameters = agent's call within protocol; structural changes (score/likelihood/model) need Anuar's OK",
+    "runtime_cap": "n_runs*n_iter <= 40000 (~3.5h full budget). Current default 100x100 (10k, ~1h/trial) while the loop is being validated",
+    "baseline": "no stored baseline; the current best is derived from the recorded trials (min objective, recomputed every trial). None until the first trial completes",
+    "open_decisions": [
+      "bump default budget to 200x200 (~3.5h/trial) once the loop is validated",
+      "space revision after model analysis"
+    ]
+  },
+  "trials": []
+}
