@@ -14,7 +14,7 @@ harness live in ag_hypopt.py + src/). Sections:
                                 opt = AGHyperopt()
                                 opt.fit(SPACE_PATH, TRIALS_PATH)
                                 cands = opt.propose_trials(10)   # prints table, returns batch
-  4. Harness              — faithful 17g/18c port: synthetic targets at true
+  4. Harness: frozen experiment objective, synthetic targets at true
                             params, per-photon fit + implicit diff, 2D KDE
                             likelihood, REINFORCE mu-score (sigma_ref) + z-form
                             gamma-score (H_REF), anneal, clip, deterministic
@@ -77,26 +77,28 @@ BENCHMARK_SUBSET = None
 SYNTH_SEED = 12345    # target generation seed (identical targets every trial)
 SEED = 42             # per-step noise seed base (deterministic runs)
 
-# Fixed structural choices (17g/18c verdicts — NOT tunable this campaign):
+# Fixed structural choices (frozen, NOT tunable this campaign):
 GAMMA_SCALE = True    # z-form γ-score (bandwidth-normalized, fixed reference)
 H_REF = 1.0           # fixed reference bandwidth for the γ-score
 LAMBDA_MEAN = 0.0     # mean-matching anchor weight (0.0 = disabled)
 
-# Parallelism (measured: 4 workers @ 17f speed ≈ 160k fit-calls/hour)
+# Parallelism: 4 workers, one experiment at a time.
 N_WORKERS = 4
 N_EXP_PARALLEL = 1
 
-# Runtime budget: must make BASELINE_CONFIG (200x200=40k, ~3.5h at measured speed) feasible.
-# Full 14-exp benchmark at 17f speed: 40k inner steps x 14 exps / 4 workers ~= 3.5h (18c measured).
-# BUDGET_HOURS is a protocol decision — lowering it requires a reduced benchmark or smaller space.
+# Runtime budget: an n_runs*n_iter = 40k trial (~3.5h at the measured speed) is
+# feasible for the full 14-exp benchmark (40k inner steps x 14 exps / 4 workers).
+# BUDGET_HOURS is a protocol decision; lowering it requires a reduced benchmark.
 BUDGET_HOURS = 3.5
-CALLS_PER_HOUR = 160_000   # total fit calls across all workers, measured 2026-08-29 (18c)
+CALLS_PER_HOUR = 160_000   # total fit calls across all workers (measured)
 
-# Vanilla defaults merged under every trial config (missing keys are filled
-# from here). TEST PHASE (2026-09-03): cheap budget 100x100 (~1h/trial) to
-# exercise the AG-HYPOPT loop; bump to 200x200 (17g anchor, ~3.5h) for the real
-# campaign. Structural choices stay frozen (z-form gamma, H_REF=1, LAMBDA_MEAN=0).
-BASELINE_CONFIG = dict(
+# Defaults merged under every trial config (missing keys are filled from here).
+# Only the space.json tunables (sigma_ref, lr_mu, lr_gamma, gamma_anneal, clip)
+# are proposed; the rest are fixed by this experiment. Current budget
+# n_runs x n_iter = 100 x 100 (~1h/trial); bump to 200 x 200 for the full budget
+# once the loop is validated. Structural choices stay frozen (z-form gamma,
+# H_REF=1, LAMBDA_MEAN=0).
+DEFAULT_CONFIG = dict(
     n_runs=100, n_iter=100, lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
     clip=10.0, gamma_anneal=0.5, h_s_min=0.05,
 )
@@ -338,11 +340,18 @@ class AGHyperopt:
                 raise ValueError(f"self-dependency for '{child}'")
 
     def _discover_params(self, trials):
+        """Parameter universe for the proposal models.
+
+        If a space is declared it is authoritative: params are exactly the
+        declared ones, so keys recorded in trials but not declared (e.g. fixed
+        defaults that landed in a config) never become proposal params. Without
+        a declared space, the universe is the union of keys seen in the trials.
+        """
+        if self.parameters_:
+            return sorted(self.parameters_.keys())
         params = set()
         for t in trials:
             params.update(t['params'].keys())
-        if self.parameters_:
-            params.update(self.parameters_.keys())
         return sorted(params)
 
     def _param_meta(self, param):
@@ -622,7 +631,7 @@ AGHyperopt.propose_candidates = AGHyperopt.propose_trials
 # 4. HARNESS — run one trial + objective
 # ============================================================
 def _kde_scores(sim_f, sim_s, sim_n, sim_df, sim_ds, data_f, data_s, h_f, h_s, mu, sigma_prop, cfg):
-    """2D KDE negative log-likelihood + per-data-point scores (identical to 17g)."""
+    """2D KDE negative log-likelihood + per-data-point scores (frozen machinery)."""
     d_f = data_f[:, None] - sim_f[None, :]
     d_s = data_s[:, None] - sim_s[None, :]
     W = torch.exp(-0.5 * (d_f / h_f) ** 2 - 0.5 * (d_s / h_s) ** 2)
@@ -662,7 +671,7 @@ def _parallel_map(pool, tasks):
     return list(pool.map(_run_one, tasks, chunksize=8))
 
 def _run_experiment(exp, cfg, pool):
-    """One experiment: joint μ + γ optimization (17g machinery, config-driven)."""
+    """One experiment: joint μ + γ optimization (frozen machinery, config-driven)."""
     mu_true, sigma_prop = exp['mu_true'], exp['sigma_prop']
     lam, gamma_true = exp['lam'], exp['gamma_true']
     mu_init, gamma_init = 0.5 * mu_true, 0.5 * gamma_true
@@ -745,11 +754,11 @@ def _run_experiment(exp, cfg, pool):
 def run_trial(config, experiments=None, verbose=True):
     """Run one trial on the benchmark. Returns dict with per-experiment results.
 
-    config keys (all optional, defaults from BASELINE_CONFIG):
+    config keys (all optional, defaults from DEFAULT_CONFIG):
         n_runs, n_iter, lr_mu, lr_gamma, sigma_ref, clip, gamma_anneal, h_s_min
     Deterministic per (config, benchmark): SEED + SYNTH_SEED fixed.
     """
-    cfg = dict(BASELINE_CONFIG)
+    cfg = dict(DEFAULT_CONFIG)
     cfg.update({k: v for k, v in config.items() if v is not None})
     cfg['n_runs'] = int(cfg['n_runs'])
     cfg['n_iter'] = int(cfg['n_iter'])
@@ -839,7 +848,7 @@ def objective(config, experiments=None, verbose=True):
     """Packed trial objective: run the frozen vanilla benchmark on `config`.
 
     config: dict of tunables — all keys optional, missing ones fall back to the
-        BASELINE_CONFIG vanilla defaults. Campaign tunables (space.json):
+        DEFAULT_CONFIG defaults. Campaign tunables (space.json):
         sigma_ref, lr_mu, lr_gamma, gamma_anneal, clip. (n_runs/n_iter may be
         overridden too, e.g. for smoke tests.)
     Returns (loss, uncertainty, report):
@@ -861,7 +870,7 @@ if __name__ == '__main__':
     assert len(cands) == 4 and all('params' in c for c in cands), 'propose_trials contract broken'
 
     tiny = [EXPERIMENTS[0]]
-    cfg = dict(BASELINE_CONFIG, n_runs=4, n_iter=3)
+    cfg = dict(DEFAULT_CONFIG, n_runs=4, n_iter=3)
     run = run_trial(cfg, experiments=tiny, verbose=True)
     obj, unc, bd = compute_objective(run)
     print(f"\nSMOKE objective={obj:.6f} +/- {unc:.6f} | "

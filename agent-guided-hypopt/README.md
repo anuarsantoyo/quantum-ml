@@ -32,7 +32,7 @@ agent-guided-hypopt/
 
 | Experiment | Description |
 |---|---|
-| experiment_1 | Origin: 17/18-series lineage (synthetic 17g win, real-data 18b/18c verdicts). Algorithm: TPE. Model: KDE+REINFORCE inversion, Lorentzian-width (TPA) line shape. **Real machinery built 2026-08-30**: ag_hypopt.py (AGHyperopt TPE class: LCB split, magic-clipped variable-bandwidth KDEs, uniform-prior exploration, conditional tree), space.json (declared space), trial harness in ag_hypopt.py (run_trial/compute_objective, restored 17g port); self-generating chain in template.ipynb (trial_01 ships unexecuted), registry with baseline_17g (obj 0.001578 ± 0.000859). Budget ~3.5h/trial (cap 40k). Space provisional pending model analysis. |
+| experiment_1 | Algorithm: TPE (AGHyperopt). Model snapshot: KDE+REINFORCE inversion, Lorentzian-width (TPA) line shape. Harness: frozen synthetic benchmark (14 exps; mu/gamma relative-MSE objective). Cold start 2026-09-09: empty registry, current best derived from recorded trials (min objective), no stored baseline. Budget 100x100 (~1h/trial) while validating the loop; space.json declares 5 tunables. Template wording: agent summarizes the record, then chooses the proposal that makes the most sense (no hypotheses or expectations). |
 
 ---
 
