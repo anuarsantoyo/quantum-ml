@@ -55,6 +55,20 @@
       "summary": "Trial 04 (sigma_ref 6.62, lr_mu 29.41, lr_gamma 0.609, gamma_anneal 0.707): objective 0.1987 +/- 0.0399 (between trial_01 and trial_02); mu still ~half-truth, gamma RMSE best so far (29.5% rel)",
       "key_insight": "A strong gamma_anneal (0.707) yields the campaign-best gamma recovery (rescues 1 nW Trans20), leaving the mu attractor as the dominant loss term.",
       "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "gamma_anneal": 0.6037521928090351,
+        "lr_gamma": 0.846352631789195,
+        "lr_mu": 17.88313902605355,
+        "sigma_ref": 10.716027601762832
+      },
+      "objective": 0.1862971899987507,
+      "uncertainty": 0.03357071170067034,
+      "summary": "Trial 05 (sigma_ref 10.72, lr_mu 17.88, lr_gamma 0.846, gamma_anneal 0.604): objective 0.1863 +/- 0.0336, new campaign best (edges trial_01); mu still ~half-truth, gamma strong at high T",
+      "key_insight": "A mid-range config with strong anneal (~0.6) gives the best objective so far but only trims the loss slightly -- the uniform ~half-truth mu attractor remains the floor.",
+      "notebook": "trial_05.ipynb"
     }
   ]
 }
