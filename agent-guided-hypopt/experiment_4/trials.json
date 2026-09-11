@@ -69,6 +69,20 @@
       "summary": "Trial 05 (sigma_ref 10.72, lr_mu 17.88, lr_gamma 0.846, gamma_anneal 0.604): objective 0.1863 +/- 0.0336, new campaign best (edges trial_01); mu still ~half-truth, gamma strong at high T",
       "key_insight": "A mid-range config with strong anneal (~0.6) gives the best objective so far but only trims the loss slightly -- the uniform ~half-truth mu attractor remains the floor.",
       "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "gamma_anneal": 0.6143058491780905,
+        "lr_gamma": 0.8929488628119009,
+        "lr_mu": 15.99144393780724,
+        "sigma_ref": 11.110573798754524
+      },
+      "objective": 0.22028693623499013,
+      "uncertainty": 0.04402877636063299,
+      "summary": "Trial 06 (highest-EI TPE pick; sigma_ref 11.11, lr_mu 15.99, lr_gamma 0.893, gamma_anneal 0.614): objective 0.2203 +/- 0.0440, worse than trial_05 despite a similar recipe; gamma collapsed at 3 nW Trans05",
+      "key_insight": "A hyperparameter config very close to the best trial failed to reproduce its gamma recovery -- the low-transmission gamma estimate is unstable across small config changes, adding large scatter to the objective.",
+      "notebook": "trial_06.ipynb"
     }
   ]
 }
