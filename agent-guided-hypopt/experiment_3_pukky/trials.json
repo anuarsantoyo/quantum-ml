@@ -97,6 +97,20 @@
       "summary": "Trial 07 (sigma_ref 6.16, lr_mu 27.08, lr_gamma 0.41, gamma_anneal 0.39), the TPE top draw, scored 0.0205 +/- 0.0086, tied with trial 05: mu stayed at 15.3% (sigma_ref below 6.3 adds nothing) and gamma was slightly worse at 13.3%.",
       "key_insight": "mu has saturated around sigma_ref ~6.3 and lr_mu ~27 (lowering sigma_ref to 6.16 gave no mu gain), so further gains must come from the residual low-signal (Trans05) behaviour rather than from these tunables.",
       "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "gamma_anneal": 0.3734765069762409,
+        "lr_gamma": 0.40777556382876595,
+        "lr_mu": 26.99014093194482,
+        "sigma_ref": 6.221288450869356
+      },
+      "objective": 0.02940588470296193,
+      "uncertainty": 0.012593118896434049,
+      "summary": "Trial 08 (sigma_ref 6.22, lr_mu 26.99, lr_gamma 0.408, gamma_anneal 0.373) scored 0.0294 +/- 0.0126: mu held at the 15.6% floor but gamma jumped to 18.5% on a 1nW Trans05 outlier (-40.5%), so plateau-config differences are within run-to-run noise.",
+      "key_insight": "On the plateau mu is fixed at ~15.3-15.6% while gamma fluctuates 12.6-18.5% at the low-count Trans05 scans; the objective spread among near-optimal configs is dominated by that low-signal gamma noise, not by the tunables.",
+      "notebook": "trial_08.ipynb"
     }
   ]
 }
