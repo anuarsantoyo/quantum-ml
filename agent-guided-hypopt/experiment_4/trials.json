@@ -237,6 +237,20 @@
       "summary": "Trial 17 (sigma_ref 25.0, lr_mu 6.79, lr_gamma 0.852, gamma_anneal 0.387): objective 0.1816 +/- 0.0349, fourth best; near-exact replica of trial_09 but Trans05 gamma still collapsed (-66%/-59%)",
       "key_insight": "A near-identical copy of the best recipe gave a top-quartile but clearly non-best result -- trial_09 0.1657 was substantially a favourable low-transmission gamma draw, not a uniquely optimal configuration.",
       "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "gamma_anneal": 0.5975325817857566,
+        "lr_gamma": 0.8978568237433998,
+        "lr_mu": 9.021264784890075,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.19985477181150518,
+      "uncertainty": 0.03440351538648297,
+      "summary": "Trial 18 (sigma_ref 25.0, lr_mu 9.02, lr_gamma 0.898, gamma_anneal 0.598): objective 0.1999 +/- 0.0344, mid-pack; high-T gamma good but Trans05/20 gamma still degraded",
+      "key_insight": "Mid/high-transmission gamma is reliably recovered with high sigma_ref and high lr_gamma, but the low-transmission gamma -- which dominates the objective -- remains the persistent, unstable failure across every config.",
+      "notebook": "trial_18.ipynb"
     }
   ]
 }
