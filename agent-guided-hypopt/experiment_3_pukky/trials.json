@@ -69,6 +69,20 @@
       "summary": "Trial 05 (sigma_ref 6.28, lr_mu 26.99, lr_gamma 0.42, gamma_anneal 0.42) scored 0.0196 +/- 0.0080, the new best: both mu (15.3%) and gamma (12.6%) rel RMSE improved, confirming a winning region near lr_mu ~27, low sigma_ref, low-to-moderate gamma_anneal.",
       "key_insight": "The optimum sits near lr_mu ~27, sigma_ref ~6.3, lr_gamma ~0.42, gamma_anneal ~0.2-0.4; moderate gamma_anneal is harmless, so trial 04 gamma loss came from its high lr_gamma / anneal combination.",
       "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "gamma_anneal": 0.4833155115836798,
+        "lr_gamma": 0.4995974124703059,
+        "lr_mu": 26.818823006650042,
+        "sigma_ref": 7.636430571625812
+      },
+      "objective": 0.03293247074669933,
+      "uncertainty": 0.013640274619059964,
+      "summary": "Trial 06 (sigma_ref 7.64, lr_mu 26.82, lr_gamma 0.50, gamma_anneal 0.48) scored 0.0329 +/- 0.0136, worse than trial 05, and confirms sigma_ref as a monotone mu lever (mu rel RMSE rises 15.3% -> 21.2% as sigma_ref goes 6.28 -> 7.64).",
+      "key_insight": "sigma_ref is a strong, monotone mu lever (smaller is better); the optimum sits at sigma_ref below trial 05 value of 6.28.",
+      "notebook": "trial_06.ipynb"
     }
   ]
 }
