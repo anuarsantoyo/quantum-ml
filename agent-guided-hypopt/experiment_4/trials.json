@@ -223,6 +223,20 @@
       "summary": "Trial 16 (sigma_ref 25.0, lr_mu 7.63, lr_gamma 0.980, gamma_anneal 0.551): objective 0.2058 +/- 0.0375, mid-pack; sweet-spot-band config but Trans05 gamma still collapsed (-75%/-59%)",
       "key_insight": "Trials 15 and 16 are two consecutive middling sweet-spot-band results after the two good ones (09/14): the band is favourable on average, but each trial score is dominated by whether the low-transmission gamma converges that run.",
       "notebook": "trial_16.ipynb"
+    },
+    {
+      "trial_id": "trial_17",
+      "config": {
+        "gamma_anneal": 0.387069329855276,
+        "lr_gamma": 0.8515851952605118,
+        "lr_mu": 6.792855630315614,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.18163832206668937,
+      "uncertainty": 0.03487240651373168,
+      "summary": "Trial 17 (sigma_ref 25.0, lr_mu 6.79, lr_gamma 0.852, gamma_anneal 0.387): objective 0.1816 +/- 0.0349, fourth best; near-exact replica of trial_09 but Trans05 gamma still collapsed (-66%/-59%)",
+      "key_insight": "A near-identical copy of the best recipe gave a top-quartile but clearly non-best result -- trial_09 0.1657 was substantially a favourable low-transmission gamma draw, not a uniquely optimal configuration.",
+      "notebook": "trial_17.ipynb"
     }
   ]
 }
