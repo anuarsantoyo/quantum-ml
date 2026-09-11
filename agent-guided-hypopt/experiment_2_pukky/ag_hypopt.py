@@ -102,7 +102,8 @@ CALLS_PER_HOUR = 160_000   # total fit calls across all workers (measured)
 # once the loop is validated. Structural choices stay frozen (z-form gamma,
 # H_REF=1, LAMBDA_MEAN=0).
 DEFAULT_CONFIG = dict(
-    n_runs=100, n_iter=100, lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
+    n_runs=100, n_iter=10,  # SMOKE (Pukky 2026-09-11): n_iter=10 to test the mechanism; REVERT TO 100
+    lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
     clip=10.0, gamma_anneal=0.5, h_s_min=0.05,
 )
 
