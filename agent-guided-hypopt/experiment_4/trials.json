@@ -195,6 +195,20 @@
       "summary": "Trial 14 (sigma_ref 23.87, lr_mu 5.74, lr_gamma 0.897, gamma_anneal 0.615): objective 0.1679 +/- 0.0279, second best, essentially matching trial_09; gamma RMSE 29.1% with 3 nW Trans05 rescued to -31%",
       "key_insight": "The interior high-sigma_ref / low-lr_mu / high-lr_gamma region now has two consistently good draws (trial_09 0.1657, trial_14 0.1679) -- the campaign sweet spot -- while boundary extrapolations of the same knobs blow up.",
       "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "gamma_anneal": 0.45648111356308096,
+        "lr_gamma": 0.911928901523244,
+        "lr_mu": 5.0,
+        "sigma_ref": 21.996027046958904
+      },
+      "objective": 0.2046197693332147,
+      "uncertainty": 0.05065917363835229,
+      "summary": "Trial 15 (sigma_ref 22.0, lr_mu 5.0, lr_gamma 0.912, gamma_anneal 0.456): objective 0.2046 +/- 0.0507; inside the sweet-spot region but 1 nW Trans05 gamma collapsed to -90%",
+      "key_insight": "Even within the sweet-spot band the low-transmission gamma can collapse outright (1 nW Trans05 to 0.85 MHz), so the region is good on average but not robust -- the low-T instability, not any knob mean, sets each trial score.",
+      "notebook": "trial_15.ipynb"
     }
   ]
 }
