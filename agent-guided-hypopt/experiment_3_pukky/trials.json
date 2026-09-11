@@ -223,6 +223,20 @@
       "summary": "Trial 16 (sigma_ref 6.099, lr_mu 27.11, lr_gamma 0.417, gamma_anneal 0.420) scored 0.0294 +/- 0.0142, a mid-range plateau result: mu 16.6% and gamma 17.7%, both dragged by a bad 3nW Trans05 run (gamma -44.3%).",
       "key_insight": "The erratic low-count Trans05 scan (1nW or 3nW) is the sole driver of plateau objective variance; mu stays at 14.4-17.2% and trial 14 (0.0149) remains best.",
       "notebook": "trial_16.ipynb"
+    },
+    {
+      "trial_id": "trial_17",
+      "config": {
+        "gamma_anneal": 0.4152825764976662,
+        "lr_gamma": 0.4178843232536425,
+        "lr_mu": 27.052581111395494,
+        "sigma_ref": 6.1054290193431155
+      },
+      "objective": 0.02029811132216138,
+      "uncertainty": 0.008101333800555749,
+      "summary": "Trial 17 (sigma_ref 6.105, lr_mu 27.05, lr_gamma 0.418, gamma_anneal 0.415) scored 0.0203 +/- 0.0081, a mid-range plateau result (mu 14.6%, gamma 13.9%); trial 14 (0.0149) remains best with the plateau fully converged.",
+      "key_insight": "Repeating the plateau optimum now only re-samples the irreducible Trans05 gamma noise; mu is fixed at ~14.4-17.2% and no tunable changes this.",
+      "notebook": "trial_17.ipynb"
     }
   ]
 }
