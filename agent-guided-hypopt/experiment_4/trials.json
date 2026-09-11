@@ -181,6 +181,20 @@
       "summary": "Trial 13 (sigma_ref 24.83, lr_mu 18.99, lr_gamma 0.857, gamma_anneal 0.401): objective 0.1941 +/- 0.0318, a third near-replicate of the ~0.194 mid-pack plateau (trials 07, 12); Trans05/20 gamma still degraded",
       "key_insight": "A broad band of high-sigma_ref / high-lr_gamma configs reproduces a stable ~0.194 plateau far above the 0.1657 best -- the trial_09 win looks like a lucky draw in an unstable low-transmission gamma regime, not a reproducible optimum.",
       "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "gamma_anneal": 0.6153545414493528,
+        "lr_gamma": 0.8970587074805996,
+        "lr_mu": 5.736670970523138,
+        "sigma_ref": 23.871826530533255
+      },
+      "objective": 0.16790809899767045,
+      "uncertainty": 0.027914307057344538,
+      "summary": "Trial 14 (sigma_ref 23.87, lr_mu 5.74, lr_gamma 0.897, gamma_anneal 0.615): objective 0.1679 +/- 0.0279, second best, essentially matching trial_09; gamma RMSE 29.1% with 3 nW Trans05 rescued to -31%",
+      "key_insight": "The interior high-sigma_ref / low-lr_mu / high-lr_gamma region now has two consistently good draws (trial_09 0.1657, trial_14 0.1679) -- the campaign sweet spot -- while boundary extrapolations of the same knobs blow up.",
+      "notebook": "trial_14.ipynb"
     }
   ]
 }
