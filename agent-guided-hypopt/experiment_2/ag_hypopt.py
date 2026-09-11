@@ -540,7 +540,7 @@ class AGHyperopt:
 
     def _uniform_propose(self, n_candidates):
         """n_candidates independent uniform draws from the declared space."""
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(self.seed)
         out = []
         attempts = 0
         max_attempts = 200 * n_candidates
@@ -602,7 +602,7 @@ class AGHyperopt:
             raise RuntimeError('fit() did not produce densities (trials phase)')
         n_explore = int(max(0, min(self.explore_slots, n_candidates)))
         n_model = n_candidates - n_explore
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(self.seed)
         out = []
         attempts = 0
         max_attempts = 200 * n_candidates
