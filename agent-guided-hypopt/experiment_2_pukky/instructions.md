@@ -29,17 +29,22 @@ protocol) are not looked for in this campaign.
   never write, edit, or delete code. You only write analysis text where a `✍️` cell asks for it
   and set the variables the notebook asks for (`INDEX`, `SUMMARY`, `KEY_INSIGHT`; `TRIAL_ID`
   is stamped automatically at generation).
-- ⛔ **Never "Run All"**: `✍️` cells are written by you between execution phases.
-- ⛔ **Execute in place** (`papermill x.ipynb x.ipynb`): results land in the notebook.
+- ⛔ **Run the notebook cell by cell** — like pressing Run on one cell at a time in Jupyter,
+  using `nbrun.py` (below). Never run the whole notebook in one pass: **no `papermill`, no
+  "Run All"**. Those execute every cell at once and therefore cannot stop for you to fill a
+  `✍️` cell after a `▶` cell produced its result. `✍️` cells are written by you between cells.
+- ⛔ **Execute in place**: each cell's output must land in the trial notebook. `nbrun.py`
+  does this.
 - ⛔ **Follow the notebook exactly**: do not skip cells, do not improvise, do not go beyond
   what the cells say.
-- ⛔ **Run nothing but the notebook's `▶` cells.** Execute them in place (for example with
-  `papermill`). Never run any other program. Never create or run a script, helper, or
-  automation of any kind, in the experiment folder or anywhere else (including `/tmp`).
+- ⛔ **Run nothing but the notebook's `▶` cells.** Execute them one at a time with `nbrun.py`.
+  Never run any other program, and never create or run any other script, helper, or automation,
+  in the experiment folder or anywhere else (including `/tmp`). `nbrun.py` is the one provided
+  runner; it is not a script for you to modify or extend.
 - ⛔ **No background or detached processes, with one exception.** Never use `&`, `nohup`,
   `setsid`, or any detach trick, and never start a long-running process to get around a
-  command or time limit, except the trial notebook's own `▶` run cell, which is executed
-  detached and polled as described in **Executing the trial cell** below.
+  command or time limit — except running your own trial's long `▶` cell (cell 5) detached via
+  `nbrun.py`, as described in **Running the notebook** below.
 - ⛔ **Never work around your own limits.** If a step does not fit within the tools and the
   time you have, that is a stop condition, not a problem to solve with a gadget
   you invent.
@@ -56,30 +61,58 @@ protocol) are not looked for in this campaign.
   as a short note in the notebook's `✍️` analysis, then keep going. Never stop, delay, or
   interrupt a trial because of an idea: this is a hyperparameter tuning algorithm.
 
-## Executing the trial cell (the one exception to the no-background rule)
+## Running the notebook (cell by cell)
 
-One trial runs `objective()` and takes roughly 20 to 30 minutes, longer than the agent's
-per-command time limit. The trial notebook's own `▶` run cell is the single sanctioned
-exception to the no-background rule. Use the repository's `.venv` (its `papermill` and
-`python3` kernel have torch; the plain system `papermill` starts a kernel without torch),
-launch that cell with `setsid` in a new session and with stdin closed, so it survives the command runner's process-group cleanup, then poll:
+Run the trial notebook **one cell at a time**, exactly as a person would in Jupyter: run a `▶`
+cell, read its output, write the next `✍️` cell, run the next `▶` cell, and so on. Use the
+bundled runner, which executes a single cell in place against a persistent kernel:
 
 ```bash
-cd <experiment folder> && setsid <repo>/.venv/bin/papermill --no-progress-bar trial_XX.ipynb trial_XX.ipynb </dev/null >/dev/null 2>&1 &
+python3 nbrun.py trial_XX.ipynb <cell_index>   # run one cell (0-based index), save in place, print its output
+python3 nbrun.py trial_XX.ipynb --status       # is this notebook's kernel alive?
+python3 nbrun.py trial_XX.ipynb --stop         # shut the kernel down (do this when the trial is finished)
+```
+
+Run `nbrun.py` with the repository's Python (the one whose `python3` kernel has `torch`).
+`nbrun.py` starts a kernel for the notebook on first use and keeps it alive between calls, so a
+later cell sees the variables the earlier cells created — the notebook runs exactly as it would
+if you pressed Run on each cell yourself. It writes the cell's outputs back into the notebook
+and echoes the cell's stdout/stderr to your terminal so you can read it.
+
+Per trial, in order:
+1. `python3 nbrun.py trial_XX.ipynb 2` — propose (cell 2). Read the candidate table it prints.
+2. Write `✍️` cell 3 (your analysis) and `✍️` cell 4 (`INDEX = N`), then run cell 4:
+   `python3 nbrun.py trial_XX.ipynb 4`.
+3. Run cell 5 — the trial itself (`objective(CHOSEN)`), which takes ~20–30 minutes:
+   `python3 nbrun.py trial_XX.ipynb 5`. This is longer than your per-command limit, so launch
+   it detached and poll (see below).
+4. Write `✍️` cell 6 (your analysis) and `✍️` cell 7 (`SUMMARY`, `KEY_INSIGHT`), then run cell 7:
+   `python3 nbrun.py trial_XX.ipynb 7`.
+5. Run cells 8 and 9 (record, then generate the next trial):
+   `python3 nbrun.py trial_XX.ipynb 8` then `python3 nbrun.py trial_XX.ipynb 9`.
+6. `python3 nbrun.py trial_XX.ipynb --stop`.
+
+### The one long cell (cell 5): launch detached, then poll
+
+Cell 5 is the only step longer than your per-command time limit. Launch just that cell detached,
+with stdin closed, so it survives the command runner's process-group cleanup:
+
+```bash
+cd <experiment folder> && nohup python3 nbrun.py trial_XX.ipynb 5 </dev/null >/tmp/nbrun_XX.log 2>&1 &
 ```
 
 then wait with short commands, for example:
 
 ```bash
-pgrep -af 'papermill trial_XX'
+pgrep -af 'nbrun.py trial_XX.ipynb 5'
 ```
 
-repeating until no matching process remains. `papermill` writes the notebook in place when it
-exits, so once the process is gone you read the results and continue. This exception applies
-only to running this notebook's own `▶` cells through `papermill`, never to any other program,
-and never to more than one detached run at a time.
+repeating until no matching process remains. When the process is gone, `nbrun.py` has already
+written the cell's output into the notebook — read it and continue with cell 6. This exception
+applies only to running this notebook's own `▶` cell 5, never to any other program, and never
+to more than one detached run at a time.
 
 Everything else lives where it belongs:
 physics -> `context.md` | idea of the experiment -> `README.md` | registry -> `trials.json`
 | algorithm + harness -> `ag_hypopt.py` + `src/` | trial worksheet + per-trial instructions ->
-`template.ipynb`
+`template.ipynb` | cell runner -> `nbrun.py`
