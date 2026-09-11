@@ -83,6 +83,20 @@
       "summary": "Trial 06 (sigma_ref 7.64, lr_mu 26.82, lr_gamma 0.50, gamma_anneal 0.48) scored 0.0329 +/- 0.0136, worse than trial 05, and confirms sigma_ref as a monotone mu lever (mu rel RMSE rises 15.3% -> 21.2% as sigma_ref goes 6.28 -> 7.64).",
       "key_insight": "sigma_ref is a strong, monotone mu lever (smaller is better); the optimum sits at sigma_ref below trial 05 value of 6.28.",
       "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "gamma_anneal": 0.3861666152035277,
+        "lr_gamma": 0.4115770397368759,
+        "lr_mu": 27.08009402797008,
+        "sigma_ref": 6.157444464863774
+      },
+      "objective": 0.02045494962344624,
+      "uncertainty": 0.008621436757027949,
+      "summary": "Trial 07 (sigma_ref 6.16, lr_mu 27.08, lr_gamma 0.41, gamma_anneal 0.39), the TPE top draw, scored 0.0205 +/- 0.0086, tied with trial 05: mu stayed at 15.3% (sigma_ref below 6.3 adds nothing) and gamma was slightly worse at 13.3%.",
+      "key_insight": "mu has saturated around sigma_ref ~6.3 and lr_mu ~27 (lowering sigma_ref to 6.16 gave no mu gain), so further gains must come from the residual low-signal (Trans05) behaviour rather than from these tunables.",
+      "notebook": "trial_07.ipynb"
     }
   ]
 }
