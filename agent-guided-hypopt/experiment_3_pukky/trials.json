@@ -41,6 +41,20 @@
       "summary": "Trial 03 (sigma_ref 9.37, lr_mu 23.05, lr_gamma 0.79, gamma_anneal 0.22) scored 0.0477 +/- 0.0122, worse than trial 02: raising lr_gamma left gamma flat (13.7%) while the accompanying mu-regime change pushed mu rel RMSE back up to 27.7%.",
       "key_insight": "gamma (13.7%) is insensitive to lr_gamma, whereas mu tracks lr_mu / sigma_ref; trial 02 high-lr_mu, low-sigma_ref regime remains the best.",
       "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "gamma_anneal": 0.7072920791792757,
+        "lr_gamma": 0.6090620422514893,
+        "lr_mu": 29.406092642692602,
+        "sigma_ref": 6.616720477912043
+      },
+      "objective": 0.026170812136914846,
+      "uncertainty": 0.012171730176715294,
+      "summary": "Trial 04 (sigma_ref 6.62, lr_mu 29.41, lr_gamma 0.61, gamma_anneal 0.71) scored 0.0262 +/- 0.0122, a near-tie with but not better than trial 02: lr_mu past 25 gave no mu gain (17.2% vs 17.5%) while gamma slipped to 15.1% (3nW Trans05 -37%).",
+      "key_insight": "mu saturates at lr_mu ~25 (29 adds nothing), and the gamma regression at higher gamma_anneal (0.71) points to low gamma_anneal being better.",
+      "notebook": "trial_04.ipynb"
     }
   ]
 }
