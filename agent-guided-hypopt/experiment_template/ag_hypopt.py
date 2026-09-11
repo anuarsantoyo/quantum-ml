@@ -26,6 +26,7 @@ Interface (algorithm-swappable — future experiment_2 can ship GPBO/CMA-ES):
     run_trial(config) -> results          (deterministic per config, SEED=42)
     compute_objective(results) -> (objective, uncertainty, breakdown)
     format_report(breakdown) -> str
+    plot_paths(results) -> fig            (inline (mu,gamma) phase-space paths, no Fisher, 2x7)
 """
 import json
 import math
@@ -70,9 +71,12 @@ EXPERIMENTS = [
     dict(name='3nW Trans100', power='3nW', mu_true=175.707, sigma_prop=40.975, lam=3.087, gamma_true=14.1, n_target=2516),
 ]
 
-# Reduced benchmark option (open decision): None = full 14; or a list of names.
-# Kept as protocol knob so trial_00 can flip it without touching code.
-BENCHMARK_SUBSET = None
+# Reduced benchmark: the 1st, 3rd, 5th, 7th transmissions (Trans05/20/60/100)
+# at both powers = 8 of the 14 experiments, so trials run faster.
+BENCHMARK_SUBSET = [
+    '1nW Trans05', '1nW Trans20', '1nW Trans60', '1nW Trans100',
+    '3nW Trans05', '3nW Trans20', '3nW Trans60', '3nW Trans100',
+]
 
 SYNTH_SEED = 12345    # target generation seed (identical targets every trial)
 SEED = 42             # per-step noise seed base (deterministic runs)
@@ -99,7 +103,8 @@ CALLS_PER_HOUR = 160_000   # total fit calls across all workers (measured)
 # once the loop is validated. Structural choices stay frozen (z-form gamma,
 # H_REF=1, LAMBDA_MEAN=0).
 DEFAULT_CONFIG = dict(
-    n_runs=100, n_iter=100, lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
+    n_runs=100, n_iter=10,  # SMOKE (Pukky 2026-09-11): n_iter=10 to test the mechanism; REVERT TO 100
+    lr_mu=15.0, lr_gamma=0.5, sigma_ref=10.0,
     clip=10.0, gamma_anneal=0.5, h_s_min=0.05,
 )
 
@@ -537,7 +542,7 @@ class AGHyperopt:
 
     def _uniform_propose(self, n_candidates):
         """n_candidates independent uniform draws from the declared space."""
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(self.seed)
         out = []
         attempts = 0
         max_attempts = 200 * n_candidates
@@ -599,7 +604,7 @@ class AGHyperopt:
             raise RuntimeError('fit() did not produce densities (trials phase)')
         n_explore = int(max(0, min(self.explore_slots, n_candidates)))
         n_model = n_candidates - n_explore
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(self.seed)
         out = []
         attempts = 0
         max_attempts = 200 * n_candidates
@@ -844,7 +849,209 @@ def format_report(breakdown):
                  f"bias {g['bias']:+.3f})")
     return "\n".join(lines)
 
-def objective(config, experiments=None, verbose=True):
+# ---------------------------------------------------------------------------
+# Visualisation: (mu, gamma) phase-space optimisation paths per experiment.
+# 2 columns (laser: 1nW | 3nW) x 7 rows (transmission T05..T100), start/end
+# markers, truth dashed. NO Fisher ellipse: the AG-HYPOPT objective carries no
+# Fisher information, so the campaign plots the paths only. Rendered inline
+# (plt.show) so each trial notebook stays self-contained.
+# ---------------------------------------------------------------------------
+LAST_RUN = None   # set by objective(); the most recent trial's full run dict
+
+# Canonical axis order for the phase-space grid.
+_POWERS = ('1nW', '3nW')
+
+
+def trial_seed(trial_id):
+    """Integer seed derived from a TRIAL ID, so each trial draws a fresh batch.
+
+    'trial_03' -> 3. Non-numeric ids fall back to a stable string hash. Used as the
+    AGHyperopt proposal seed: without it every trial (same default seed) proposes the
+    SAME candidate batch — the repeating-sample bug.
+    """
+    s = str(trial_id)
+    digits = ''
+    for ch in reversed(s):
+        if not ch.isdigit():
+            break
+        digits = ch + digits
+    if digits:
+        return int(digits)
+    h = 0
+    for ch in s:
+        h = (h * 131 + ord(ch)) & 0x7FFFFFFF
+    return h or 1
+
+
+def _path_axes(results, powers, trans):
+    """Grid axes (powers x trans) actually present in `results`, in canonical order."""
+    powers = list(powers) if powers is not None else \
+        [p for p in _POWERS if any(r.get('power') == p for r in results)]
+    if trans is not None:
+        trans = list(trans)
+    else:
+        seen = list(dict.fromkeys(r['exp'].split('Trans')[-1] for r in results))
+        trans = sorted(seen, key=lambda s: (0, int(s)) if s.isdigit() else (1, s))
+    return powers, trans
+
+
+def plot_paths(results, powers=None, trans=None, figsize=None, title=None, show=True):
+    """(mu, gamma) phase-space paths per experiment: cols = laser, rows = transmission.
+
+    Autosized: unless given, the grid uses exactly the powers/transmissions present in
+    `results` (canonical order), so a subset benchmark fills every panel.
+
+    results: per-experiment dicts from run_trial (needs 'exp', 'power',
+        'mu_true', 'gamma_true', 'mu_final', 'gamma_final', 'nll_final', 'history').
+    No Fisher ellipse (the campaign objective is Fisher-free). Returns the figure;
+    renders inline with plt.show() when show=True.
+    """
+    import matplotlib.pyplot as plt
+
+    if not results:
+        return None
+    powers, trans = _path_axes(results, powers, trans)
+    if figsize is None:
+        figsize = (6.0 * len(powers), 3.9 * len(trans) + 1.2)
+
+    by_key = {(r.get('power'), r['exp'].split('Trans')[-1]): r for r in results}
+
+    fig, axes = plt.subplots(len(trans), len(powers), figsize=figsize, squeeze=False)
+    for ci, power in enumerate(powers):
+        for ri, t in enumerate(trans):
+            ax = axes[ri][ci]
+            r = by_key.get((power, t))
+            if r is None:
+                ax.axis('off')
+                continue
+            hs = r['history']
+            mus = [h['mu'] for h in hs]
+            gams = [h['gamma'] for h in hs]
+            ax.plot(mus, gams, 'b.-', lw=1.2, ms=3, zorder=3)
+            ax.plot(mus[::10], gams[::10], 'k.', ms=3, zorder=3)
+            ax.plot(mus[0], gams[0], 'go', ms=8, zorder=5)
+            ax.plot(mus[-1], gams[-1], 'r*', ms=14, mec='k', mew=0.5, zorder=5)
+            ax.axvline(r['mu_true'], color='g', ls='--', lw=1, alpha=0.6)
+            ax.axhline(r['gamma_true'], color='g', ls='--', lw=1, alpha=0.6)
+            ax.set_title(f"{r['exp']} | Δμ={r['mu_final']-r['mu_true']:+.1f} "
+                         f"Δγ={r['gamma_final']-r['gamma_true']:+.2f} "
+                         f"NLL={r['nll_final']:.1f}", fontsize=8)
+            ax.set_xlabel('μ'); ax.set_ylabel('γ (MHz)')
+            ax.grid(alpha=0.3)
+            xs = mus + [r['mu_true']]; ys = gams + [r['gamma_true']]
+            x0, x1 = min(xs), max(xs); sp = (x1 - x0) or 1.0
+            y0, y1 = min(ys), max(ys); spy = (y1 - y0) or 1.0
+            ax.set_xlim(x0 - 0.08 * sp, x1 + 0.08 * sp)
+            ax.set_ylim(y0 - 0.08 * spy, y1 + 0.08 * spy)
+            if ri == 0 and ci == 0:
+                ax.plot([], [], 'go', ms=8, label='start')
+                ax.plot([], [], 'r*', ms=12, mec='k', label='end')
+                ax.plot([], [], 'b-', label='path')
+                ax.legend(fontsize=7, loc='best')
+    if title is None:
+        title = ('AG-HYPOPT — (μ, γ) phase-space paths '
+                 '(columns: laser | rows: transmission)')
+    fig.suptitle(title, fontsize=13, y=0.996)
+    plt.tight_layout()
+    if show:
+        plt.show()
+    return fig
+
+
+def _trial_rows(trials):
+    """Normalize a trials source to [(config_dict, objective_float), ...] (completed only)."""
+    if isinstance(trials, (str, os.PathLike)):
+        trials = json.load(open(trials))
+    if isinstance(trials, dict):
+        trials = trials.get('trials', [])
+    rows = []
+    for t in trials:
+        cfg = t.get('config') or t.get('params') or {}
+        obj = t.get('objective', t.get('loss'))
+        if cfg and obj is not None:
+            rows.append((dict(cfg), float(obj)))
+    return rows
+
+
+def plot_parallel(trials, current=None, params=None, figsize=None, title=None, show=True):
+    """Parallel-coordinates view of the campaign: one polyline per trial across the tuned
+    hyperparameters and the objective; lines colored by objective (lower = better).
+
+    trials: trials.json path, the loaded dict, or a list of {config, objective}.
+    current: optional {'config':..., 'objective':...} for the just-run trial — drawn thick/
+        crimson and included in the objective color scale.
+    Autosized: axes = the config keys in first-seen order, then 'objective'. Renders inline
+    when show=True; returns the figure.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+
+    rows = _trial_rows(trials)
+    cur_i = None
+    if current is not None:
+        if isinstance(current, dict):
+            ccfg = current.get('config') or current.get('params')
+            cobj = current.get('objective', current.get('loss'))
+        else:
+            ccfg, cobj = current
+        if ccfg is not None and cobj is not None:
+            cur_i = len(rows)
+            rows = rows + [(dict(ccfg), float(cobj))]
+    if not rows:
+        return None
+
+    if params is None:
+        order = []
+        for cfg, _ in rows:
+            for k in cfg:
+                if k not in order:
+                    order.append(k)
+        params = order
+    names = list(params) + ['objective']
+
+    lo, hi = {}, {}
+    for p in params:
+        vals = [cfg[p] for cfg, _ in rows if p in cfg]
+        lo[p], hi[p] = (min(vals), max(vals)) if vals else (0.0, 1.0)
+    objs = [o for _, o in rows]
+    olo, ohi = min(objs), max(objs)
+
+    def _n(v, a, b):
+        return 0.5 if b <= a else (v - a) / (b - a)
+
+    xs = np.arange(len(names))
+    fig, ax = plt.subplots(figsize=figsize or (max(6.5, 1.7 * len(names)), 5.2))
+    cmap = plt.cm.viridis
+    norm = Normalize(olo, ohi)
+    for i, (cfg, obj) in enumerate(rows):
+        ys = [_n(cfg[p], lo[p], hi[p]) for p in params] + [_n(obj, olo, ohi)]
+        if i == cur_i:
+            ax.plot(xs, ys, color='crimson', lw=2.6, marker='o', ms=4, zorder=5, label='this trial')
+        else:
+            ax.plot(xs, ys, color=cmap(norm(obj)), lw=1.4, alpha=0.85, zorder=2)
+    for xi, name in enumerate(names):
+        ax.axvline(xi, color='k', lw=0.8, alpha=0.45, zorder=1)
+        a, b = (lo[name], hi[name]) if name in lo else (olo, ohi)
+        ax.text(xi, 1.02, f'{b:.3g}', ha='center', va='bottom', fontsize=7)
+        ax.text(xi, -0.02, f'{a:.3g}', ha='center', va='top', fontsize=7)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(names, rotation=20, ha='right')
+    ax.set_ylim(-0.08, 1.08)
+    ax.set_yticks([])
+    ax.set_xlim(-0.5, len(names) - 0.5)
+    ax.set_title(title or 'Campaign — parallel coordinates (tunables → objective)', fontsize=11)
+    fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax,
+                 label='objective (lower = better)')
+    if cur_i is not None:
+        ax.legend(fontsize=8, loc='best')
+    plt.tight_layout()
+    if show:
+        plt.show()
+    return fig
+
+
+def objective(config, experiments=None, verbose=True, show_paths=True):
     """Packed trial objective: run the frozen vanilla benchmark on `config`.
 
     config: dict of tunables — all keys optional, missing ones fall back to the
@@ -855,10 +1062,16 @@ def objective(config, experiments=None, verbose=True):
         loss         combined relative MSE of (mu, gamma) over the benchmark
         uncertainty  standard error across the per-experiment errors
         report       printable per-experiment table (RMSE/rel-RMSE/bias summary)
+    show_paths=True renders the (μ,γ) phase-space path figure inline (2 cols x 7
+    rows, no Fisher) and stashes the full run dict in the module global LAST_RUN.
     Deterministic per (config, benchmark): SEED=42 + SYNTH_SEED fixed.
     """
     run = run_trial(config, experiments=experiments, verbose=verbose)
     loss, uncertainty, breakdown = compute_objective(run)
+    global LAST_RUN
+    LAST_RUN = run
+    if show_paths:
+        plot_paths(run['results'])
     return loss, uncertainty, format_report(breakdown)
 
 
