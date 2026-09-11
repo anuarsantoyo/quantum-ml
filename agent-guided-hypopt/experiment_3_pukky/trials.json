@@ -265,6 +265,20 @@
       "summary": "Trial 19 (gamma_anneal 0.0, lr_mu 27.04, sigma_ref 6.067, lr_gamma 0.399) scored 0.0263 +/- 0.0142: exactly-zero annealing kept mu at the 14.7% floor but a 3nW Trans05 collapse (-46.3%) pushed gamma to 17.6%.",
       "key_insight": "gamma_anneal 0.0 confirms near-zero annealing is safe for mu (14.2-14.7% in trials 18/19) but does not tame the Trans05 gamma noise; trial 14 (0.0149) remains best.",
       "notebook": "trial_19.ipynb"
+    },
+    {
+      "trial_id": "trial_20",
+      "config": {
+        "gamma_anneal": 0.4155662001259543,
+        "lr_gamma": 0.413028721629315,
+        "lr_mu": 27.029884674922044,
+        "sigma_ref": 6.055724331687579
+      },
+      "objective": 0.01928026540524994,
+      "uncertainty": 0.007917427448212923,
+      "summary": "Trial 20 (sigma_ref 6.056, lr_mu 27.03, lr_gamma 0.413, gamma_anneal 0.416) scored 0.0193 +/- 0.0079 (mu 14.4%, gamma 13.3%), closing the campaign on the converged plateau; trial 14 (0.0149) is the best config.",
+      "key_insight": "The final trial reconfirms the converged optimum (lr_mu ~27, sigma_ref ~6.1, lr_gamma ~0.42, low gamma_anneal) with mu fixed at ~14.4% and the objective set by irreducible Trans05 gamma noise.",
+      "notebook": "trial_20.ipynb"
     }
   ]
 }
