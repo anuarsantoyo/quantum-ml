@@ -153,6 +153,20 @@
       "summary": "Trial 11 (sigma_ref 6.137, lr_mu 26.94, lr_gamma 0.418, gamma_anneal 0.414), the plateau point again, scored 0.0174 +/- 0.0076, the new best (mu 14.6%, gamma 11.6%), confirming the optimum and the ~0.017-0.030 noise band.",
       "key_insight": "Four runs of the plateau config span 0.0174-0.0301 purely from Trans05 gamma noise; trial 11 (0.0174) is the best so far, and no tunable change has beaten this point.",
       "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "gamma_anneal": 0.4272561607959156,
+        "lr_gamma": 0.41853440469083536,
+        "lr_mu": 26.99136438143308,
+        "sigma_ref": 6.092670751287152
+      },
+      "objective": 0.014954742415186937,
+      "uncertainty": 0.0062092140615613136,
+      "summary": "Trial 12 (sigma_ref 6.093, lr_mu 26.99, lr_gamma 0.419, gamma_anneal 0.427) scored 0.0150 +/- 0.0062, a clear new best with the best gamma so far (9.6%) and mu at the 14.4% floor - the lowest sigma_ref of the plateau points.",
+      "key_insight": "Pushing sigma_ref to the low edge of the good region (6.09) coincided with the best gamma yet (9.6%), so sigma_ref may be monotone in gamma error too; the best config is lr_mu ~27, sigma_ref ~6.1.",
+      "notebook": "trial_12.ipynb"
     }
   ]
 }
