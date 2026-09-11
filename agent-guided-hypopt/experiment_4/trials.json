@@ -265,6 +265,20 @@
       "summary": "Trial 19 (sigma_ref 25.0, lr_mu 5.0, lr_gamma 0.857, gamma_anneal 0.452): objective 0.1777 +/- 0.0307, third best; sweet-spot recipe with 3 nW Trans100 gamma essentially exact (+0.1%)",
       "key_insight": "The sweet-spot band now holds four of the five best trials (09, 14, 17, 19), confirming sigma_ref~25 / low lr_mu / high lr_gamma / moderate anneal as the best region, while the residual low-transmission gamma error keeps the objective off zero.",
       "notebook": "trial_19.ipynb"
+    },
+    {
+      "trial_id": "trial_20",
+      "config": {
+        "gamma_anneal": 0.46944572688281216,
+        "lr_gamma": 0.8593947709942624,
+        "lr_mu": 5.0,
+        "sigma_ref": 21.149502567089378
+      },
+      "objective": 0.16368692215876363,
+      "uncertainty": 0.029837653920946026,
+      "summary": "Trial 20 (sigma_ref 21.15, lr_mu 5.0, lr_gamma 0.859, gamma_anneal 0.469): objective 0.1637 +/- 0.0298, NEW campaign best and best gamma RMSE (27.5%), with 1 nW Trans05/20 rescued to -30%/-27%",
+      "key_insight": "The final sweet-spot draw gave the campaign optimum: low lr_mu with high sigma_ref and high lr_gamma improves the objective-dominating low-transmission gamma, while mu stays pinned at an invariant ~half-truth attractor.",
+      "notebook": "trial_20.ipynb"
     }
   ]
 }
