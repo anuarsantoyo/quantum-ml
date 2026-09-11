@@ -167,6 +167,20 @@
       "summary": "Trial 12 (sigma_ref 6.093, lr_mu 26.99, lr_gamma 0.419, gamma_anneal 0.427) scored 0.0150 +/- 0.0062, a clear new best with the best gamma so far (9.6%) and mu at the 14.4% floor - the lowest sigma_ref of the plateau points.",
       "key_insight": "Pushing sigma_ref to the low edge of the good region (6.09) coincided with the best gamma yet (9.6%), so sigma_ref may be monotone in gamma error too; the best config is lr_mu ~27, sigma_ref ~6.1.",
       "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "gamma_anneal": 0.42584174403884456,
+        "lr_gamma": 0.4192244113569571,
+        "lr_mu": 27.07378447528217,
+        "sigma_ref": 6.127088678533054
+      },
+      "objective": 0.03387169190945009,
+      "uncertainty": 0.016664781366088413,
+      "summary": "Trial 13 (sigma_ref 6.127, lr_mu 27.07, lr_gamma 0.419, gamma_anneal 0.426) scored 0.0339 +/- 0.0167, the worst recent plateau run, purely from a 1nW Trans05 gamma collapse (-50.3%); mu held at 14.8% and gamma rose to 21.4%.",
+      "key_insight": "The plateau config gives mu 14.4-17.2% but gamma 9.6-21.4% depending on whether the low-count Trans05 scans collapse; the objective variance is a single-scan effect, not a tunable one.",
+      "notebook": "trial_13.ipynb"
     }
   ]
 }
