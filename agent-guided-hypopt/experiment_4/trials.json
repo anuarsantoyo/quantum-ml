@@ -251,6 +251,20 @@
       "summary": "Trial 18 (sigma_ref 25.0, lr_mu 9.02, lr_gamma 0.898, gamma_anneal 0.598): objective 0.1999 +/- 0.0344, mid-pack; high-T gamma good but Trans05/20 gamma still degraded",
       "key_insight": "Mid/high-transmission gamma is reliably recovered with high sigma_ref and high lr_gamma, but the low-transmission gamma -- which dominates the objective -- remains the persistent, unstable failure across every config.",
       "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "gamma_anneal": 0.4516136810988214,
+        "lr_gamma": 0.8572103903310909,
+        "lr_mu": 5.0,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.1776615618446329,
+      "uncertainty": 0.03074934557013481,
+      "summary": "Trial 19 (sigma_ref 25.0, lr_mu 5.0, lr_gamma 0.857, gamma_anneal 0.452): objective 0.1777 +/- 0.0307, third best; sweet-spot recipe with 3 nW Trans100 gamma essentially exact (+0.1%)",
+      "key_insight": "The sweet-spot band now holds four of the five best trials (09, 14, 17, 19), confirming sigma_ref~25 / low lr_mu / high lr_gamma / moderate anneal as the best region, while the residual low-transmission gamma error keeps the objective off zero.",
+      "notebook": "trial_19.ipynb"
     }
   ]
 }
