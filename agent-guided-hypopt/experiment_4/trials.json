@@ -41,6 +41,20 @@
       "summary": "Trial 03 (sigma_ref 16.64, lr_mu 25.03, lr_gamma 0.389, gamma_anneal 0.064): objective 0.2472 +/- 0.0509, worst so far; mu attractor near half-truth, gamma collapses to ~-82% at Trans05",
       "key_insight": "Near-zero gamma anneal (0.064) coincides with a hard low-transmission gamma collapse (~15-20% of truth on both powers), the largest single loss contributor so far.",
       "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "gamma_anneal": 0.7072920791792757,
+        "lr_gamma": 0.6090620422514893,
+        "lr_mu": 29.406092642692602,
+        "sigma_ref": 6.616720477912043
+      },
+      "objective": 0.19872985507064578,
+      "uncertainty": 0.03991669722460906,
+      "summary": "Trial 04 (sigma_ref 6.62, lr_mu 29.41, lr_gamma 0.609, gamma_anneal 0.707): objective 0.1987 +/- 0.0399 (between trial_01 and trial_02); mu still ~half-truth, gamma RMSE best so far (29.5% rel)",
+      "key_insight": "A strong gamma_anneal (0.707) yields the campaign-best gamma recovery (rescues 1 nW Trans20), leaving the mu attractor as the dominant loss term.",
+      "notebook": "trial_04.ipynb"
     }
   ]
 }
