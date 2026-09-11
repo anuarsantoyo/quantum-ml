@@ -111,6 +111,20 @@
       "summary": "Trial 08 (sigma_ref 16.76, lr_mu 7.75, lr_gamma 0.831, gamma_anneal 0.740): objective 0.1948 +/- 0.0286, fourth best (best mu RMSE, tightest CI); gamma near-truth/overshoots at high T but still unstable at low T",
       "key_insight": "Pushing anneal to 0.740 did not fix the low-transmission gamma instability, and the mu attractor stays at a very uniform half-truth -- both loss components now look resistant to further hyperparameter tuning.",
       "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "gamma_anneal": 0.4100279848627326,
+        "lr_gamma": 0.8844952605812364,
+        "lr_mu": 6.546371917884403,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.1657252006863315,
+      "uncertainty": 0.029260112102100277,
+      "summary": "Trial 09 (sigma_ref 25.0, lr_mu 6.55, lr_gamma 0.884, gamma_anneal 0.410): objective 0.1657 +/- 0.0293, new campaign best; mu at a uniform half-truth, gamma RMSE best yet (28.3% rel)",
+      "key_insight": "A sigma_ref=25.0 / low-lr_mu config cut the gamma term sharply (3 nW Trans05 -15.8%) for the best objective so far, while the mu attractor remained pinned at exactly half-truth.",
+      "notebook": "trial_09.ipynb"
     }
   ]
 }
