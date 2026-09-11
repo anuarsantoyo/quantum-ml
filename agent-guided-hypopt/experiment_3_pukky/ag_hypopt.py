@@ -858,19 +858,61 @@ def format_report(breakdown):
 # ---------------------------------------------------------------------------
 LAST_RUN = None   # set by objective(); the most recent trial's full run dict
 
+# Canonical axis order for the phase-space grid.
+_POWERS = ('1nW', '3nW')
 
-def plot_paths(results, powers=('1nW', '3nW'),
-               trans=('05', '10', '20', '40', '60', '80', '100'),
-               figsize=(12, 27), title=None, show=True):
-    """(mu, gamma) phase-space paths per experiment: 2 cols (laser) x 7 rows (transmission).
+
+def trial_seed(trial_id):
+    """Integer seed derived from a TRIAL ID, so each trial draws a fresh batch.
+
+    'trial_03' -> 3. Non-numeric ids fall back to a stable string hash. Used as the
+    AGHyperopt proposal seed: without it every trial (same default seed) proposes the
+    SAME candidate batch — the repeating-sample bug.
+    """
+    s = str(trial_id)
+    digits = ''
+    for ch in reversed(s):
+        if not ch.isdigit():
+            break
+        digits = ch + digits
+    if digits:
+        return int(digits)
+    h = 0
+    for ch in s:
+        h = (h * 131 + ord(ch)) & 0x7FFFFFFF
+    return h or 1
+
+
+def _path_axes(results, powers, trans):
+    """Grid axes (powers x trans) actually present in `results`, in canonical order."""
+    powers = list(powers) if powers is not None else \
+        [p for p in _POWERS if any(r.get('power') == p for r in results)]
+    if trans is not None:
+        trans = list(trans)
+    else:
+        seen = list(dict.fromkeys(r['exp'].split('Trans')[-1] for r in results))
+        trans = sorted(seen, key=lambda s: (0, int(s)) if s.isdigit() else (1, s))
+    return powers, trans
+
+
+def plot_paths(results, powers=None, trans=None, figsize=None, title=None, show=True):
+    """(mu, gamma) phase-space paths per experiment: cols = laser, rows = transmission.
+
+    Autosized: unless given, the grid uses exactly the powers/transmissions present in
+    `results` (canonical order), so a subset benchmark fills every panel.
 
     results: per-experiment dicts from run_trial (needs 'exp', 'power',
         'mu_true', 'gamma_true', 'mu_final', 'gamma_final', 'nll_final', 'history').
-        Experiments absent from the benchmark leave their panel blank.
     No Fisher ellipse (the campaign objective is Fisher-free). Returns the figure;
     renders inline with plt.show() when show=True.
     """
     import matplotlib.pyplot as plt
+
+    if not results:
+        return None
+    powers, trans = _path_axes(results, powers, trans)
+    if figsize is None:
+        figsize = (6.0 * len(powers), 3.9 * len(trans) + 1.2)
 
     by_key = {(r.get('power'), r['exp'].split('Trans')[-1]): r for r in results}
 
