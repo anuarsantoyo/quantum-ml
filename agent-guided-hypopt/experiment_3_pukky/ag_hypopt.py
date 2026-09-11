@@ -958,6 +958,99 @@ def plot_paths(results, powers=None, trans=None, figsize=None, title=None, show=
     return fig
 
 
+def _trial_rows(trials):
+    """Normalize a trials source to [(config_dict, objective_float), ...] (completed only)."""
+    if isinstance(trials, (str, os.PathLike)):
+        trials = json.load(open(trials))
+    if isinstance(trials, dict):
+        trials = trials.get('trials', [])
+    rows = []
+    for t in trials:
+        cfg = t.get('config') or t.get('params') or {}
+        obj = t.get('objective', t.get('loss'))
+        if cfg and obj is not None:
+            rows.append((dict(cfg), float(obj)))
+    return rows
+
+
+def plot_parallel(trials, current=None, params=None, figsize=None, title=None, show=True):
+    """Parallel-coordinates view of the campaign: one polyline per trial across the tuned
+    hyperparameters and the objective; lines colored by objective (lower = better).
+
+    trials: trials.json path, the loaded dict, or a list of {config, objective}.
+    current: optional {'config':..., 'objective':...} for the just-run trial — drawn thick/
+        crimson and included in the objective color scale.
+    Autosized: axes = the config keys in first-seen order, then 'objective'. Renders inline
+    when show=True; returns the figure.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+
+    rows = _trial_rows(trials)
+    cur_i = None
+    if current is not None:
+        if isinstance(current, dict):
+            ccfg = current.get('config') or current.get('params')
+            cobj = current.get('objective', current.get('loss'))
+        else:
+            ccfg, cobj = current
+        if ccfg is not None and cobj is not None:
+            cur_i = len(rows)
+            rows = rows + [(dict(ccfg), float(cobj))]
+    if not rows:
+        return None
+
+    if params is None:
+        order = []
+        for cfg, _ in rows:
+            for k in cfg:
+                if k not in order:
+                    order.append(k)
+        params = order
+    names = list(params) + ['objective']
+
+    lo, hi = {}, {}
+    for p in params:
+        vals = [cfg[p] for cfg, _ in rows if p in cfg]
+        lo[p], hi[p] = (min(vals), max(vals)) if vals else (0.0, 1.0)
+    objs = [o for _, o in rows]
+    olo, ohi = min(objs), max(objs)
+
+    def _n(v, a, b):
+        return 0.5 if b <= a else (v - a) / (b - a)
+
+    xs = np.arange(len(names))
+    fig, ax = plt.subplots(figsize=figsize or (max(6.5, 1.7 * len(names)), 5.2))
+    cmap = plt.cm.viridis
+    norm = Normalize(olo, ohi)
+    for i, (cfg, obj) in enumerate(rows):
+        ys = [_n(cfg[p], lo[p], hi[p]) for p in params] + [_n(obj, olo, ohi)]
+        if i == cur_i:
+            ax.plot(xs, ys, color='crimson', lw=2.6, marker='o', ms=4, zorder=5, label='this trial')
+        else:
+            ax.plot(xs, ys, color=cmap(norm(obj)), lw=1.4, alpha=0.85, zorder=2)
+    for xi, name in enumerate(names):
+        ax.axvline(xi, color='k', lw=0.8, alpha=0.45, zorder=1)
+        a, b = (lo[name], hi[name]) if name in lo else (olo, ohi)
+        ax.text(xi, 1.02, f'{b:.3g}', ha='center', va='bottom', fontsize=7)
+        ax.text(xi, -0.02, f'{a:.3g}', ha='center', va='top', fontsize=7)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(names, rotation=20, ha='right')
+    ax.set_ylim(-0.08, 1.08)
+    ax.set_yticks([])
+    ax.set_xlim(-0.5, len(names) - 0.5)
+    ax.set_title(title or 'Campaign — parallel coordinates (tunables → objective)', fontsize=11)
+    fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax,
+                 label='objective (lower = better)')
+    if cur_i is not None:
+        ax.legend(fontsize=8, loc='best')
+    plt.tight_layout()
+    if show:
+        plt.show()
+    return fig
+
+
 def objective(config, experiments=None, verbose=True, show_paths=True):
     """Packed trial objective: run the frozen vanilla benchmark on `config`.
 
