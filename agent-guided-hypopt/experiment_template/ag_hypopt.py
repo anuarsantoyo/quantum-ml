@@ -81,6 +81,13 @@ BENCHMARK_SUBSET = [
 SYNTH_SEED = 12345    # target generation seed (identical targets every trial)
 SEED = 42             # per-step noise seed base (deterministic runs)
 
+# ---- target data source -------------------------------------------------
+# True = real measured FWHM targets (15-series load & filter: raw * 1000 -> MHz,
+# keep valid rows with err/fwhm < 10). False = the synthetic benchmark
+# (targets generated at the true parameters with SYNTH_SEED).
+USE_REAL_DATA = False
+REAL_CSV = os.path.join(_REPO, 'data', 'processed', 'fwhm_linewidths.csv')
+
 # Fixed structural choices (frozen, NOT tunable this campaign):
 GAMMA_SCALE = True    # z-form γ-score (bandwidth-normalized, fixed reference)
 H_REF = 1.0           # fixed reference bandwidth for the γ-score
@@ -675,6 +682,28 @@ def _init_worker():
 def _parallel_map(pool, tasks):
     return list(pool.map(_run_one, tasks, chunksize=8))
 
+def _load_real_target(exp):
+    """Real measured FWHM target for `exp` (15-series convention).
+
+    Reads data/processed/fwhm_linewidths.csv, selects this experiment's
+    (power_nW, transmission), scales raw -> MHz (x1000), and keeps valid rows with
+    fit-error/FWHM < 10. Returns (target_f, target_s) float32 tensors (MHz).
+    Used when USE_REAL_DATA is True (see experiment_4).
+    """
+    import pandas as pd
+    power_nW = int(str(exp['power']).replace('nW', ''))
+    trans = int(str(exp['name']).split('Trans')[-1])
+    df = pd.read_csv(REAL_CSV)
+    sub = df[(df['power_nW'] == power_nW) & (df['transmission'] == trans)]
+    f = sub['fwhm'].to_numpy(dtype=float) * 1000.0
+    e = sub['fit_error'].to_numpy(dtype=float) * 1000.0
+    with np.errstate(invalid='ignore', divide='ignore'):
+        ok = np.isfinite(f) & np.isfinite(e) & (f > 0)
+        filt = ok & ((e / f) < 10.0)
+    return (torch.tensor(f[filt], dtype=torch.float32),
+            torch.tensor(e[filt], dtype=torch.float32))
+
+
 def _run_experiment(exp, cfg, pool):
     """One experiment: joint μ + γ optimization (frozen machinery, config-driven)."""
     mu_true, sigma_prop = exp['mu_true'], exp['sigma_prop']
@@ -685,16 +714,19 @@ def _run_experiment(exp, cfg, pool):
     sigma_ref = cfg['sigma_ref']; clip = cfg['clip']
     gamma_anneal = cfg['gamma_anneal']; h_s_min = cfg['h_s_min']
 
-    # ---- synthetic target at TRUE values (same seed as 16-series) ----
-    rng_t = np.random.default_rng(SYNTH_SEED)
-    tasks_t = []
-    for _ in range(exp['n_target']):
-        u, b, n = draw_fixed_noise(mu_true, sigma_prop, lam, rng_t)
-        tasks_t.append((gamma_true, u.numpy(), b.numpy()))
-    res_t = _parallel_map(pool, tasks_t)
-    target_f = torch.tensor([r[0] for r in res_t], dtype=torch.float32)
-    target_s = torch.tensor([r[1] for r in res_t], dtype=torch.float32)
-    scott = exp['n_target'] ** (-1.0 / 6.0)
+    # ---- target distribution: real measured FWHM or synthetic at TRUE values ----
+    if USE_REAL_DATA:
+        target_f, target_s = _load_real_target(exp)
+    else:
+        rng_t = np.random.default_rng(SYNTH_SEED)
+        tasks_t = []
+        for _ in range(exp['n_target']):
+            u, b, n = draw_fixed_noise(mu_true, sigma_prop, lam, rng_t)
+            tasks_t.append((gamma_true, u.numpy(), b.numpy()))
+        res_t = _parallel_map(pool, tasks_t)
+        target_f = torch.tensor([r[0] for r in res_t], dtype=torch.float32)
+        target_s = torch.tensor([r[1] for r in res_t], dtype=torch.float32)
+    scott = len(target_f) ** (-1.0 / 6.0)
     H_F = float(target_f.std()) * scott
     H_S = max(float(target_s.std()) * scott, h_s_min)
 

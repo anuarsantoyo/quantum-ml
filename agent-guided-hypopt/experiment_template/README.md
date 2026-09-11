@@ -20,6 +20,12 @@ copied from this folder's `template.ipynb` (with the number `01` stamped in) and
 of experiment names. Snapshot default: the 8-experiment subset — 1nW/3nW × {Trans05, Trans20,
 Trans60, Trans100}.>
 
+## Data source
+`USE_REAL_DATA` in `ag_hypopt.py`: `False` (default) = synthetic targets generated at the true
+parameters; `True` = real measured FWHM targets from `data/processed/fwhm_linewidths.csv`
+(15-series load & filter: raw ×1000 → MHz, keep `fit_error/fwhm < 10`). See `experiment_4` for a
+real-data instance.
+
 ## Search space
 <The tunables and their ranges, as declared in `space.json`. Snapshot default:
 `sigma_ref [5,25]`, `lr_mu [5,30]`, `lr_gamma [0.2,1.0]`, `gamma_anneal [0,0.75]`.>
