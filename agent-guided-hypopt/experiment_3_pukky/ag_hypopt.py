@@ -26,6 +26,7 @@ Interface (algorithm-swappable — future experiment_2 can ship GPBO/CMA-ES):
     run_trial(config) -> results          (deterministic per config, SEED=42)
     compute_objective(results) -> (objective, uncertainty, breakdown)
     format_report(breakdown) -> str
+    plot_paths(results) -> fig            (inline (mu,gamma) phase-space paths, no Fisher, 2x7)
 """
 import json
 import math
@@ -848,7 +849,74 @@ def format_report(breakdown):
                  f"bias {g['bias']:+.3f})")
     return "\n".join(lines)
 
-def objective(config, experiments=None, verbose=True):
+# ---------------------------------------------------------------------------
+# Visualisation: (mu, gamma) phase-space optimisation paths per experiment.
+# 2 columns (laser: 1nW | 3nW) x 7 rows (transmission T05..T100), start/end
+# markers, truth dashed. NO Fisher ellipse: the AG-HYPOPT objective carries no
+# Fisher information, so the campaign plots the paths only. Rendered inline
+# (plt.show) so each trial notebook stays self-contained.
+# ---------------------------------------------------------------------------
+LAST_RUN = None   # set by objective(); the most recent trial's full run dict
+
+
+def plot_paths(results, powers=('1nW', '3nW'),
+               trans=('05', '10', '20', '40', '60', '80', '100'),
+               figsize=(12, 27), title=None, show=True):
+    """(mu, gamma) phase-space paths per experiment: 2 cols (laser) x 7 rows (transmission).
+
+    results: per-experiment dicts from run_trial (needs 'exp', 'power',
+        'mu_true', 'gamma_true', 'mu_final', 'gamma_final', 'nll_final', 'history').
+        Experiments absent from the benchmark leave their panel blank.
+    No Fisher ellipse (the campaign objective is Fisher-free). Returns the figure;
+    renders inline with plt.show() when show=True.
+    """
+    import matplotlib.pyplot as plt
+
+    by_key = {(r.get('power'), r['exp'].split('Trans')[-1]): r for r in results}
+
+    fig, axes = plt.subplots(len(trans), len(powers), figsize=figsize, squeeze=False)
+    for ci, power in enumerate(powers):
+        for ri, t in enumerate(trans):
+            ax = axes[ri][ci]
+            r = by_key.get((power, t))
+            if r is None:
+                ax.axis('off')
+                continue
+            hs = r['history']
+            mus = [h['mu'] for h in hs]
+            gams = [h['gamma'] for h in hs]
+            ax.plot(mus, gams, 'b.-', lw=1.2, ms=3, zorder=3)
+            ax.plot(mus[::10], gams[::10], 'k.', ms=3, zorder=3)
+            ax.plot(mus[0], gams[0], 'go', ms=8, zorder=5)
+            ax.plot(mus[-1], gams[-1], 'r*', ms=14, mec='k', mew=0.5, zorder=5)
+            ax.axvline(r['mu_true'], color='g', ls='--', lw=1, alpha=0.6)
+            ax.axhline(r['gamma_true'], color='g', ls='--', lw=1, alpha=0.6)
+            ax.set_title(f"{r['exp']} | Δμ={r['mu_final']-r['mu_true']:+.1f} "
+                         f"Δγ={r['gamma_final']-r['gamma_true']:+.2f} "
+                         f"NLL={r['nll_final']:.1f}", fontsize=8)
+            ax.set_xlabel('μ'); ax.set_ylabel('γ (MHz)')
+            ax.grid(alpha=0.3)
+            xs = mus + [r['mu_true']]; ys = gams + [r['gamma_true']]
+            x0, x1 = min(xs), max(xs); sp = (x1 - x0) or 1.0
+            y0, y1 = min(ys), max(ys); spy = (y1 - y0) or 1.0
+            ax.set_xlim(x0 - 0.08 * sp, x1 + 0.08 * sp)
+            ax.set_ylim(y0 - 0.08 * spy, y1 + 0.08 * spy)
+            if ri == 0 and ci == 0:
+                ax.plot([], [], 'go', ms=8, label='start')
+                ax.plot([], [], 'r*', ms=12, mec='k', label='end')
+                ax.plot([], [], 'b-', label='path')
+                ax.legend(fontsize=7, loc='best')
+    if title is None:
+        title = ('AG-HYPOPT — (μ, γ) phase-space paths '
+                 '(columns: laser | rows: transmission)')
+    fig.suptitle(title, fontsize=13, y=0.996)
+    plt.tight_layout()
+    if show:
+        plt.show()
+    return fig
+
+
+def objective(config, experiments=None, verbose=True, show_paths=True):
     """Packed trial objective: run the frozen vanilla benchmark on `config`.
 
     config: dict of tunables — all keys optional, missing ones fall back to the
@@ -859,10 +927,16 @@ def objective(config, experiments=None, verbose=True):
         loss         combined relative MSE of (mu, gamma) over the benchmark
         uncertainty  standard error across the per-experiment errors
         report       printable per-experiment table (RMSE/rel-RMSE/bias summary)
+    show_paths=True renders the (μ,γ) phase-space path figure inline (2 cols x 7
+    rows, no Fisher) and stashes the full run dict in the module global LAST_RUN.
     Deterministic per (config, benchmark): SEED=42 + SYNTH_SEED fixed.
     """
     run = run_trial(config, experiments=experiments, verbose=verbose)
     loss, uncertainty, breakdown = compute_objective(run)
+    global LAST_RUN
+    LAST_RUN = run
+    if show_paths:
+        plot_paths(run['results'])
     return loss, uncertainty, format_report(breakdown)
 
 
