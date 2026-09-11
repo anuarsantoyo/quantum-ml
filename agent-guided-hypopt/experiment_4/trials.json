@@ -83,6 +83,20 @@
       "summary": "Trial 06 (highest-EI TPE pick; sigma_ref 11.11, lr_mu 15.99, lr_gamma 0.893, gamma_anneal 0.614): objective 0.2203 +/- 0.0440, worse than trial_05 despite a similar recipe; gamma collapsed at 3 nW Trans05",
       "key_insight": "A hyperparameter config very close to the best trial failed to reproduce its gamma recovery -- the low-transmission gamma estimate is unstable across small config changes, adding large scatter to the objective.",
       "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "gamma_anneal": 0.599367352096285,
+        "lr_gamma": 0.7766320231301568,
+        "lr_mu": 20.611569799548583,
+        "sigma_ref": 21.326762076381513
+      },
+      "objective": 0.19402322741423836,
+      "uncertainty": 0.035626948124049894,
+      "summary": "Trial 07 (sigma_ref 21.33, lr_mu 20.61, lr_gamma 0.777, gamma_anneal 0.599): objective 0.1940 +/- 0.0356, third best so far and best mu RMSE (50.6% rel); gamma good at high T, still poor at Trans05",
+      "key_insight": "This config gives the tightest half-truth mu attractor yet, but the Trans05 gamma collapse persists at anneal ~0.6 -- the loss is jointly set by an invariant mu gap and an unstable low-transmission gamma estimate.",
+      "notebook": "trial_07.ipynb"
     }
   ]
 }
