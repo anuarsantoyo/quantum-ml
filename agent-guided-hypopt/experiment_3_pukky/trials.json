@@ -125,6 +125,20 @@
       "summary": "Trial 09 (sigma_ref 6.17, lr_mu 27.06, lr_gamma 0.419, gamma_anneal 0.390), essentially the trial 05 point again, scored 0.0182 +/- 0.0078, the new best, with mu 14.4% and gamma 12.5% - both best-so-far, landing on the favourable side of the low-signal gamma noise.",
       "key_insight": "The plateau config (lr_mu ~27, sigma_ref ~6.2) gives mu 14.4-15.6%; trial 09 0.0182 vs trial 08 0.0294 at nearly the same point is driven by Trans05 gamma noise, so the true objective floor is about 0.018-0.020.",
       "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "gamma_anneal": 0.413237748669919,
+        "lr_gamma": 0.41830206400110437,
+        "lr_mu": 27.076746481099203,
+        "sigma_ref": 6.236911549052799
+      },
+      "objective": 0.03007306859114822,
+      "uncertainty": 0.014313586454420732,
+      "summary": "Trial 10 (sigma_ref 6.24, lr_mu 27.08, lr_gamma 0.418, gamma_anneal 0.413), essentially identical to trial 09, scored 0.0301 +/- 0.0143 versus trial 09 0.0182 - a 65% swing proving the plateau objective is dominated by Trans05 gamma noise.",
+      "key_insight": "Near-identical plateau configs differ by up to ~65% in objective (0.018-0.030) purely through the low-count Trans05 runs; the true floor is ~0.018 and no hyperparameter value has beaten it.",
+      "notebook": "trial_10.ipynb"
     }
   ]
 }
