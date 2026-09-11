@@ -27,6 +27,20 @@
       "summary": "Trial 02 (sigma_ref 6.84, lr_mu 25.36, lr_gamma 0.439, gamma_anneal 0.196): objective 0.2075 +/- 0.0377, slightly worse than trial_01; mu gap -45..-69%, gamma good only at high transmission",
       "key_insight": "The ~half-truth mu attractor is robust to a more aggressive lr_mu / low sigma_ref config (the mu gap even widens at high transmission); gamma low-transmission collapse is the other persistent loss contributor.",
       "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_anneal": 0.06423687535771827,
+        "lr_gamma": 0.3894484052768798,
+        "lr_mu": 25.031861630159923,
+        "sigma_ref": 16.643240721287356
+      },
+      "objective": 0.2471931670191306,
+      "uncertainty": 0.05092319289412327,
+      "summary": "Trial 03 (sigma_ref 16.64, lr_mu 25.03, lr_gamma 0.389, gamma_anneal 0.064): objective 0.2472 +/- 0.0509, worst so far; mu attractor near half-truth, gamma collapses to ~-82% at Trans05",
+      "key_insight": "Near-zero gamma anneal (0.064) coincides with a hard low-transmission gamma collapse (~15-20% of truth on both powers), the largest single loss contributor so far.",
+      "notebook": "trial_03.ipynb"
     }
   ]
 }
