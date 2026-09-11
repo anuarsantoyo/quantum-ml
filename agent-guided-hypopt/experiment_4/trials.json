@@ -125,6 +125,20 @@
       "summary": "Trial 09 (sigma_ref 25.0, lr_mu 6.55, lr_gamma 0.884, gamma_anneal 0.410): objective 0.1657 +/- 0.0293, new campaign best; mu at a uniform half-truth, gamma RMSE best yet (28.3% rel)",
       "key_insight": "A sigma_ref=25.0 / low-lr_mu config cut the gamma term sharply (3 nW Trans05 -15.8%) for the best objective so far, while the mu attractor remained pinned at exactly half-truth.",
       "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "gamma_anneal": 0.5780620323311736,
+        "lr_gamma": 0.8709235528684893,
+        "lr_mu": 9.306519935279034,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.37271406191488476,
+      "uncertainty": 0.1917585359951884,
+      "summary": "Trial 10 (sigma_ref 25.0, lr_mu 9.31, lr_gamma 0.871, gamma_anneal 0.578): objective 0.3727 +/- 0.1918, worst trial of the campaign, caused solely by a runaway 1 nW Trans05 gamma (+179%)",
+      "key_insight": "Two configs in nearly the same TPE region (trial_09 vs trial_10, differing mainly in lr_mu) gave the best and worst objectives -- the low-transmission gamma estimate is violently unstable, dominating the objective variance.",
+      "notebook": "trial_10.ipynb"
     }
   ]
 }
