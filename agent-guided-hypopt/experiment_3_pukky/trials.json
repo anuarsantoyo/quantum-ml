@@ -27,6 +27,20 @@
       "summary": "Trial 02 (sigma_ref 6.84, lr_mu 25.36, lr_gamma 0.44, gamma_anneal 0.20) scored 0.0246 +/- 0.0094, a ~4x gain over trial 01, driven by a much higher mu learning rate that cut the mu rel RMSE from 39.8% to 17.5%.",
       "key_insight": "The mu under-shoot was mainly mu under-convergence: raising lr_mu ~2.5x nearly fixed the high-transmission mu bias, leaving the low-signal Trans05 points (-31% mu, -32% gamma at 3nW) as the dominant residual error.",
       "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_anneal": 0.22362231799306856,
+        "lr_gamma": 0.7934053440554643,
+        "lr_mu": 23.054120203552937,
+        "sigma_ref": 9.374308491376091
+      },
+      "objective": 0.04773876624568367,
+      "uncertainty": 0.012175663496135702,
+      "summary": "Trial 03 (sigma_ref 9.37, lr_mu 23.05, lr_gamma 0.79, gamma_anneal 0.22) scored 0.0477 +/- 0.0122, worse than trial 02: raising lr_gamma left gamma flat (13.7%) while the accompanying mu-regime change pushed mu rel RMSE back up to 27.7%.",
+      "key_insight": "gamma (13.7%) is insensitive to lr_gamma, whereas mu tracks lr_mu / sigma_ref; trial 02 high-lr_mu, low-sigma_ref regime remains the best.",
+      "notebook": "trial_03.ipynb"
     }
   ]
 }
