@@ -1,3 +1,18 @@
 {
-  "trials": []
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_anneal": 0.10053127293537356,
+        "lr_gamma": 0.5224903891577034,
+        "lr_mu": 10.08638101690374,
+        "sigma_ref": 10.24626680883699
+      },
+      "objective": 0.09809407534625733,
+      "uncertainty": 0.019396379743988373,
+      "summary": "Trial 01 (sigma_ref 10.25, lr_mu 10.09, lr_gamma 0.52, gamma_anneal 0.10) scored 0.0981 +/- 0.0194, with mu systematically underestimated in every experiment (-34% to -47%).",
+      "key_insight": "The objective is mu-limited (rel RMSE 39.8% vs gamma 19.5%), and the mu bias is a uniform low shift rather than a few bad experiments.",
+      "notebook": "trial_01.ipynb"
+    }
+  ]
 }
