@@ -111,6 +111,20 @@
       "summary": "Trial 08 (sigma_ref 6.22, lr_mu 26.99, lr_gamma 0.408, gamma_anneal 0.373) scored 0.0294 +/- 0.0126: mu held at the 15.6% floor but gamma jumped to 18.5% on a 1nW Trans05 outlier (-40.5%), so plateau-config differences are within run-to-run noise.",
       "key_insight": "On the plateau mu is fixed at ~15.3-15.6% while gamma fluctuates 12.6-18.5% at the low-count Trans05 scans; the objective spread among near-optimal configs is dominated by that low-signal gamma noise, not by the tunables.",
       "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "gamma_anneal": 0.3899397501159928,
+        "lr_gamma": 0.4189600161936162,
+        "lr_mu": 27.05963708185149,
+        "sigma_ref": 6.173642367808347
+      },
+      "objective": 0.018230471243595107,
+      "uncertainty": 0.007776145478465846,
+      "summary": "Trial 09 (sigma_ref 6.17, lr_mu 27.06, lr_gamma 0.419, gamma_anneal 0.390), essentially the trial 05 point again, scored 0.0182 +/- 0.0078, the new best, with mu 14.4% and gamma 12.5% - both best-so-far, landing on the favourable side of the low-signal gamma noise.",
+      "key_insight": "The plateau config (lr_mu ~27, sigma_ref ~6.2) gives mu 14.4-15.6%; trial 09 0.0182 vs trial 08 0.0294 at nearly the same point is driven by Trans05 gamma noise, so the true objective floor is about 0.018-0.020.",
+      "notebook": "trial_09.ipynb"
     }
   ]
 }
