@@ -1,3 +1,18 @@
 {
-  "trials": []
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_anneal": 0.348582398649244,
+        "lr_gamma": 0.7924933167748989,
+        "lr_mu": 16.41594101450036,
+        "sigma_ref": 10.825323440413898
+      },
+      "objective": 0.0016347930573617653,
+      "uncertainty": 0.001035344187206895,
+      "summary": "trial_01 (first warm-up uniform draw: sigma_ref 10.8, lr_mu 16.4, lr_gamma 0.79, gamma_anneal 0.35; n_runs=n_iter=100) ran the 8-experiment benchmark in 21.8 min: objective 0.0016 +/- 0.0010, mu rel-RMSE 5.6 percent, gamma rel-RMSE 1.4 percent.",
+      "key_insight": "The warm-up draw already recovers gamma to 1.4 percent and mu to 5.6 percent relative RMSE, with the only visible residual being the two low-count Trans05 experiments where mu lands about 10 to 11 percent low.",
+      "notebook": "trial_01.ipynb"
+    }
+  ]
 }

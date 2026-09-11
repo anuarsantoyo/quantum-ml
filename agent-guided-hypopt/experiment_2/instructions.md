@@ -33,12 +33,51 @@ protocol) are not looked for in this campaign.
 - ⛔ **Execute in place** (`papermill x.ipynb x.ipynb`): results land in the notebook.
 - ⛔ **Follow the notebook exactly**: do not skip cells, do not improvise, do not go beyond
   what the cells say.
+- ⛔ **Run nothing but the notebook's `▶` cells.** Execute them in place (for example with
+  `papermill`). Never run any other program. Never create or run a script, helper, or
+  automation of any kind, in the experiment folder or anywhere else (including `/tmp`).
+- ⛔ **No background or detached processes, with one exception.** Never use `&`, `nohup`,
+  `setsid`, or any detach trick, and never start a long-running process to get around a
+  command or time limit, except the trial notebook's own `▶` run cell, which is executed
+  detached and polled as described in **Executing the trial cell** below.
+- ⛔ **Never work around your own limits.** If a step does not fit within the tools and the
+  time you have, that is a stop condition, not a problem to solve with a gadget
+  you invent.
+- ⛔ **Make only the decisions a cell asks for.** The only decisions in this campaign are the
+  cell-3 choice and the cell-6/7 text. Do not decide anything else: not how to run, not how to
+  wait, not how to choose beyond the cell's instruction, not what to record beyond it.
+- ⛔ **Touch only the allowed files.** The allowed files are exactly the current trial
+  notebook, the trial notebooks it generates, and `trials.json`. Any other file, anywhere, is a
+  stop condition.
 - Fail fast: if a run is obviously broken, stop it and record `objective: null` with the
   reason, as the notebook instructs.
 - Structural changes (score, likelihood, model, template, protocol) are not part of this
   campaign and you do not look for them. If an urgent idea comes up anyway, write it for Anuar
   as a short note in the notebook's `✍️` analysis, then keep going. Never stop, delay, or
   interrupt a trial because of an idea: this is a hyperparameter tuning algorithm.
+
+## Executing the trial cell (the one exception to the no-background rule)
+
+One trial runs `objective()` and takes roughly 20 to 30 minutes, longer than the agent's
+per-command time limit. The trial notebook's own `▶` run cell is the single sanctioned
+exception to the no-background rule. Use the repository's `.venv` (its `papermill` and
+`python3` kernel have torch; the plain system `papermill` starts a kernel without torch),
+launch that cell with `setsid` in a new session and with stdin closed, so it survives the command runner's process-group cleanup, then poll:
+
+```bash
+cd <experiment folder> && setsid <repo>/.venv/bin/papermill --no-progress-bar trial_XX.ipynb trial_XX.ipynb </dev/null >/dev/null 2>&1 &
+```
+
+then wait with short commands, for example:
+
+```bash
+pgrep -af 'papermill trial_XX'
+```
+
+repeating until no matching process remains. `papermill` writes the notebook in place when it
+exits, so once the process is gone you read the results and continue. This exception applies
+only to running this notebook's own `▶` cells through `papermill`, never to any other program,
+and never to more than one detached run at a time.
 
 Everything else lives where it belongs:
 physics -> `context.md` | idea of the experiment -> `README.md` | registry -> `trials.json`
