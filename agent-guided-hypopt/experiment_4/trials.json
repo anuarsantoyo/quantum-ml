@@ -153,6 +153,20 @@
       "summary": "Trial 11 (sigma_ref 20.76, lr_mu 5.80, lr_gamma 0.883, gamma_anneal 0.419): objective 0.1883 +/- 0.0381, third best; near-trial_09 recipe but Trans05 gamma still collapsed (-73%/-59%)",
       "key_insight": "The trial_09 neighbourhood has now produced best, mid-pack and worst outcomes, confirming the objective is dominated by an unstable low-transmission gamma rather than a reproducible hyperparameter optimum.",
       "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "gamma_anneal": 0.4776349148374577,
+        "lr_gamma": 0.9071263319779149,
+        "lr_mu": 16.528680909298796,
+        "sigma_ref": 23.42651851932735
+      },
+      "objective": 0.19408972466195784,
+      "uncertainty": 0.04275650257498119,
+      "summary": "Trial 12 (sigma_ref 23.43, lr_mu 16.53, lr_gamma 0.907, gamma_anneal 0.478): objective 0.1941 +/- 0.0428, mid-pack (tied with trial_07); Trans05 gamma collapsed (-80%/-59%)",
+      "key_insight": "Raising lr_mu to 16.5 left the objective at the trial_07 mid-pack level; the loss again comes from the unstable Trans05 gamma, not the (invariant) mu term.",
+      "notebook": "trial_12.ipynb"
     }
   ]
 }
