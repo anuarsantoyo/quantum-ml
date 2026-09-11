@@ -27,6 +27,20 @@
       "summary": "trial_02 (uniform warm-up draw: sigma_ref 8.79, lr_mu 16.74, lr_gamma 0.496, gamma_anneal 0.244; n_runs=100, n_iter=10 mechanism test, NOT the campaign budget) ran the 8-experiment benchmark in 6.5 min: objective 0.0537 +/- 0.0149, mu rel-RMSE 31.1 percent, gamma rel-RMSE 10.4 percent.",
       "key_insight": "With n_iter=10 the optimizer is far from converged (mu biased about -31 percent on every experiment); this run only demonstrates the mechanism.",
       "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_anneal": 0.48289884006049844,
+        "lr_gamma": 0.8582092906166641,
+        "lr_mu": 16.085354970683277,
+        "sigma_ref": 9.544774435695537
+      },
+      "objective": 0.06956505300416924,
+      "uncertainty": 0.014616477534375978,
+      "summary": "trial_03 (uniform warm-up draw: sigma_ref 9.54, lr_mu 16.09, lr_gamma 0.858, gamma_anneal 0.483; n_runs=100, n_iter=10) ran the 8-experiment benchmark in 6.4 min: objective 0.0696 +/- 0.0146, mu rel-RMSE 33.1 percent, gamma rel-RMSE 17.1 percent.",
+      "key_insight": "mu is biased low on every experiment at n_iter=10; registry best remains trial_01.",
+      "notebook": "trial_03.ipynb"
     }
   ]
 }
