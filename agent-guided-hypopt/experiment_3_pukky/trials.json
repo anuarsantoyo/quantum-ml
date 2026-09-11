@@ -195,6 +195,20 @@
       "summary": "Trial 14 (sigma_ref 6.095, lr_mu 27.05, lr_gamma 0.417, gamma_anneal 0.417) scored 0.0149 +/- 0.0061, the new best by a hair over trial 12 (0.0150) and again with gamma under 10% (9.5%) at the low-sigma_ref edge.",
       "key_insight": "Both best trials sit at the low-sigma_ref edge (6.09) with gamma under 10%, while other plateau runs give gamma 11.6-21.4% - sigma_ref ~6.1 looks like the optimum, though Trans05 noise still dominates.",
       "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "gamma_anneal": 0.4295579367598742,
+        "lr_gamma": 0.4194100717133653,
+        "lr_mu": 27.04182484771595,
+        "sigma_ref": 6.047241324806652
+      },
+      "objective": 0.019859844784417748,
+      "uncertainty": 0.00797588922875254,
+      "summary": "Trial 15 (sigma_ref 6.047, lr_mu 27.04, lr_gamma 0.419, gamma_anneal 0.430) scored 0.0199 +/- 0.0080: pushing sigma_ref below 6.09 gave no gain (mu at the 14.6% floor, gamma 13.6%), so trials 12/14 remain the best plateau points.",
+      "key_insight": "sigma_ref below 6.09 does not improve on trials 12/14 (6.09); the plateau gamma, and hence the objective, are set by the erratic low-count Trans05 scans rather than by sigma_ref in this range.",
+      "notebook": "trial_15.ipynb"
     }
   ]
 }
