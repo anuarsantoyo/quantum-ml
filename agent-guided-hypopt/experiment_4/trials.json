@@ -1,3 +1,18 @@
 {
-  "trials": []
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_anneal": 0.38386621852519254,
+        "lr_gamma": 0.9603709570607484,
+        "lr_mu": 8.603990317990844,
+        "sigma_ref": 23.972988942744877
+      },
+      "objective": 0.19067096119523924,
+      "uncertainty": 0.030995478059969116,
+      "summary": "Trial 01 (sigma_ref 23.97, lr_mu 8.60, lr_gamma 0.960, gamma_anneal 0.384): objective 0.1907 +/- 0.0310; mu recovers at a clean ~50% of truth on all 8 experiments, gamma only at high transmission",
+      "key_insight": "The real-data attractor floor (~half of mu_true) is uniform across all 8 experiments and dominates the objective, while gamma is recovered well only at high transmission.",
+      "notebook": "trial_01.ipynb"
+    }
+  ]
 }
