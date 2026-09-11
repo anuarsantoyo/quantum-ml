@@ -13,6 +13,20 @@
       "summary": "Trial 01 (sigma_ref 23.97, lr_mu 8.60, lr_gamma 0.960, gamma_anneal 0.384): objective 0.1907 +/- 0.0310; mu recovers at a clean ~50% of truth on all 8 experiments, gamma only at high transmission",
       "key_insight": "The real-data attractor floor (~half of mu_true) is uniform across all 8 experiments and dominates the objective, while gamma is recovered well only at high transmission.",
       "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "gamma_anneal": 0.1962091006869873,
+        "lr_gamma": 0.43879291473129867,
+        "lr_mu": 25.355643514857007,
+        "sigma_ref": 6.838318842701938
+      },
+      "objective": 0.20750013897360847,
+      "uncertainty": 0.03768144708916763,
+      "summary": "Trial 02 (sigma_ref 6.84, lr_mu 25.36, lr_gamma 0.439, gamma_anneal 0.196): objective 0.2075 +/- 0.0377, slightly worse than trial_01; mu gap -45..-69%, gamma good only at high transmission",
+      "key_insight": "The ~half-truth mu attractor is robust to a more aggressive lr_mu / low sigma_ref config (the mu gap even widens at high transmission); gamma low-transmission collapse is the other persistent loss contributor.",
+      "notebook": "trial_02.ipynb"
     }
   ]
 }
