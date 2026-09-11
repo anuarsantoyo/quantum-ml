@@ -167,6 +167,20 @@
       "summary": "Trial 12 (sigma_ref 23.43, lr_mu 16.53, lr_gamma 0.907, gamma_anneal 0.478): objective 0.1941 +/- 0.0428, mid-pack (tied with trial_07); Trans05 gamma collapsed (-80%/-59%)",
       "key_insight": "Raising lr_mu to 16.5 left the objective at the trial_07 mid-pack level; the loss again comes from the unstable Trans05 gamma, not the (invariant) mu term.",
       "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "gamma_anneal": 0.4011602314470213,
+        "lr_gamma": 0.8571273078630519,
+        "lr_mu": 18.986613390263727,
+        "sigma_ref": 24.829891944165983
+      },
+      "objective": 0.1941419627257022,
+      "uncertainty": 0.03180311473874877,
+      "summary": "Trial 13 (sigma_ref 24.83, lr_mu 18.99, lr_gamma 0.857, gamma_anneal 0.401): objective 0.1941 +/- 0.0318, a third near-replicate of the ~0.194 mid-pack plateau (trials 07, 12); Trans05/20 gamma still degraded",
+      "key_insight": "A broad band of high-sigma_ref / high-lr_gamma configs reproduces a stable ~0.194 plateau far above the 0.1657 best -- the trial_09 win looks like a lucky draw in an unstable low-transmission gamma regime, not a reproducible optimum.",
+      "notebook": "trial_13.ipynb"
     }
   ]
 }
