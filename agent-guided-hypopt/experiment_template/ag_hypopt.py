@@ -752,6 +752,7 @@ def _run_experiment(exp, cfg, pool):
 
     return dict(exp=exp['name'], power=exp['power'],
                 mu_true=mu_true, gamma_true=gamma_true,
+                mu_init=mu_init, gamma_init=gamma_init,
                 mu_final=history[-1]['mu'], gamma_final=history[-1]['gamma'],
                 nll_final=history[-1]['nll'], mean_loss_final=history[-1]['mean_loss'],
                 history=history, H_F=H_F, H_S=H_S, t_elapsed=time.time() - t_start)
@@ -927,8 +928,11 @@ def plot_paths(results, powers=None, trans=None, figsize=None, title=None, show=
             hs = r['history']
             mus = [h['mu'] for h in hs]
             gams = [h['gamma'] for h in hs]
+            i_mu, i_gam = r.get('mu_init'), r.get('gamma_init')
             ax.plot(mus, gams, 'b.-', lw=1.2, ms=3, zorder=3)
             ax.plot(mus[::10], gams[::10], 'k.', ms=3, zorder=3)
+            if i_mu is not None and i_gam is not None:
+                ax.plot(i_mu, i_gam, 'o', mfc='none', mec='k', mew=1.4, ms=9, zorder=4)
             ax.plot(mus[0], gams[0], 'go', ms=8, zorder=5)
             ax.plot(mus[-1], gams[-1], 'r*', ms=14, mec='k', mew=0.5, zorder=5)
             ax.axvline(r['mu_true'], color='g', ls='--', lw=1, alpha=0.6)
@@ -939,12 +943,16 @@ def plot_paths(results, powers=None, trans=None, figsize=None, title=None, show=
             ax.set_xlabel('μ'); ax.set_ylabel('γ (MHz)')
             ax.grid(alpha=0.3)
             xs = mus + [r['mu_true']]; ys = gams + [r['gamma_true']]
+            if i_mu is not None: xs = xs + [i_mu]
+            if i_gam is not None: ys = ys + [i_gam]
             x0, x1 = min(xs), max(xs); sp = (x1 - x0) or 1.0
             y0, y1 = min(ys), max(ys); spy = (y1 - y0) or 1.0
             ax.set_xlim(x0 - 0.08 * sp, x1 + 0.08 * sp)
             ax.set_ylim(y0 - 0.08 * spy, y1 + 0.08 * spy)
             if ri == 0 and ci == 0:
-                ax.plot([], [], 'go', ms=8, label='start')
+                ax.plot([], [], 'o', mfc='none', mec='k', mew=1.4, ms=9,
+                        label='init (0.5·true)')
+                ax.plot([], [], 'go', ms=8, label='start (step 0)')
                 ax.plot([], [], 'r*', ms=12, mec='k', label='end')
                 ax.plot([], [], 'b-', label='path')
                 ax.legend(fontsize=7, loc='best')
