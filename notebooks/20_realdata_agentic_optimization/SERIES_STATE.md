@@ -65,6 +65,7 @@ tracking progress. Official S is what the stop rule watches.
 | a | 20a | 17g exactly, real targets (baseline) | 4.37e13 | 33.8% | 52.3% | 19.9 | DONE |
 | b | 20b | mu score σ_ref = σ_prop (count-calibrated) | 1.26e16 | 36.8% | 47.7% | 6.9 | DONE |
 | c | 20c | implicit-diff reg 1e-4 -> 1e-3 (attack FM#10) | 1.38e11 | 35.0% | 47.3% | 4.9 | DONE |
+| d | 20d | clip implicit derivatives at DERIV_CLIP=20 | **4.94** | 34.8% | 47.4% | **4.94** | DONE |
 
 ### Log notes
 - **20a (2026-09-15, 18 min):** μ lands at **0.41–0.55 × μ_true in ALL 14** exps (mu rel-RMSE 52.3%)
@@ -103,6 +104,14 @@ tracking progress. Official S is what the stop rule watches.
 - **Lesson → 20d:** attack FM#10 *robustly* instead of tuning reg — clip the per-draw implicit
   derivatives at a physical bound (every sane draw has |dσ/dγ| ≲ 10, |dFWHM/dγ| ≲ 25; the n_sig=1
   draw has |dσ/dγ|→∞).
+- **20d (2026-09-15, 22 min):** ONE change = clip |dFWHM/dγ|,|dσ/dγ| at `DERIV_CLIP=20` in `_run_one`.
+  **Prediction HIT:** official **S collapses 1.38e11 → 4.94** and now equals S_rob (14/14 exps finite,
+  σ_γ = 0.5–1.2 for all); μ/γ point estimates moved < 3% (μ rel-RMSE 47.4%, γ 34.8%). **FM#10 CLOSED**
+  — the metric is now meaningful. FIG12 (max unclipped |dσ/dγ| per fitted point) shows no blow-ups in
+  100 draws; the blow-up is rare (a single n_sig=1 draw in 500) and the clip bounds it deterministically.
+  **Goal status after 20d:** high-T γ 6/6 within 2σ (rel err mean 6.4%, ~5% at T100); high-T μ ratio
+  still 0.47–0.49 (0/6) → μ-goal unmet; low-T γ coverage poor (3nW T05 |dγ|/σ=16). S improved again
+  (streak 0). **20e must now attack the goal (γ low-T / μ bias).**
 
 ---
 ### Agent instructions (per tick / per notebook)
