@@ -34,7 +34,7 @@ The approach is validated on synthetic data with known ground truth and applied 
 │   ├── losses.py        # MMD², L2, Wasserstein-1 distribution losses
 │   ├── implicit.py      # Implicit differentiation through the L-BFGS fit
 │   └── utils.py         # Data loading helpers
-├── notebooks/           # Numbered chapters (01 → 19), grouped in ordered folders — see below
+├── notebooks/           # Numbered chapters (01 → 20), grouped in ordered folders — see below
 ├── data/
 │   ├── raw_data/        # Experimental PLE measurements (1 nW & 3 nW) + data description
 │   └── processed/       # Preprocessed linewidth table + bootstrap results
@@ -49,7 +49,7 @@ The approach is validated on synthetic data with known ground truth and applied 
 
 ## Notebooks
 
-The notebooks are organized as numbered chapters, kept in **ordered folders that follow the numbering** so the directory listing reads in the same order as the sequence: `01-06_foundations/`, `07-11_methods/`, `12a-12d_joint-opt/`, `13-14_real-data-diag/`, `15-16_sweeps/`, `17_playground/`, `18_failure-analysis/`, `19_identifiability/`. Superseded copies (legacy `-executed`/`-output` twins) live under `archive/notebooks/`. When several notebooks share a number they are variants or experiments of the same idea, so each number gets a single description.
+The notebooks are organized as numbered chapters, kept in **ordered folders that follow the numbering** so the directory listing reads in the same order as the sequence: `01-06_foundations/`, `07-11_methods/`, `12a-12d_joint-opt/`, `13-14_real-data-diag/`, `15-16_sweeps/`, `17_playground/`, `18_failure-analysis/`, `19_identifiability/`, `20_realdata_agentic_optimization/`. Superseded copies (legacy `-executed`/`-output` twins) live under `archive/notebooks/`. When several notebooks share a number they are variants or experiments of the same idea, so each number gets a single description.
 
 ### 01 — MC algorithm
 `notebooks/01-06_foundations/01-mc-algorithm.ipynb`
@@ -145,6 +145,11 @@ Diagnosis of the high-transmission failure and sanity checks of the real-data pi
 `notebooks/19_identifiability/19a-voigt-target-sweep.ipynb`, `notebooks/19_identifiability/19b-real-mu-identifiability.ipynb`, `notebooks/19_identifiability/19c-sigma-channel-calibration.ipynb`, `notebooks/19_identifiability/19d-honest-wide-report.ipynb`
 
 Series 19 studies μ identifiability on the real Lorentzian-FWHM data: 19a sweeps a Voigt target, 19b probes μ identifiability on the real data, 19c calibrates the σ channel, and **19d is the final report**. Under the honest-wide (D1) configuration the true μ lies within 2σ in 14/14 real experiments (max |Δμ|/σ = 1.87, mean 0.88; 10/14 within 1σ), with a μ attractor at 0.43–0.52× the true value absorbed by the widened posterior.
+
+### 20 — Real-data agentic optimization (20a…, in progress)
+`notebooks/20_realdata_agentic_optimization/20a.ipynb` (+ `SERIES_STATE.md`)
+
+Autonomous series: start from the **17g** model (best synthetic performer) and apply it **unchanged** to the real data (**20a** baseline transfer test), then chain **one-change-per-notebook** experiments toward accurate (μ, γ) recovery on the real data, with accuracy graded by transmission (loose at low T, tight at high T). Frozen goal, protocol, metrics and stop rules live in the series' `SERIES_STATE.md`; budget 100 runs × 30 iters per experiment, cap 10 notebooks.
 
 ---
 
