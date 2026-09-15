@@ -62,7 +62,7 @@ tracking progress. Official S is what the stop rule watches.
 ## 7. Log
 | # | notebook | one change | S (primary) | gamma rel-RMSE | mu rel-RMSE | status |
 |---|----------|-----------|-------------|----------------|-------------|--------|
-| a | 20a | 17g exactly, real targets (baseline) | 4.37e13 (robust 5.6) | 33.8% | 52.3% | DONE |
+| a | 20a | 17g exactly, real targets (baseline) | 4.37e13 (robust 19.9) | 33.8% | 52.3% | DONE |
 
 ### Log notes
 - **20a (2026-09-15, 18 min):** μ lands at **0.41–0.55 × μ_true in ALL 14** exps (mu rel-RMSE 52.3%)
@@ -76,8 +76,28 @@ tracking progress. Official S is what the stop rule watches.
   |dγ|/σ = 6.1e14 term dominates S. 1nW T10 also small (σ_γ=0.021 → 179). These two are the
   whole of S; the other 12 sum to ≈4.8. Fixing μ init-lock should dissolve FM#10 (higher n ⇒
   stable fits).
-- Robust companion S_rob (non-degenerate exps only) = **5.6** → the baseline to beat on a
-  meaning-comparable scale.
+- Robust companion S_rob (non-degenerate exps: drop σ_γ<1e-6 or J_gg>1e20) = **19.9** → the
+  baseline to beat on a meaning-comparable scale. (Only 1nW T05 is dropped; 1nW T10, σ_γ=0.021,
+  stays and contributes 179, i.e. it is *small*, not degenerate.)
+
+| b | 20b | μ score σ_ref = σ_prop (count-calibrated) | 1.26e16 (robust 6.9) | 36.8% | 47.7% | DONE |
+
+- **20b (2026-09-15, 19 min):** ONE change = per-exp `σ_ref = σ_prop` in the μ step (D1 score).
+  **Prediction largely HIT:** μ *escaped init* at low T (1nW T05 0.53→0.76, T10 0.55→0.79,
+  3nW T05 0.53→0.64) while high-T μ stayed ≈0.47–0.49 — the μ-ratio-vs-T curve **inverts** as
+  predicted. So part of 20a's μ≈0.5 is genuine init-lock (FM#9), part is a real high-T model bias.
+  μ rel-RMSE 52.3%→47.7%.
+  **But official S got WORSE (4.4e13→1.3e16):** μ at 1nW T05 only reached 7.1 (n≈7) so FM#10
+  *persisted* (σ_γ = 3e-17!). Prediction "FM#10 disappears" was **falsified**. γ also regressed at
+  1nW low/mid T (T05 ratio 0.34, T20 0.34; basin jumps to 0.1 and 0.8 stayed pinned low) — the μ
+  change perturbed the γ trajectories through the shared sim cloud. Robust S_rob improved 19.9→6.9
+  (the 1nW T10 term dropped 179→5.9). **Status: 1st no-official-improvement.**
+- **Root cause of FM#10 found (offline autopsy, 2026-09-15):** the implicit derivative dσ_fwhm/dγ
+  in `compute_fwhm_and_dgamma` **blows up to 1.1e17** for 1–2 degenerate low-count draws (n≈6–7) at
+  the fitted point of 1nW T05, because the L-BFGS Hessian inversion uses `reg=1e-4` and is
+  ill-conditioned there. That single draw makes J_gg≈1e28 → σ_γ≈9e-15 → the whole of S. Fix tested:
+  `reg=1e-3` removes the blow-up entirely (|dσ/dγ|max 1.1e17→43, dFWHM/dγ barely moves 20.4→18.7).
+  → **20c change.**
 
 ---
 ### Agent instructions (per tick / per notebook)
