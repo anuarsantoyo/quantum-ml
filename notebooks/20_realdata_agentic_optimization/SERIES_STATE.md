@@ -67,6 +67,7 @@ tracking progress. Official S is what the stop rule watches.
 | c | 20c | implicit-diff reg 1e-4 -> 1e-3 (attack FM#10) | 1.38e11 | 35.0% | 47.3% | 4.9 | DONE |
 | d | 20d | clip implicit derivatives at DERIV_CLIP=20 | **4.94** | 34.8% | 47.4% | **4.94** | DONE |
 | e | 20e | per-scan FWHM heterogeneity (HET_FRAC=1) | 4.74 | 36.0% | 45.4% | 4.74 | DONE |
+| f | 20f | LR_GAMMA 0.5 -> 1.0 (converge high-T γ) | 4.93 | 34.6% | 44.7% | 4.93 | DONE |
 
 ### Log notes
 - **20a (2026-09-15, 18 min):** μ lands at **0.41–0.55 × μ_true in ALL 14** exps (mu rel-RMSE 52.3%)
@@ -113,6 +114,19 @@ tracking progress. Official S is what the stop rule watches.
   15.8, 1nW T05 7.7, 1nW T20 5.5). The *data* says γ_true = median(FWHM)/2 (1nW T100: 17.01/2 = 8.50;
   3nW T80: 28.88/2 = 14.44 ≈ 14.1). A robust **median anchor** should pull γ there where the fragile
   KDE γ-score pins it at ~0.4×.
+- **20f (2026-09-15, 21 min):** ONE change = `LR_GAMMA` 0.5→1.0 (anneal unchanged), on the evidence
+  that high-T γ paths were *still climbing at iter 30* (1nW T60 ended 6.70/8.5) while low-T γ sat at
+  a smooth biased optimum. **Prediction 1 HIT:** high-T γ improved a lot — **3nW T60/T80/T100 now
+  ratio 1.00** (γ 14.13/14.13/14.06 vs 14.1), high-T γ rel err 11.0→6.2%, overall γ rel-RMSE
+  36.0→34.6%. **Prediction 3 FAILED:** S rose 4.74→4.93 (low/mid-T γ |dγ|/σ grew: 3nW T05 10.0→17.1,
+  1nW T20 5.5→8.9). So 20f *improved the goal* (γ) but worsened the *primary metric* — S and the goal
+  diverge because S penalises the low-T γ mismatch hard. **Status: 1st no-improvement in S.**
+- **Note (S vs goal divergence):** from 20e on, S has plateaued at ≈4.7–4.9 (differences ~4%). Its
+  value is dominated by low/mid-T γ terms whose |dγ|/σ is large because σ_γ is small (
+  systematic model mismatch, not statistical). The high-T γ goal is now essentially met (3nW exact,
+  1nW ≈0.9); the μ-ratio goal is **not** met and — per the offline NLL(μ) autopsies (diag/mode_diag2:
+  min at μ/μ_true≈0.3 for every model variant tried, incl. heterogeneity + σ-floor) — is a genuine
+  model bias, not an optimiser artefact.
 - **Lesson → 20d:** attack FM#10 *robustly* instead of tuning reg — clip the per-draw implicit
   derivatives at a physical bound (every sane draw has |dσ/dγ| ≲ 10, |dFWHM/dγ| ≲ 25; the n_sig=1
   draw has |dσ/dγ|→∞).
