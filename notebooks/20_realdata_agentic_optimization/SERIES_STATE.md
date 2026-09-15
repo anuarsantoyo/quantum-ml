@@ -66,6 +66,7 @@ tracking progress. Official S is what the stop rule watches.
 | b | 20b | mu score σ_ref = σ_prop (count-calibrated) | 1.26e16 | 36.8% | 47.7% | 6.9 | DONE |
 | c | 20c | implicit-diff reg 1e-4 -> 1e-3 (attack FM#10) | 1.38e11 | 35.0% | 47.3% | 4.9 | DONE |
 | d | 20d | clip implicit derivatives at DERIV_CLIP=20 | **4.94** | 34.8% | 47.4% | **4.94** | DONE |
+| e | 20e | per-scan FWHM heterogeneity (HET_FRAC=1) | 4.74 | 36.0% | 45.4% | 4.74 | DONE |
 
 ### Log notes
 - **20a (2026-09-15, 18 min):** μ lands at **0.41–0.55 × μ_true in ALL 14** exps (mu rel-RMSE 52.3%)
@@ -101,6 +102,17 @@ tracking progress. Official S is what the stop rule watches.
   pathology is a degenerate 1-signal-photon fit, and raising reg is fragile whack-a-mole (the fitted
   point moves → a new blow-up appears). μ rel-RMSE 47.7→47.3%, γ 36.8→35.0% (γ at 1nW T10/T20 pinned
   low ~0.42). **Status: improvement in S (streak reset).**
+- **20e (2026-09-15, 21 min):** ONE change = per-scan FWHM excess scatter
+  `ft += N(0, (HET_FRAC·IQR(target_f)/1.349)²)`, HET_FRAC=1, applied in optimizer + Fisher + FIG8.
+  **Mixed:** S improved slightly 4.94→4.74 (μ rel-RMSE 47.4→45.4%), and μ ratios at low T rose
+  further (1nW T10 0.78→0.88, T20 0.52→0.60). **But prediction (γ rel-RMSE drops sharply) FAILED:**
+  γ rel-RMSE *rose* 34.8→36.0%; high-T γ rel err rose 6.4→11.0% (γ ratios dropped to 0.79–0.94).
+  The jitter-matched cloud did not turn the γ channel into a clean location match — the γ estimate
+  drifts with the KDE score history and brings the bias along. **Status: improvement in S (streak 0).**
+- **Diagnosis → 20f:** γ is the S-dominant failure (mean |dγ|/σ = 3.95, driven by 3nW T05 10.0, 3nW T10
+  15.8, 1nW T05 7.7, 1nW T20 5.5). The *data* says γ_true = median(FWHM)/2 (1nW T100: 17.01/2 = 8.50;
+  3nW T80: 28.88/2 = 14.44 ≈ 14.1). A robust **median anchor** should pull γ there where the fragile
+  KDE γ-score pins it at ~0.4×.
 - **Lesson → 20d:** attack FM#10 *robustly* instead of tuning reg — clip the per-draw implicit
   derivatives at a physical bound (every sane draw has |dσ/dγ| ≲ 10, |dFWHM/dγ| ≲ 25; the n_sig=1
   draw has |dσ/dγ|→∞).
