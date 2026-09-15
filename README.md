@@ -34,14 +34,14 @@ The approach is validated on synthetic data with known ground truth and applied 
 │   ├── losses.py        # MMD², L2, Wasserstein-1 distribution losses
 │   ├── implicit.py      # Implicit differentiation through the L-BFGS fit
 │   └── utils.py         # Data loading helpers
-├── notebooks/           # Numbered chapters (01 → 16), described below
+├── notebooks/           # Numbered chapters (01 → 19), grouped in ordered folders — see below
 ├── data/
 │   ├── raw_data/        # Experimental PLE measurements (1 nW & 3 nW) + data description
 │   └── processed/       # Preprocessed linewidth table + bootstrap results
 ├── docs/                # Reference papers
 ├── notes/               # Project journal (JOURNAL.md) and presentations
 ├── scripts/             # Data preprocessing
-├── archive/             # Deprecated notebooks
+├── archive/             # Deprecated / superseded notebooks (incl. legacy -executed twins)
 └── requirements.txt
 ```
 
@@ -49,93 +49,108 @@ The approach is validated on synthetic data with known ground truth and applied 
 
 ## Notebooks
 
-The notebooks are organized as numbered chapters. When several notebooks share a number they are variants or experiments of the same idea, so each number gets a single description.
+The notebooks are organized as numbered chapters, kept in **ordered folders that follow the numbering** so the directory listing reads in the same order as the sequence: `01-06_foundations/`, `07-11_methods/`, `12a-12d_joint-opt/`, `13-14_real-data-diag/`, `15-16_sweeps/`, `17_playground/`, `18_failure-analysis/`, `19_identifiability/`. Superseded copies (legacy `-executed`/`-output` twins) live under `archive/notebooks/`. When several notebooks share a number they are variants or experiments of the same idea, so each number gets a single description.
 
 ### 01 — MC algorithm
-`notebooks/01-mc-algorithm.ipynb`
+`notebooks/01-06_foundations/01-mc-algorithm.ipynb`
 
 Walks through the paper's Monte Carlo simulation step by step: the terminology (run, simulation, MC distribution) and the forward pipeline — noiseless PLE spectrum, photon noise, Lorentzian fit → one extracted linewidth per run. Sets up the goal of converting the MC simulation into a backpropagatable PyTorch pipeline.
 
 ### 02 — Making sampling differentiable
-`notebooks/02-sampling-toy.ipynb`
+`notebooks/01-06_foundations/02-sampling-toy.ipynb`
 
 The first obstacle: sampling the photon count n ~ N(μ, σ) and rounding it to an integer is non-differentiable (stochastic node + step function). Introduces the reparameterization trick on a simple example, building the tools to make the sampling step gradient-friendly.
 
 ### 03 — Implicit differentiation through a fit
-`notebooks/03-fitting-toy.ipynb`, `notebooks/03-fitting-toy-fwmh.ipynb`
+`notebooks/01-06_foundations/03-fitting-toy.ipynb`, `notebooks/01-06_foundations/03-fitting-toy-fwmh.ipynb`
 
 The per-run fit (L-BFGS) is an iterative optimization that blocks gradients. Differentiates *around* the fit with the implicit function theorem — no unrolling of the optimizer — and pushes the outer loss through the fitted pseudo-Voigt, for both the raw γ and the FWHM of the fitted distribution.
 
 ### 04 — EDA
-`notebooks/04-eda.ipynb`
+`notebooks/01-06_foundations/04-eda.ipynb`
 
 Exploratory analysis of the experimental linewidth data from Dr. Pieplow: failed-fit (NaN) rates vs. transmission/power, FWHM distributions, the power-broadening trend, and the fit-error quality metric.
 
 ### 05 — Loss functions
-`notebooks/05-loss-mmd.ipynb`, `notebooks/05-loss-w1.ipynb`
+`notebooks/01-06_foundations/05-loss-mmd.ipynb`, `notebooks/01-06_foundations/05-loss-w1.ipynb`
 
 Distribution-matching losses for comparing simulated and experimental FWHM sets: MMD² with a Gaussian kernel (bandwidth tuning, median heuristic) and the parameter-free 1D Wasserstein-1 distance on sorted samples.
 
 ### 06 — γ differentiable end-to-end
-`notebooks/06-gamma.ipynb`, `notebooks/06-gamma-simple.ipynb`
+`notebooks/01-06_foundations/06-gamma.ipynb`, `notebooks/01-06_foundations/06-gamma-simple.ipynb`
 
 First full differentiability of the MC pipeline for the linewidth γ: reparameterized Cauchy sampling (γ·tan(π(u−0.5))) plus implicit differentiation through the per-run fit, so `loss.backward()` populates `gamma.grad`. Validated: γ = 20 → recovers ~20.5.
 
 ### 07 — REINFORCE for μ
-`notebooks/07-reinforce-toy.ipynb`
+`notebooks/07-11_methods/07-reinforce-toy.ipynb`
 
 Optimizes the mean photon count μ through the discrete rounding step with the REINFORCE gradient estimator (policy gradient) and an exponential-moving-average baseline, on a Wasserstein-1 loss.
 
 ### 08 — Per-run REINFORCE
-`notebooks/08-reinforce-per-run.ipynb`
+`notebooks/07-11_methods/08-reinforce-per-run.ipynb`
 
 Refines REINFORCE to per-quantile losses: sorting pairs low-n runs (narrow FWHM) with low target quantiles, giving a structured, directional gradient per quantile. An empirical ρ(n, loss) test shows the signal is strong and correctly directed when μ is below the truth, and decays near it.
 
 ### 09 — (μ, σ) → FWHM map
-`notebooks/09-mu-sigma-fwhm-map.ipynb`
+`notebooks/07-11_methods/09-mu-sigma-fwhm-map.ipynb`
 
 Grid sweep over the photon-count proposal distribution (μ, σ) to build intuition for how it shapes the resulting FWHM distribution, and where the REINFORCE gradient has signal.
 
 ### 10 — Joint optimization
-`notebooks/10-joint-optimization.ipynb`
+`notebooks/07-11_methods/10-joint-optimization.ipynb`
 
 Combines the two gradient estimators into one joint optimizer: REINFORCE for μ through the discrete step, implicit differentiation for γ through the fit, and a CRLB-based dσ/dγ.
 
 ### 11 — FWHM pairplot over (μ, γ)
-`notebooks/11-fwhm-pairplot.ipynb`
+`notebooks/07-11_methods/11-fwhm-pairplot.ipynb`
 
 Pairplot-style grid showing how the FWHM distribution changes as a function of both μ and γ — a visual illustration of the μ/γ degeneracy (many pairs give the same FWHM distribution).
 
 ### 12 — Joint optimization with σ matching (12a–12d)
-`notebooks/12a-joint-opt-with-sigma-noise.ipynb`, `notebooks/12b-joint-opt-with-sigma-lr-decay.ipynb`, `notebooks/12c-joint-opt-with-sigma-mean-fwhm.ipynb`, `notebooks/12d-joint-opt-likelihood-fisher.ipynb`
+`notebooks/12a-12d_joint-opt/12a-joint-opt-with-sigma-noise.ipynb`, `notebooks/12a-12d_joint-opt/12b-joint-opt-with-sigma-lr-decay.ipynb`, `notebooks/12a-12d_joint-opt/12c-joint-opt-with-sigma-mean-fwhm.ipynb`, `notebooks/12a-12d_joint-opt/12d-joint-opt-likelihood-fisher.ipynb`
 
 Matching the FWHM distribution alone is degenerate: different (μ, γ) pairs produce the same FWHM. Matching FWHM *and* its fit uncertainty σ breaks the degeneracy. 12a adds σ matching; 12b adds learning-rate decay; 12c adds a mean-matching term and is the state of the art on synthetic data (μ 8 → 48.45, true 50; γ 5 → 19.62, true 20); 12d replaces the W₁/mean losses with a 2D KDE negative log-likelihood, turning the optimization into an MLE and making the Fisher information / Cramér-Rao bound applicable as the uncertainty statement.
 
 ### 13 — Real data: first attempt and diagnosis (13a–13f)
-`notebooks/13-real-data-optimization-executed.ipynb`, `notebooks/13-real-data-optimization-output.ipynb`, `notebooks/13a-diagnose.ipynb`, `notebooks/13b-fix-quantile-bug.ipynb`, `notebooks/13b-quantile-fix.ipynb`, `notebooks/13b-quantile-fix-executed.ipynb`, `notebooks/13c-faster-gamma.ipynb`, `notebooks/13c-more-iterations.ipynb`, `notebooks/13c-reduce-sigma-weight.ipynb`, `notebooks/13c-reduce-sigma-weight-executed.ipynb`, `notebooks/13d-higher-gamma-lr.ipynb`, `notebooks/13d-higher-gamma-lr-executed.ipynb`, `notebooks/13e-moderate-gamma-lr.ipynb`, `notebooks/13e-moderate-gamma-lr-executed.ipynb`, `notebooks/13f-higher-background-noise.ipynb`, `notebooks/13f-higher-background-noise-executed.ipynb`
+`notebooks/13-14_real-data-diag/13a-diagnose.ipynb`, `notebooks/13-14_real-data-diag/13b-fix-quantile-bug.ipynb`, `notebooks/13-14_real-data-diag/13b-quantile-fix.ipynb`, `notebooks/13-14_real-data-diag/13c-faster-gamma.ipynb`, `notebooks/13-14_real-data-diag/13c-more-iterations.ipynb`, `notebooks/13-14_real-data-diag/13c-reduce-sigma-weight.ipynb`, `notebooks/13-14_real-data-diag/13d-higher-gamma-lr.ipynb`, `notebooks/13-14_real-data-diag/13e-moderate-gamma-lr.ipynb`, `notebooks/13-14_real-data-diag/13f-higher-background-noise.ipynb` — superseded `-executed`/`-output` copies are archived under `archive/notebooks/`.
 
 First application of the joint optimization to real PLE data (3 nW, 40% transmission), then a sequence of experiments to diagnose and tune the optimization: fixing a quantile bug, faster γ, more iterations, reduced σ weight, higher/moderate γ learning rate, higher background noise. Best result: 13e, W₁ = 2.28. Key finding: the FWHM spread is stuck at ~40–50% of the target regardless of hyperparameters → a model gap (real lines are fitted with a Voigt, our simulator is Lorentzian-only).
 
 ### 14 — Uncertainties by bootstrap
-`notebooks/14-uncertainties-dummy.ipynb`
+`notebooks/13-14_real-data-diag/14-uncertainties-dummy.ipynb`
 
 First uncertainty experiment: bootstrap copies of the target data (resample with replacement), re-run the full 12c optimization on each copy, and use the spread of the recovered (μ, γ) as the statistical uncertainty.
 
 ### 15 — Real-data sweep (15a–15n)
-`notebooks/15a-real-data-1nW-trans05.ipynb` … `notebooks/15n-real-data-3nW-trans100.ipynb` (14 files: 2 powers × 7 transmissions)
+`notebooks/15-16_sweeps/15a-real-data-1nW-trans05.ipynb` … `notebooks/15-16_sweeps/15n-real-data-3nW-trans100.ipynb` (14 files: 2 powers × 7 transmissions)
 
 Applies the 12d model (2D KDE likelihood + Fisher information) to all 14 real experiments, reporting Cramér-Rao uncertainties per experiment. σ_γ decreases strongly with transmission (at 1 nW from ~72 to ~0.9 MHz), σ_μ stays weakly identified, and recovered μ runs biased low at high transmission.
 
 ### 16 — Closed-loop synthetic diagnostic (16a–16n)
-`notebooks/16a-synthetic-1nw-trans05.ipynb` … `notebooks/16n-synthetic-3nw-trans100.ipynb` (14 files: 2 powers × 7 transmissions)
+`notebooks/15-16_sweeps/16a-synthetic-1nw-trans05.ipynb` … `notebooks/15-16_sweeps/16n-synthetic-3nw-trans100.ipynb` (14 files: 2 powers × 7 transmissions)
 
 The same pipeline as the 15-series, but the target FWHM distribution is generated by our own simulator at the true values. The model recovers the truth at low/mid transmission (most within ~1σ) but systematically fails at high transmission (γ and μ biased low, pathological Fisher signatures) — showing the high-transmission failure is at least partly a model/optimization property, not only a data mismatch.
+
+### 17 — Optimizer playground: λ₀ anchor / scale-free variants (17a–17h)
+`notebooks/17_playground/17-improvements-playground.ipynb`, `notebooks/17_playground/17b-lambda0.ipynb`, `notebooks/17_playground/17c-lambda0-gamma-half.ipynb`, `notebooks/17_playground/17d-lambda01.ipynb`, `notebooks/17_playground/17e-lambda0-fixmu.ipynb`, `notebooks/17_playground/17f-lambda0-scalefree.ipynb`, `notebooks/17_playground/17g-lambda0-gammascale.ipynb`, `notebooks/17_playground/17h-lambda0-gammascale-fisher.ipynb`
+
+Exploratory series on the optimizer's anchor/regularization term (λ₀) and scale-free reformulations, ending with 17h, which adds the Fisher-information view later reused in series 19.
+
+### 18 — Failure analysis & real-data sanity (18, 18b, 18c)
+`notebooks/18_failure-analysis/18-failure-analysis.ipynb`, `notebooks/18_failure-analysis/18b-real-data-sanity.ipynb`, `notebooks/18_failure-analysis/18c-real-data-gammascale.ipynb`
+
+Diagnosis of the high-transmission failure and sanity checks of the real-data pipeline; 18c applies the γ-scale approach to the real data (γ RMSE ≈ 3.54 MHz, the baseline the 19-series improves on).
+
+### 19 — μ identifiability on real data (19a–19d)
+`notebooks/19_identifiability/19a-voigt-target-sweep.ipynb`, `notebooks/19_identifiability/19b-real-mu-identifiability.ipynb`, `notebooks/19_identifiability/19c-sigma-channel-calibration.ipynb`, `notebooks/19_identifiability/19d-honest-wide-report.ipynb`
+
+Series 19 studies μ identifiability on the real Lorentzian-FWHM data: 19a sweeps a Voigt target, 19b probes μ identifiability on the real data, 19c calibrates the σ channel, and **19d is the final report**. Under the honest-wide (D1) configuration the true μ lies within 2σ in 14/14 real experiments (max |Δμ|/σ = 1.87, mean 0.88; 10/14 within 1σ), with a μ attractor at 0.43–0.52× the true value absorbed by the widened posterior.
 
 ---
 
 ## Current state and next steps
 
-The differentiable MC pipeline is complete and validated on synthetic data: 12c recovers (μ, γ) = (48.45, 19.62) against a truth of (50, 20), and 12d reformulates the optimization as an MLE whose Fisher information yields Cramér-Rao uncertainties. Applied to all 14 real experiments (15-series), the method recovers parameters with uncertainties that shrink with transmission, though μ remains weakly identified and biased low at high transmission. The closed-loop 16-series confirms the model is healthy at low/mid transmission but fails at high transmission even on its own data. The next steps are to fix the high-transmission failure (12c-style mean-matching anchor, more iterations/restarts, stronger γ gradient), close the Voigt-vs-Lorentzian model gap to match the real FWHM spread, and then fine-tune the optimization on the real data.
+The differentiable MC pipeline is complete and validated on synthetic data: 12c recovers (μ, γ) = (48.45, 19.62) against a truth of (50, 20), and 12d reformulates the optimization as an MLE whose Fisher information yields Cramér-Rao uncertainties. Applied to all 14 real experiments (15-series), the method recovers parameters with uncertainties that shrink with transmission, though μ remains weakly identified and biased low at high transmission. The closed-loop 16-series confirms the model is healthy at low/mid transmission but fails at high transmission even on its own data. Series 17 followed as an optimizer playground (λ₀ anchor / scale-free variants), 18 as the failure analysis and real-data γ-scale checks, and 19 as the μ-identifiability study on real data, culminating in the final honest-wide report (19d): the true μ lies within 2σ in 14/14 real experiments. The next steps are to fix the high-transmission failure (12c-style mean-matching anchor, more iterations/restarts, stronger γ gradient), close the Voigt-vs-Lorentzian model gap to match the real FWHM spread, and then fine-tune the optimization on the real data.
 
 ---
 
