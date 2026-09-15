@@ -1,0 +1,284 @@
+{
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_anneal": 0.38386621852519254,
+        "lr_gamma": 0.9603709570607484,
+        "lr_mu": 8.603990317990844,
+        "sigma_ref": 23.972988942744877
+      },
+      "objective": 0.19067096119523924,
+      "uncertainty": 0.030995478059969116,
+      "summary": "Trial 01 (sigma_ref 23.97, lr_mu 8.60, lr_gamma 0.960, gamma_anneal 0.384): objective 0.1907 +/- 0.0310; mu recovers at a clean ~50% of truth on all 8 experiments, gamma only at high transmission",
+      "key_insight": "The real-data attractor floor (~half of mu_true) is uniform across all 8 experiments and dominates the objective, while gamma is recovered well only at high transmission.",
+      "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "gamma_anneal": 0.1962091006869873,
+        "lr_gamma": 0.43879291473129867,
+        "lr_mu": 25.355643514857007,
+        "sigma_ref": 6.838318842701938
+      },
+      "objective": 0.20750013897360847,
+      "uncertainty": 0.03768144708916763,
+      "summary": "Trial 02 (sigma_ref 6.84, lr_mu 25.36, lr_gamma 0.439, gamma_anneal 0.196): objective 0.2075 +/- 0.0377, slightly worse than trial_01; mu gap -45..-69%, gamma good only at high transmission",
+      "key_insight": "The ~half-truth mu attractor is robust to a more aggressive lr_mu / low sigma_ref config (the mu gap even widens at high transmission); gamma low-transmission collapse is the other persistent loss contributor.",
+      "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_anneal": 0.06423687535771827,
+        "lr_gamma": 0.3894484052768798,
+        "lr_mu": 25.031861630159923,
+        "sigma_ref": 16.643240721287356
+      },
+      "objective": 0.2471931670191306,
+      "uncertainty": 0.05092319289412327,
+      "summary": "Trial 03 (sigma_ref 16.64, lr_mu 25.03, lr_gamma 0.389, gamma_anneal 0.064): objective 0.2472 +/- 0.0509, worst so far; mu attractor near half-truth, gamma collapses to ~-82% at Trans05",
+      "key_insight": "Near-zero gamma anneal (0.064) coincides with a hard low-transmission gamma collapse (~15-20% of truth on both powers), the largest single loss contributor so far.",
+      "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "gamma_anneal": 0.7072920791792757,
+        "lr_gamma": 0.6090620422514893,
+        "lr_mu": 29.406092642692602,
+        "sigma_ref": 6.616720477912043
+      },
+      "objective": 0.19872985507064578,
+      "uncertainty": 0.03991669722460906,
+      "summary": "Trial 04 (sigma_ref 6.62, lr_mu 29.41, lr_gamma 0.609, gamma_anneal 0.707): objective 0.1987 +/- 0.0399 (between trial_01 and trial_02); mu still ~half-truth, gamma RMSE best so far (29.5% rel)",
+      "key_insight": "A strong gamma_anneal (0.707) yields the campaign-best gamma recovery (rescues 1 nW Trans20), leaving the mu attractor as the dominant loss term.",
+      "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "gamma_anneal": 0.6037521928090351,
+        "lr_gamma": 0.846352631789195,
+        "lr_mu": 17.88313902605355,
+        "sigma_ref": 10.716027601762832
+      },
+      "objective": 0.1862971899987507,
+      "uncertainty": 0.03357071170067034,
+      "summary": "Trial 05 (sigma_ref 10.72, lr_mu 17.88, lr_gamma 0.846, gamma_anneal 0.604): objective 0.1863 +/- 0.0336, new campaign best (edges trial_01); mu still ~half-truth, gamma strong at high T",
+      "key_insight": "A mid-range config with strong anneal (~0.6) gives the best objective so far but only trims the loss slightly -- the uniform ~half-truth mu attractor remains the floor.",
+      "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "gamma_anneal": 0.6143058491780905,
+        "lr_gamma": 0.8929488628119009,
+        "lr_mu": 15.99144393780724,
+        "sigma_ref": 11.110573798754524
+      },
+      "objective": 0.22028693623499013,
+      "uncertainty": 0.04402877636063299,
+      "summary": "Trial 06 (highest-EI TPE pick; sigma_ref 11.11, lr_mu 15.99, lr_gamma 0.893, gamma_anneal 0.614): objective 0.2203 +/- 0.0440, worse than trial_05 despite a similar recipe; gamma collapsed at 3 nW Trans05",
+      "key_insight": "A hyperparameter config very close to the best trial failed to reproduce its gamma recovery -- the low-transmission gamma estimate is unstable across small config changes, adding large scatter to the objective.",
+      "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "gamma_anneal": 0.599367352096285,
+        "lr_gamma": 0.7766320231301568,
+        "lr_mu": 20.611569799548583,
+        "sigma_ref": 21.326762076381513
+      },
+      "objective": 0.19402322741423836,
+      "uncertainty": 0.035626948124049894,
+      "summary": "Trial 07 (sigma_ref 21.33, lr_mu 20.61, lr_gamma 0.777, gamma_anneal 0.599): objective 0.1940 +/- 0.0356, third best so far and best mu RMSE (50.6% rel); gamma good at high T, still poor at Trans05",
+      "key_insight": "This config gives the tightest half-truth mu attractor yet, but the Trans05 gamma collapse persists at anneal ~0.6 -- the loss is jointly set by an invariant mu gap and an unstable low-transmission gamma estimate.",
+      "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "gamma_anneal": 0.7404576325034442,
+        "lr_gamma": 0.8308391486560232,
+        "lr_mu": 7.745243306077349,
+        "sigma_ref": 16.75620838220414
+      },
+      "objective": 0.1947903262833932,
+      "uncertainty": 0.02864720589357919,
+      "summary": "Trial 08 (sigma_ref 16.76, lr_mu 7.75, lr_gamma 0.831, gamma_anneal 0.740): objective 0.1948 +/- 0.0286, fourth best (best mu RMSE, tightest CI); gamma near-truth/overshoots at high T but still unstable at low T",
+      "key_insight": "Pushing anneal to 0.740 did not fix the low-transmission gamma instability, and the mu attractor stays at a very uniform half-truth -- both loss components now look resistant to further hyperparameter tuning.",
+      "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "gamma_anneal": 0.4100279848627326,
+        "lr_gamma": 0.8844952605812364,
+        "lr_mu": 6.546371917884403,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.1657252006863315,
+      "uncertainty": 0.029260112102100277,
+      "summary": "Trial 09 (sigma_ref 25.0, lr_mu 6.55, lr_gamma 0.884, gamma_anneal 0.410): objective 0.1657 +/- 0.0293, new campaign best; mu at a uniform half-truth, gamma RMSE best yet (28.3% rel)",
+      "key_insight": "A sigma_ref=25.0 / low-lr_mu config cut the gamma term sharply (3 nW Trans05 -15.8%) for the best objective so far, while the mu attractor remained pinned at exactly half-truth.",
+      "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "gamma_anneal": 0.5780620323311736,
+        "lr_gamma": 0.8709235528684893,
+        "lr_mu": 9.306519935279034,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.37271406191488476,
+      "uncertainty": 0.1917585359951884,
+      "summary": "Trial 10 (sigma_ref 25.0, lr_mu 9.31, lr_gamma 0.871, gamma_anneal 0.578): objective 0.3727 +/- 0.1918, worst trial of the campaign, caused solely by a runaway 1 nW Trans05 gamma (+179%)",
+      "key_insight": "Two configs in nearly the same TPE region (trial_09 vs trial_10, differing mainly in lr_mu) gave the best and worst objectives -- the low-transmission gamma estimate is violently unstable, dominating the objective variance.",
+      "notebook": "trial_10.ipynb"
+    },
+    {
+      "trial_id": "trial_11",
+      "config": {
+        "gamma_anneal": 0.4187801667023736,
+        "lr_gamma": 0.8827203800126975,
+        "lr_mu": 5.799287816635503,
+        "sigma_ref": 20.760791890079837
+      },
+      "objective": 0.1883029576127933,
+      "uncertainty": 0.03810856974139172,
+      "summary": "Trial 11 (sigma_ref 20.76, lr_mu 5.80, lr_gamma 0.883, gamma_anneal 0.419): objective 0.1883 +/- 0.0381, third best; near-trial_09 recipe but Trans05 gamma still collapsed (-73%/-59%)",
+      "key_insight": "The trial_09 neighbourhood has now produced best, mid-pack and worst outcomes, confirming the objective is dominated by an unstable low-transmission gamma rather than a reproducible hyperparameter optimum.",
+      "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "gamma_anneal": 0.4776349148374577,
+        "lr_gamma": 0.9071263319779149,
+        "lr_mu": 16.528680909298796,
+        "sigma_ref": 23.42651851932735
+      },
+      "objective": 0.19408972466195784,
+      "uncertainty": 0.04275650257498119,
+      "summary": "Trial 12 (sigma_ref 23.43, lr_mu 16.53, lr_gamma 0.907, gamma_anneal 0.478): objective 0.1941 +/- 0.0428, mid-pack (tied with trial_07); Trans05 gamma collapsed (-80%/-59%)",
+      "key_insight": "Raising lr_mu to 16.5 left the objective at the trial_07 mid-pack level; the loss again comes from the unstable Trans05 gamma, not the (invariant) mu term.",
+      "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "gamma_anneal": 0.4011602314470213,
+        "lr_gamma": 0.8571273078630519,
+        "lr_mu": 18.986613390263727,
+        "sigma_ref": 24.829891944165983
+      },
+      "objective": 0.1941419627257022,
+      "uncertainty": 0.03180311473874877,
+      "summary": "Trial 13 (sigma_ref 24.83, lr_mu 18.99, lr_gamma 0.857, gamma_anneal 0.401): objective 0.1941 +/- 0.0318, a third near-replicate of the ~0.194 mid-pack plateau (trials 07, 12); Trans05/20 gamma still degraded",
+      "key_insight": "A broad band of high-sigma_ref / high-lr_gamma configs reproduces a stable ~0.194 plateau far above the 0.1657 best -- the trial_09 win looks like a lucky draw in an unstable low-transmission gamma regime, not a reproducible optimum.",
+      "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "gamma_anneal": 0.6153545414493528,
+        "lr_gamma": 0.8970587074805996,
+        "lr_mu": 5.736670970523138,
+        "sigma_ref": 23.871826530533255
+      },
+      "objective": 0.16790809899767045,
+      "uncertainty": 0.027914307057344538,
+      "summary": "Trial 14 (sigma_ref 23.87, lr_mu 5.74, lr_gamma 0.897, gamma_anneal 0.615): objective 0.1679 +/- 0.0279, second best, essentially matching trial_09; gamma RMSE 29.1% with 3 nW Trans05 rescued to -31%",
+      "key_insight": "The interior high-sigma_ref / low-lr_mu / high-lr_gamma region now has two consistently good draws (trial_09 0.1657, trial_14 0.1679) -- the campaign sweet spot -- while boundary extrapolations of the same knobs blow up.",
+      "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "gamma_anneal": 0.45648111356308096,
+        "lr_gamma": 0.911928901523244,
+        "lr_mu": 5.0,
+        "sigma_ref": 21.996027046958904
+      },
+      "objective": 0.2046197693332147,
+      "uncertainty": 0.05065917363835229,
+      "summary": "Trial 15 (sigma_ref 22.0, lr_mu 5.0, lr_gamma 0.912, gamma_anneal 0.456): objective 0.2046 +/- 0.0507; inside the sweet-spot region but 1 nW Trans05 gamma collapsed to -90%",
+      "key_insight": "Even within the sweet-spot band the low-transmission gamma can collapse outright (1 nW Trans05 to 0.85 MHz), so the region is good on average but not robust -- the low-T instability, not any knob mean, sets each trial score.",
+      "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "gamma_anneal": 0.5505848709786184,
+        "lr_gamma": 0.9795992965392009,
+        "lr_mu": 7.634924819981757,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.2057964885598391,
+      "uncertainty": 0.03751046859591869,
+      "summary": "Trial 16 (sigma_ref 25.0, lr_mu 7.63, lr_gamma 0.980, gamma_anneal 0.551): objective 0.2058 +/- 0.0375, mid-pack; sweet-spot-band config but Trans05 gamma still collapsed (-75%/-59%)",
+      "key_insight": "Trials 15 and 16 are two consecutive middling sweet-spot-band results after the two good ones (09/14): the band is favourable on average, but each trial score is dominated by whether the low-transmission gamma converges that run.",
+      "notebook": "trial_16.ipynb"
+    },
+    {
+      "trial_id": "trial_17",
+      "config": {
+        "gamma_anneal": 0.387069329855276,
+        "lr_gamma": 0.8515851952605118,
+        "lr_mu": 6.792855630315614,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.18163832206668937,
+      "uncertainty": 0.03487240651373168,
+      "summary": "Trial 17 (sigma_ref 25.0, lr_mu 6.79, lr_gamma 0.852, gamma_anneal 0.387): objective 0.1816 +/- 0.0349, fourth best; near-exact replica of trial_09 but Trans05 gamma still collapsed (-66%/-59%)",
+      "key_insight": "A near-identical copy of the best recipe gave a top-quartile but clearly non-best result -- trial_09 0.1657 was substantially a favourable low-transmission gamma draw, not a uniquely optimal configuration.",
+      "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "gamma_anneal": 0.5975325817857566,
+        "lr_gamma": 0.8978568237433998,
+        "lr_mu": 9.021264784890075,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.19985477181150518,
+      "uncertainty": 0.03440351538648297,
+      "summary": "Trial 18 (sigma_ref 25.0, lr_mu 9.02, lr_gamma 0.898, gamma_anneal 0.598): objective 0.1999 +/- 0.0344, mid-pack; high-T gamma good but Trans05/20 gamma still degraded",
+      "key_insight": "Mid/high-transmission gamma is reliably recovered with high sigma_ref and high lr_gamma, but the low-transmission gamma -- which dominates the objective -- remains the persistent, unstable failure across every config.",
+      "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "gamma_anneal": 0.4516136810988214,
+        "lr_gamma": 0.8572103903310909,
+        "lr_mu": 5.0,
+        "sigma_ref": 25.0
+      },
+      "objective": 0.1776615618446329,
+      "uncertainty": 0.03074934557013481,
+      "summary": "Trial 19 (sigma_ref 25.0, lr_mu 5.0, lr_gamma 0.857, gamma_anneal 0.452): objective 0.1777 +/- 0.0307, third best; sweet-spot recipe with 3 nW Trans100 gamma essentially exact (+0.1%)",
+      "key_insight": "The sweet-spot band now holds four of the five best trials (09, 14, 17, 19), confirming sigma_ref~25 / low lr_mu / high lr_gamma / moderate anneal as the best region, while the residual low-transmission gamma error keeps the objective off zero.",
+      "notebook": "trial_19.ipynb"
+    },
+    {
+      "trial_id": "trial_20",
+      "config": {
+        "gamma_anneal": 0.46944572688281216,
+        "lr_gamma": 0.8593947709942624,
+        "lr_mu": 5.0,
+        "sigma_ref": 21.149502567089378
+      },
+      "objective": 0.16368692215876363,
+      "uncertainty": 0.029837653920946026,
+      "summary": "Trial 20 (sigma_ref 21.15, lr_mu 5.0, lr_gamma 0.859, gamma_anneal 0.469): objective 0.1637 +/- 0.0298, NEW campaign best and best gamma RMSE (27.5%), with 1 nW Trans05/20 rescued to -30%/-27%",
+      "key_insight": "The final sweet-spot draw gave the campaign optimum: low lr_mu with high sigma_ref and high lr_gamma improves the objective-dominating low-transmission gamma, while mu stays pinned at an invariant ~half-truth attractor.",
+      "notebook": "trial_20.ipynb"
+    }
+  ]
+}

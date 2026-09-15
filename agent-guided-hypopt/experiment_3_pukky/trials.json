@@ -1,0 +1,284 @@
+{
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_anneal": 0.10053127293537356,
+        "lr_gamma": 0.5224903891577034,
+        "lr_mu": 10.08638101690374,
+        "sigma_ref": 10.24626680883699
+      },
+      "objective": 0.09809407534625733,
+      "uncertainty": 0.019396379743988373,
+      "summary": "Trial 01 (sigma_ref 10.25, lr_mu 10.09, lr_gamma 0.52, gamma_anneal 0.10) scored 0.0981 +/- 0.0194, with mu systematically underestimated in every experiment (-34% to -47%).",
+      "key_insight": "The objective is mu-limited (rel RMSE 39.8% vs gamma 19.5%), and the mu bias is a uniform low shift rather than a few bad experiments.",
+      "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "gamma_anneal": 0.1962091006869873,
+        "lr_gamma": 0.43879291473129867,
+        "lr_mu": 25.355643514857007,
+        "sigma_ref": 6.838318842701938
+      },
+      "objective": 0.024631674811036782,
+      "uncertainty": 0.009445683569121255,
+      "summary": "Trial 02 (sigma_ref 6.84, lr_mu 25.36, lr_gamma 0.44, gamma_anneal 0.20) scored 0.0246 +/- 0.0094, a ~4x gain over trial 01, driven by a much higher mu learning rate that cut the mu rel RMSE from 39.8% to 17.5%.",
+      "key_insight": "The mu under-shoot was mainly mu under-convergence: raising lr_mu ~2.5x nearly fixed the high-transmission mu bias, leaving the low-signal Trans05 points (-31% mu, -32% gamma at 3nW) as the dominant residual error.",
+      "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_anneal": 0.22362231799306856,
+        "lr_gamma": 0.7934053440554643,
+        "lr_mu": 23.054120203552937,
+        "sigma_ref": 9.374308491376091
+      },
+      "objective": 0.04773876624568367,
+      "uncertainty": 0.012175663496135702,
+      "summary": "Trial 03 (sigma_ref 9.37, lr_mu 23.05, lr_gamma 0.79, gamma_anneal 0.22) scored 0.0477 +/- 0.0122, worse than trial 02: raising lr_gamma left gamma flat (13.7%) while the accompanying mu-regime change pushed mu rel RMSE back up to 27.7%.",
+      "key_insight": "gamma (13.7%) is insensitive to lr_gamma, whereas mu tracks lr_mu / sigma_ref; trial 02 high-lr_mu, low-sigma_ref regime remains the best.",
+      "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "gamma_anneal": 0.7072920791792757,
+        "lr_gamma": 0.6090620422514893,
+        "lr_mu": 29.406092642692602,
+        "sigma_ref": 6.616720477912043
+      },
+      "objective": 0.026170812136914846,
+      "uncertainty": 0.012171730176715294,
+      "summary": "Trial 04 (sigma_ref 6.62, lr_mu 29.41, lr_gamma 0.61, gamma_anneal 0.71) scored 0.0262 +/- 0.0122, a near-tie with but not better than trial 02: lr_mu past 25 gave no mu gain (17.2% vs 17.5%) while gamma slipped to 15.1% (3nW Trans05 -37%).",
+      "key_insight": "mu saturates at lr_mu ~25 (29 adds nothing), and the gamma regression at higher gamma_anneal (0.71) points to low gamma_anneal being better.",
+      "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "gamma_anneal": 0.4166970876905426,
+        "lr_gamma": 0.4171612836240812,
+        "lr_mu": 26.991279333373054,
+        "sigma_ref": 6.284288746243821
+      },
+      "objective": 0.019643059098693794,
+      "uncertainty": 0.0080237210533169,
+      "summary": "Trial 05 (sigma_ref 6.28, lr_mu 26.99, lr_gamma 0.42, gamma_anneal 0.42) scored 0.0196 +/- 0.0080, the new best: both mu (15.3%) and gamma (12.6%) rel RMSE improved, confirming a winning region near lr_mu ~27, low sigma_ref, low-to-moderate gamma_anneal.",
+      "key_insight": "The optimum sits near lr_mu ~27, sigma_ref ~6.3, lr_gamma ~0.42, gamma_anneal ~0.2-0.4; moderate gamma_anneal is harmless, so trial 04 gamma loss came from its high lr_gamma / anneal combination.",
+      "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "gamma_anneal": 0.4833155115836798,
+        "lr_gamma": 0.4995974124703059,
+        "lr_mu": 26.818823006650042,
+        "sigma_ref": 7.636430571625812
+      },
+      "objective": 0.03293247074669933,
+      "uncertainty": 0.013640274619059964,
+      "summary": "Trial 06 (sigma_ref 7.64, lr_mu 26.82, lr_gamma 0.50, gamma_anneal 0.48) scored 0.0329 +/- 0.0136, worse than trial 05, and confirms sigma_ref as a monotone mu lever (mu rel RMSE rises 15.3% -> 21.2% as sigma_ref goes 6.28 -> 7.64).",
+      "key_insight": "sigma_ref is a strong, monotone mu lever (smaller is better); the optimum sits at sigma_ref below trial 05 value of 6.28.",
+      "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "gamma_anneal": 0.3861666152035277,
+        "lr_gamma": 0.4115770397368759,
+        "lr_mu": 27.08009402797008,
+        "sigma_ref": 6.157444464863774
+      },
+      "objective": 0.02045494962344624,
+      "uncertainty": 0.008621436757027949,
+      "summary": "Trial 07 (sigma_ref 6.16, lr_mu 27.08, lr_gamma 0.41, gamma_anneal 0.39), the TPE top draw, scored 0.0205 +/- 0.0086, tied with trial 05: mu stayed at 15.3% (sigma_ref below 6.3 adds nothing) and gamma was slightly worse at 13.3%.",
+      "key_insight": "mu has saturated around sigma_ref ~6.3 and lr_mu ~27 (lowering sigma_ref to 6.16 gave no mu gain), so further gains must come from the residual low-signal (Trans05) behaviour rather than from these tunables.",
+      "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "gamma_anneal": 0.3734765069762409,
+        "lr_gamma": 0.40777556382876595,
+        "lr_mu": 26.99014093194482,
+        "sigma_ref": 6.221288450869356
+      },
+      "objective": 0.02940588470296193,
+      "uncertainty": 0.012593118896434049,
+      "summary": "Trial 08 (sigma_ref 6.22, lr_mu 26.99, lr_gamma 0.408, gamma_anneal 0.373) scored 0.0294 +/- 0.0126: mu held at the 15.6% floor but gamma jumped to 18.5% on a 1nW Trans05 outlier (-40.5%), so plateau-config differences are within run-to-run noise.",
+      "key_insight": "On the plateau mu is fixed at ~15.3-15.6% while gamma fluctuates 12.6-18.5% at the low-count Trans05 scans; the objective spread among near-optimal configs is dominated by that low-signal gamma noise, not by the tunables.",
+      "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "gamma_anneal": 0.3899397501159928,
+        "lr_gamma": 0.4189600161936162,
+        "lr_mu": 27.05963708185149,
+        "sigma_ref": 6.173642367808347
+      },
+      "objective": 0.018230471243595107,
+      "uncertainty": 0.007776145478465846,
+      "summary": "Trial 09 (sigma_ref 6.17, lr_mu 27.06, lr_gamma 0.419, gamma_anneal 0.390), essentially the trial 05 point again, scored 0.0182 +/- 0.0078, the new best, with mu 14.4% and gamma 12.5% - both best-so-far, landing on the favourable side of the low-signal gamma noise.",
+      "key_insight": "The plateau config (lr_mu ~27, sigma_ref ~6.2) gives mu 14.4-15.6%; trial 09 0.0182 vs trial 08 0.0294 at nearly the same point is driven by Trans05 gamma noise, so the true objective floor is about 0.018-0.020.",
+      "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "gamma_anneal": 0.413237748669919,
+        "lr_gamma": 0.41830206400110437,
+        "lr_mu": 27.076746481099203,
+        "sigma_ref": 6.236911549052799
+      },
+      "objective": 0.03007306859114822,
+      "uncertainty": 0.014313586454420732,
+      "summary": "Trial 10 (sigma_ref 6.24, lr_mu 27.08, lr_gamma 0.418, gamma_anneal 0.413), essentially identical to trial 09, scored 0.0301 +/- 0.0143 versus trial 09 0.0182 - a 65% swing proving the plateau objective is dominated by Trans05 gamma noise.",
+      "key_insight": "Near-identical plateau configs differ by up to ~65% in objective (0.018-0.030) purely through the low-count Trans05 runs; the true floor is ~0.018 and no hyperparameter value has beaten it.",
+      "notebook": "trial_10.ipynb"
+    },
+    {
+      "trial_id": "trial_11",
+      "config": {
+        "gamma_anneal": 0.4139663613017954,
+        "lr_gamma": 0.4177827906922226,
+        "lr_mu": 26.939115460966764,
+        "sigma_ref": 6.136836327252753
+      },
+      "objective": 0.017398870450196387,
+      "uncertainty": 0.007612241419429301,
+      "summary": "Trial 11 (sigma_ref 6.137, lr_mu 26.94, lr_gamma 0.418, gamma_anneal 0.414), the plateau point again, scored 0.0174 +/- 0.0076, the new best (mu 14.6%, gamma 11.6%), confirming the optimum and the ~0.017-0.030 noise band.",
+      "key_insight": "Four runs of the plateau config span 0.0174-0.0301 purely from Trans05 gamma noise; trial 11 (0.0174) is the best so far, and no tunable change has beaten this point.",
+      "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "gamma_anneal": 0.4272561607959156,
+        "lr_gamma": 0.41853440469083536,
+        "lr_mu": 26.99136438143308,
+        "sigma_ref": 6.092670751287152
+      },
+      "objective": 0.014954742415186937,
+      "uncertainty": 0.0062092140615613136,
+      "summary": "Trial 12 (sigma_ref 6.093, lr_mu 26.99, lr_gamma 0.419, gamma_anneal 0.427) scored 0.0150 +/- 0.0062, a clear new best with the best gamma so far (9.6%) and mu at the 14.4% floor - the lowest sigma_ref of the plateau points.",
+      "key_insight": "Pushing sigma_ref to the low edge of the good region (6.09) coincided with the best gamma yet (9.6%), so sigma_ref may be monotone in gamma error too; the best config is lr_mu ~27, sigma_ref ~6.1.",
+      "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "gamma_anneal": 0.42584174403884456,
+        "lr_gamma": 0.4192244113569571,
+        "lr_mu": 27.07378447528217,
+        "sigma_ref": 6.127088678533054
+      },
+      "objective": 0.03387169190945009,
+      "uncertainty": 0.016664781366088413,
+      "summary": "Trial 13 (sigma_ref 6.127, lr_mu 27.07, lr_gamma 0.419, gamma_anneal 0.426) scored 0.0339 +/- 0.0167, the worst recent plateau run, purely from a 1nW Trans05 gamma collapse (-50.3%); mu held at 14.8% and gamma rose to 21.4%.",
+      "key_insight": "The plateau config gives mu 14.4-17.2% but gamma 9.6-21.4% depending on whether the low-count Trans05 scans collapse; the objective variance is a single-scan effect, not a tunable one.",
+      "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "gamma_anneal": 0.41734599219490254,
+        "lr_gamma": 0.4174386844399097,
+        "lr_mu": 27.04917503454812,
+        "sigma_ref": 6.0954568659031985
+      },
+      "objective": 0.014863010161595509,
+      "uncertainty": 0.006100269775179727,
+      "summary": "Trial 14 (sigma_ref 6.095, lr_mu 27.05, lr_gamma 0.417, gamma_anneal 0.417) scored 0.0149 +/- 0.0061, the new best by a hair over trial 12 (0.0150) and again with gamma under 10% (9.5%) at the low-sigma_ref edge.",
+      "key_insight": "Both best trials sit at the low-sigma_ref edge (6.09) with gamma under 10%, while other plateau runs give gamma 11.6-21.4% - sigma_ref ~6.1 looks like the optimum, though Trans05 noise still dominates.",
+      "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "gamma_anneal": 0.4295579367598742,
+        "lr_gamma": 0.4194100717133653,
+        "lr_mu": 27.04182484771595,
+        "sigma_ref": 6.047241324806652
+      },
+      "objective": 0.019859844784417748,
+      "uncertainty": 0.00797588922875254,
+      "summary": "Trial 15 (sigma_ref 6.047, lr_mu 27.04, lr_gamma 0.419, gamma_anneal 0.430) scored 0.0199 +/- 0.0080: pushing sigma_ref below 6.09 gave no gain (mu at the 14.6% floor, gamma 13.6%), so trials 12/14 remain the best plateau points.",
+      "key_insight": "sigma_ref below 6.09 does not improve on trials 12/14 (6.09); the plateau gamma, and hence the objective, are set by the erratic low-count Trans05 scans rather than by sigma_ref in this range.",
+      "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "gamma_anneal": 0.4195702710239643,
+        "lr_gamma": 0.4173470745659063,
+        "lr_mu": 27.1059276796649,
+        "sigma_ref": 6.098961279863172
+      },
+      "objective": 0.029435910135912145,
+      "uncertainty": 0.014244664198481648,
+      "summary": "Trial 16 (sigma_ref 6.099, lr_mu 27.11, lr_gamma 0.417, gamma_anneal 0.420) scored 0.0294 +/- 0.0142, a mid-range plateau result: mu 16.6% and gamma 17.7%, both dragged by a bad 3nW Trans05 run (gamma -44.3%).",
+      "key_insight": "The erratic low-count Trans05 scan (1nW or 3nW) is the sole driver of plateau objective variance; mu stays at 14.4-17.2% and trial 14 (0.0149) remains best.",
+      "notebook": "trial_16.ipynb"
+    },
+    {
+      "trial_id": "trial_17",
+      "config": {
+        "gamma_anneal": 0.4152825764976662,
+        "lr_gamma": 0.4178843232536425,
+        "lr_mu": 27.052581111395494,
+        "sigma_ref": 6.1054290193431155
+      },
+      "objective": 0.02029811132216138,
+      "uncertainty": 0.008101333800555749,
+      "summary": "Trial 17 (sigma_ref 6.105, lr_mu 27.05, lr_gamma 0.418, gamma_anneal 0.415) scored 0.0203 +/- 0.0081, a mid-range plateau result (mu 14.6%, gamma 13.9%); trial 14 (0.0149) remains best with the plateau fully converged.",
+      "key_insight": "Repeating the plateau optimum now only re-samples the irreducible Trans05 gamma noise; mu is fixed at ~14.4-17.2% and no tunable changes this.",
+      "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "gamma_anneal": 0.012773009690492554,
+        "lr_gamma": 0.5157960028814634,
+        "lr_mu": 27.000932941356705,
+        "sigma_ref": 6.054652170062326
+      },
+      "objective": 0.015670138826147394,
+      "uncertainty": 0.006949595658211065,
+      "summary": "Trial 18 (gamma_anneal 0.013, lr_mu 27.00, sigma_ref 6.055, lr_gamma 0.516), a deliberate probe of near-zero annealing, scored 0.0157 +/- 0.0069 - second-best overall - with the best mu yet (14.2%) and good gamma (10.5%).",
+      "key_insight": "Near-zero gamma_anneal (0.013) on the optimal mu/sigma_ref regime gave the campaign best mu (14.2%) without hurting gamma, so the low-anneal corner is favourable and holds the remaining gains.",
+      "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "gamma_anneal": 0.0,
+        "lr_gamma": 0.39865489129651566,
+        "lr_mu": 27.04139753011884,
+        "sigma_ref": 6.067005609798211
+      },
+      "objective": 0.026266325326041215,
+      "uncertainty": 0.014168574782015136,
+      "summary": "Trial 19 (gamma_anneal 0.0, lr_mu 27.04, sigma_ref 6.067, lr_gamma 0.399) scored 0.0263 +/- 0.0142: exactly-zero annealing kept mu at the 14.7% floor but a 3nW Trans05 collapse (-46.3%) pushed gamma to 17.6%.",
+      "key_insight": "gamma_anneal 0.0 confirms near-zero annealing is safe for mu (14.2-14.7% in trials 18/19) but does not tame the Trans05 gamma noise; trial 14 (0.0149) remains best.",
+      "notebook": "trial_19.ipynb"
+    },
+    {
+      "trial_id": "trial_20",
+      "config": {
+        "gamma_anneal": 0.4155662001259543,
+        "lr_gamma": 0.413028721629315,
+        "lr_mu": 27.029884674922044,
+        "sigma_ref": 6.055724331687579
+      },
+      "objective": 0.01928026540524994,
+      "uncertainty": 0.007917427448212923,
+      "summary": "Trial 20 (sigma_ref 6.056, lr_mu 27.03, lr_gamma 0.413, gamma_anneal 0.416) scored 0.0193 +/- 0.0079 (mu 14.4%, gamma 13.3%), closing the campaign on the converged plateau; trial 14 (0.0149) is the best config.",
+      "key_insight": "The final trial reconfirms the converged optimum (lr_mu ~27, sigma_ref ~6.1, lr_gamma ~0.42, low gamma_anneal) with mu fixed at ~14.4% and the objective set by irreducible Trans05 gamma noise.",
+      "notebook": "trial_20.ipynb"
+    }
+  ]
+}

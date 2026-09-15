@@ -22,3 +22,6 @@ venv/
 # Cline / Claude
 .clinerules/
 .claude/
+
+# Generated figure outputs (keep everything in-notebook)
+fig_*.png
