@@ -68,6 +68,7 @@ tracking progress. Official S is what the stop rule watches.
 | d | 20d | clip implicit derivatives at DERIV_CLIP=20 | **4.94** | 34.8% | 47.4% | **4.94** | DONE |
 | e | 20e | per-scan FWHM heterogeneity (HET_FRAC=1) | 4.74 | 36.0% | 45.4% | 4.74 | DONE |
 | f | 20f | LR_GAMMA 0.5 -> 1.0 (converge high-T γ) | 4.93 | 34.6% | 44.7% | 4.93 | DONE |
+| g | 20g | HET_FRAC 1.0 -> 0.0 (revert heterogeneity) | 6.50 | 35.1% | 47.2% | 6.50 | DONE |
 
 ### Log notes
 - **20a (2026-09-15, 18 min):** μ lands at **0.41–0.55 × μ_true in ALL 14** exps (mu rel-RMSE 52.3%)
@@ -127,6 +128,71 @@ tracking progress. Official S is what the stop rule watches.
   1nW ≈0.9); the μ-ratio goal is **not** met and — per the offline NLL(μ) autopsies (diag/mode_diag2:
   min at μ/μ_true≈0.3 for every model variant tried, incl. heterogeneity + σ-floor) — is a genuine
   model bias, not an optimiser artefact.
+- **20g (2026-09-15, 23 min):** ONE change = `HET_FRAC` 1.0→0.0 (revert the 20e heterogeneity).
+  **Prediction falsified — and decisively so:** S *worsened* to **6.50** (20f 4.93). The low-T γ
+  regressed hard (3nW T05 |dγ|/σ 17.1→**31.3**; 1nW T20 8.9→… still 7.3). So the heterogeneity jitter
+  is **net-positive for S** (it widens the low-T sim cloud so the γ estimate is not pinned so far
+  low) — 20e (HET=1) remains the best-S config. **Status: 2nd consecutive no-improvement in S →
+  STOP (SERIES_STATE §4.3).**
+
+---
+
+## 8. FINAL SUMMARY (series 20 — STOPPED on §4.3: 2 consecutive no-improvement, notebooks 20f+20g)
+
+**Notebooks run: 7 (20a–20g), ~150 min compute. All one-change, all committed + pushed on `develop`.**
+All changes were **notebook-level only** — no `src/` edits, so series 17/18/19 are untouched. Figures
+render inline (11 panels per notebook incl. the fixed FIG1–FIG10); run histories in
+`data/processed/20[a-g]_history.json`.
+
+### Ladder of one-change experiments (S = primary metric, lower better)
+| nb | one change | S | S_rob | μ rel-RMSE | γ rel-RMSE |
+|----|-----------|-----|-------|-----------|-----------|
+| 20a | 17g exactly on real targets (baseline) | 4.37e13 | 19.9 | 52.3% | 33.8% |
+| 20b | μ score σ_ref = σ_prop (count-calibrated) | 1.26e16 | 6.9 | 47.7% | 36.8% |
+| 20c | implicit-diff reg 1e-4→1e-3 | 1.38e11 | 4.9 | 47.3% | 35.0% |
+| 20d | clip implicit derivatives (DERIV_CLIP=20) | **4.94** | 4.94 | 47.4% | 34.8% |
+| 20e | per-scan FWHM heterogeneity (HET_FRAC=1) | **4.74 (best)** | 4.74 | 45.4% | 36.0% |
+| 20f | LR_GAMMA 0.5→1.0 | 4.93 | 4.93 | 44.7% | 34.6% |
+| 20g | HET_FRAC 1.0→0.0 (revert) | 6.50 | 6.50 | 47.2% | 35.1% |
+
+### Final metrics (best-S config 20e; best-γ config 20f)
+- **μ: ratio 0.45–0.88, rel-RMSE 44.7–47.4%; coverage 14/14 inside 2σ.** μ is *honest but biased
+  low*: the point estimate lands at ≈0.5× truth at mid/high T. **μ-goal (ratio ∈[0.8,1.2] at high T)
+  NOT met.**
+- **γ: high-T essentially solved.** 20f gives γ_true at the 3nW high-T points (ratios 1.00 at T60/80/100)
+  and high-T γ rel err 6.2%; overall γ rel-RMSE 34.6%. Low/mid-T γ is still biased low (ratios 0.38–0.56
+  at T05/T10/T20) → low-T γ coverage fails. **γ-goal (≤5% at high T) nearly met; overall γ ≤10% NOT met.**
+- **Transmission grading:** γ accuracy does climb with T (rel err 59%→4% from T05→T100); μ does *not*
+  (it is pinned at ≈0.5× at all T).
+- **Anti-overfit:** tuned (T20/60/100) vs held-out (T05/10/40/80) split always reported in-notebook;
+  the S improvements (20d: 4.94) held on held-out.
+
+### Failure modes
+- **FM#10 (low-count Fisher degeneracy) — FIXED.** Root cause found by autopsy: `compute_fwhm_and_dgamma`
+  returned dσ/dγ ≈ 1e17 for a single **n_sig=1** draw (ill-conditioned L-BFGS Hessian). 20c (reg 1e-4→1e-3)
+  cut S by 5 orders; 20d (clip |dσ/dγ|,|dFWHM/dγ| at 20) closed it: S 1.4e11 → **4.94**, all 14 exps
+  finite. This is the series' cleanest, most transferable result.
+- **FM#9 (μ init-lock) — PARTLY fixed.** With σ_ref=σ_prop (20b) μ escapes its 0.5× init at low T
+  (ratio 0.53→0.76 at 1nW T05). But at mid/high T μ stays 0.47–0.50.
+- **FM#6 / FM#8 (Lorentzian + scatter-model mismatch) — attacked, not cured.** 20e's per-scan FWHM
+  heterogeneity is net-positive for S (best S 4.74) but does not fix the γ bias.
+- **Persisting core failure (the real blocker): the high-T μ bias.** Offline NLL(μ) autopsies at fixed
+  γ_true (1nW T100, 3nW T80, 1nW T20) show the likelihood minimum sits at μ/μ_true ≈ 0.3 for the
+  baseline and for **every** variant tried (additive σ_fit floor, multiplicative σ_fit scale, per-scan
+  γ-heterogeneity, 1/√n extra jitter). The real FWHM clouds are far broader/right-skewed than any
+  single-γ Lorentzian+photon-noise simulator produces, so the likelihood systematically prefers fewer
+  photons. **μ is weakly identifiable / biased on this dataset — confirming series 19** — and the
+  high-T μ-ratio goal is unreachable within this model class.
+
+### Where the series ended
+- **Stopped by §4.3** (2 consecutive no-improvement in S: 20f 4.93, 20g 6.50, vs best 20e 4.74).
+- **Goal not met** on all 14 (μ ratio at high T, and overall μ/γ rel-RMSE thresholds).
+- **Best config: 20e** (σ_ref=σ_prop, reg=1e-3, DERIV_CLIP=20, HET_FRAC=1.0, LR_GAMMA=0.5), S=4.74,
+  μ rel-RMSE 45.4%, γ rel-RMSE 36.0%, high-T γ within 2σ on 6/6.
+- **Not reached (stopped just before):** the obvious combination HET_FRAC=1.0 **+** LR_GAMMA=1.0
+  (20e's S-best with 20f's γ-best) was never run — a natural first experiment if the series is resumed.
+- Files: `notebooks/20_realdata_agentic_optimization/20[a-g].ipynb`, `data/processed/20[a-g]_history.json`,
+  `SERIES_STATE.md`. **No `src/` changes; `notes/JOURNAL.md` untouched.**
 - **Lesson → 20d:** attack FM#10 *robustly* instead of tuning reg — clip the per-draw implicit
   derivatives at a physical bound (every sane draw has |dσ/dγ| ≲ 10, |dFWHM/dγ| ≲ 25; the n_sig=1
   draw has |dσ/dγ|→∞).
