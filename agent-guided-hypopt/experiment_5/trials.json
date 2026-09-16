@@ -55,6 +55,20 @@
       "summary": "Trial 04 (lr_mu=0.1376, mu_anneal=0.9298, lr_gamma=0.6029, gamma_anneal=0.8452): objective 0.1418 +/- 0.0971, 1 diverged cell (1nW T05, gamma -5.3e16); damping the gamma step did not remove the low-T gamma divergence (now in 3 of 4 trials) and slightly worsened high-T gamma, while the small-travel mu regime again gave good mu accuracy (rel-RMSE 60%)",
       "key_insight": "The 1nW T05 gamma blow-up is not a gamma-learning-rate problem: it persisted with lr_gamma cut to 0.60 and gamma_anneal raised to 0.85, so the only trial that avoided it (trial_01) does so through its mu schedule, not its gamma schedule",
       "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "gamma_anneal": 0.45302756899829805,
+        "lr_gamma": 0.46483369956687004,
+        "lr_mu": 0.10561015387670958,
+        "mu_anneal": 0.32494264457560607
+      },
+      "objective": 0.11351515926537975,
+      "uncertainty": 0.07480785451093162,
+      "summary": "Trial 05 (lr_mu=0.1056, mu_anneal=0.3249, lr_gamma=0.4648, gamma_anneal=0.4530): objective 0.1135 +/- 0.0748 with 0 diverged cells; effectively tied with trial_01 (0.1127) but with much better mu accuracy (rel-RMSE 77% -> 57%) and gamma finite on all 8 cells - the first run since trial_01 to avoid the 1nW T05 gamma blow-up",
+      "key_insight": "Moderately reducing mu travel (0.120 -> 0.088) together with a lower gamma step reaches trial_01's objective (0.1135) while eliminating the 1nW T05 gamma divergence and cutting mu rel-RMSE from 77% to 57%, making this the best-behaved configuration so far",
+      "notebook": "trial_05.ipynb"
     }
   ],
   "protocol": {
