@@ -209,6 +209,20 @@
       "summary": "Trial 15 (lr_mu=0.1543, mu_anneal=0.3546, lr_gamma=0.4504, gamma_anneal=0.5062): objective 0.1103 +/- 0.0825 with 0 diverged cells; another optimum-region sample (travel 0.127) came within 0.0004 of trial_08 (0.1099), which remains the best",
       "key_insight": "The optimum region (travel 0.12-0.14) keeps producing 0.1099-0.1132; trial_15's 0.1103 is the closest yet to trial_08 but still does not beat it, reinforcing that the best achievable value with this schedule family is ~0.110 and further tuning yields no real gain",
       "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "gamma_anneal": 0.46672441937626824,
+        "lr_gamma": 0.4520499643693517,
+        "lr_mu": 0.15527021754560388,
+        "mu_anneal": 0.3506271637511188
+      },
+      "objective": 0.11123393192368657,
+      "uncertainty": 0.08235529131224101,
+      "summary": "Trial 16 (lr_mu=0.1553, mu_anneal=0.3506, lr_gamma=0.4520, gamma_anneal=0.4667): objective 0.1112 +/- 0.0824 with 0 diverged cells; yet another optimum-region sample (travel 0.128) landed third-best, so the plateau holds and trial_08 (0.1099) is unchanged as best",
+      "key_insight": "The optimum region keeps returning 0.1099-0.1132 regardless of the gamma-knob details; with seven sub-0.113 samples now, the campaign is plateaued and trial_08 remains the best",
+      "notebook": "trial_16.ipynb"
     }
   ],
   "protocol": {
