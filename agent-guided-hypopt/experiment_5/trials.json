@@ -41,6 +41,20 @@
       "summary": "Trial 03 (lr_mu=0.1076, mu_anneal=0.6301, lr_gamma=0.9349, gamma_anneal=0.5944): objective 0.1362 +/- 0.0919, 1 diverged cell (1nW T05, gamma ~2.7e10); reduced mu travel gave the best mu so far (rel-RMSE 77% -> 55%, mid-T overshoot cut) but widened the high-T mu undershoot, leaving the objective above trial_01",
       "key_insight": "Reduced mu travel trades the mid-transmission mu overshoot for a larger high-transmission mu undershoot: mu accuracy improves (best rel-RMSE so far, 55%) but the heavily-weighted high-T part worsens, so the net objective (0.1362) still sits above trial_01's 0.1127",
       "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "gamma_anneal": 0.8451963480816079,
+        "lr_gamma": 0.6029150106146935,
+        "lr_mu": 0.1375775281943363,
+        "mu_anneal": 0.9297746953080669
+      },
+      "objective": 0.14175916150459075,
+      "uncertainty": 0.09714337736013005,
+      "summary": "Trial 04 (lr_mu=0.1376, mu_anneal=0.9298, lr_gamma=0.6029, gamma_anneal=0.8452): objective 0.1418 +/- 0.0971, 1 diverged cell (1nW T05, gamma -5.3e16); damping the gamma step did not remove the low-T gamma divergence (now in 3 of 4 trials) and slightly worsened high-T gamma, while the small-travel mu regime again gave good mu accuracy (rel-RMSE 60%)",
+      "key_insight": "The 1nW T05 gamma blow-up is not a gamma-learning-rate problem: it persisted with lr_gamma cut to 0.60 and gamma_anneal raised to 0.85, so the only trial that avoided it (trial_01) does so through its mu schedule, not its gamma schedule",
+      "notebook": "trial_04.ipynb"
     }
   ],
   "protocol": {
