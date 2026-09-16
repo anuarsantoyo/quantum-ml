@@ -27,6 +27,20 @@
       "summary": "Trial 02 (lr_mu=0.2833, mu_anneal=0.1501, lr_gamma=0.6746, gamma_anneal=0.2475): objective 0.1449 +/- 0.0998 with 1 diverged cell (1nW T05, gamma -2.20); more sustained mu travel worsened every mu error (rel-RMSE 77% -> 136%, mid/low-T overshoot up to +275%) versus trial_01",
       "key_insight": "Increasing sustained mu travel (higher lr_mu, lower mu_anneal) is the wrong direction on this benchmark: it aggravates the mid/low-T mu overshoot and additionally induced a low-T gamma divergence, so the smaller-travel mu schedule of trial_01 is preferred",
       "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_anneal": 0.5944500606851053,
+        "lr_gamma": 0.9348906620042868,
+        "lr_mu": 0.10755962820009562,
+        "mu_anneal": 0.630090199785343
+      },
+      "objective": 0.1362224932368607,
+      "uncertainty": 0.09193318178522945,
+      "summary": "Trial 03 (lr_mu=0.1076, mu_anneal=0.6301, lr_gamma=0.9349, gamma_anneal=0.5944): objective 0.1362 +/- 0.0919, 1 diverged cell (1nW T05, gamma ~2.7e10); reduced mu travel gave the best mu so far (rel-RMSE 77% -> 55%, mid-T overshoot cut) but widened the high-T mu undershoot, leaving the objective above trial_01",
+      "key_insight": "Reduced mu travel trades the mid-transmission mu overshoot for a larger high-transmission mu undershoot: mu accuracy improves (best rel-RMSE so far, 55%) but the heavily-weighted high-T part worsens, so the net objective (0.1362) still sits above trial_01's 0.1127",
+      "notebook": "trial_03.ipynb"
     }
   ],
   "protocol": {
