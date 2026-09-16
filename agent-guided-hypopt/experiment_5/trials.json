@@ -237,6 +237,20 @@
       "summary": "Trial 17 (lr_mu=0.1067, mu_anneal=0.3508, lr_gamma=0.4525, gamma_anneal=0.4465): objective 0.1329 +/- 0.0915 with 1 diverged cell (1nW T05, gamma -0.93); the high-EI low-travel pick (travel 0.088) still diverged at the fragile 1nW T05 cell despite a proven-safe gamma schedule, so the low-travel region is not reliably safe",
       "key_insight": "The low-travel region (~0.088) again produced a 1nW T05 gamma divergence even with lr_gamma=0.453, matching the schedule of safe runs - so that divergence is the persistent hazard of small travel, and the optimum (travel ~0.13) remains both better and safer",
       "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "gamma_anneal": 0.42179334280882247,
+        "lr_gamma": 0.451868312989029,
+        "lr_mu": 0.16820541389184537,
+        "mu_anneal": 0.3588146163440286
+      },
+      "objective": 0.1120629352543323,
+      "uncertainty": 0.08257349571420124,
+      "summary": "Trial 18 (lr_mu=0.1682, mu_anneal=0.3588, lr_gamma=0.4519, gamma_anneal=0.4218): objective 0.1121 +/- 0.0826 with 0 diverged cells; another optimum sample (travel 0.138) landed fifth-best, so the plateau holds and trial_08 (0.1099) stays best",
+      "key_insight": "The optimum region returns 0.1099-0.1132 for any near-optimal schedule, with no remaining gradient in either mu travel or the gamma knobs; eight sub-0.113 samples now indicate ~0.110 is the practical floor for this schedule family",
+      "notebook": "trial_18.ipynb"
     }
   ],
   "protocol": {
