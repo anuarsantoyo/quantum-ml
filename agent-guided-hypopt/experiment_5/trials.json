@@ -111,6 +111,20 @@
       "summary": "Trial 08 (lr_mu=0.1616, mu_anneal=0.3475, lr_gamma=0.4157, gamma_anneal=0.5318): objective 0.1099 +/- 0.0826 with 0 diverged cells - a new campaign best, beating trial_01 (0.1127); the larger mu travel (0.134) fixed the heavily-weighted 1nW high-T mu undershoot (T60 -2.7%, T100 -2.5%) at the cost of larger low/mid-T overshoots",
       "key_insight": "The upper edge of the good mu-travel band (0.134) beats the lower edge (0.082-0.097): larger travel nearly eliminates the heavily-weighted 1nW high-T mu undershoot, and that gain outweighs the larger low/mid-T overshoots it brings",
       "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "gamma_anneal": 0.5416139963353477,
+        "lr_gamma": 0.4805473089982995,
+        "lr_mu": 0.14863351086147128,
+        "mu_anneal": 0.3504215766434031
+      },
+      "objective": 0.11261155219550982,
+      "uncertainty": 0.08265110820829838,
+      "summary": "Trial 09 (lr_mu=0.1486, mu_anneal=0.3504, lr_gamma=0.4805, gamma_anneal=0.5416): objective 0.1126 +/- 0.0827 with 0 diverged cells; a fine refinement next to trial_08 reproduced the good 1nW high-T mu behaviour (T60 -0.3%) but only matched trial_01's level, so trial_08 (0.1099) stays the best",
+      "key_insight": "The good mu-travel band is flat to about +/-0.003 in objective (0.1099-0.1140 over travels 0.097-0.134), with trial_08's slightly larger travel the current best; tuning inside this band yields diminishing returns",
+      "notebook": "trial_09.ipynb"
     }
   ],
   "protocol": {
