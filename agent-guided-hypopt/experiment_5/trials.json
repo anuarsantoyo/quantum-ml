@@ -153,6 +153,20 @@
       "summary": "Trial 11 (lr_mu=0.1915, mu_anneal=0.3381, lr_gamma=0.4576, gamma_anneal=0.8063): objective 0.1188 +/- 0.0835 with 0 diverged cells; extending mu travel to 0.159 overshot the optimum - the mid/low-T mu overshoots ballooned (1nW T20 +172%, 3nW T05 +166%) and the objective fell back to trial_06's level, confirming trial_08's travel 0.134 as the best",
       "key_insight": "The mu-travel optimum is now bracketed (0.123 -> 0.1126, 0.134 -> 0.1099, 0.159 -> 0.1188): the objective minimum lies near travel 0.134, beyond which extra travel costs more in mid/low-T overshoot than it gains at high T",
       "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "gamma_anneal": 0.47969975028815254,
+        "lr_gamma": 0.4774386713655748,
+        "lr_mu": 0.15519021609909986,
+        "mu_anneal": 0.3494467304397492
+      },
+      "objective": 0.11152496070538674,
+      "uncertainty": 0.0823822452730551,
+      "summary": "Trial 12 (lr_mu=0.1552, mu_anneal=0.3494, lr_gamma=0.4774, gamma_anneal=0.4797): objective 0.1115 +/- 0.0824 with 0 diverged cells; essentially trial_08's mu knobs with different gamma knobs, it landed second-best (just above trial_08's 0.1099), so gamma-schedule changes at the mu optimum do not beat trial_08",
+      "key_insight": "At the mu optimum (travel ~0.13), changing the gamma schedule (lr_gamma 0.416 -> 0.477, gamma_anneal 0.532 -> 0.480) leaves the objective essentially unchanged (0.1099 -> 0.1115), and even the 1nW high-T mu result no longer reproduces exactly - the objective is flat to ~0.002 here and trial_08 stays best",
+      "notebook": "trial_12.ipynb"
     }
   ],
   "protocol": {
