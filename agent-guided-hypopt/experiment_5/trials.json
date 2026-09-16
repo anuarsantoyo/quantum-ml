@@ -181,6 +181,20 @@
       "summary": "Trial 13 (lr_mu=0.1617, mu_anneal=0.3446, lr_gamma=0.4912, gamma_anneal=0.4499): objective 0.1132 +/- 0.0825 with 0 diverged cells; a second exact sample at trial_08's mu optimum with a different gamma schedule again failed to beat it (0.1132 vs 0.1099), confirming the optimum region is flat to ~0.003",
       "key_insight": "Repeated sampling at the mu optimum (travel 0.13) with varied gamma schedules yields 0.1099-0.1132 with no clean dependence on any knob, so the remaining ~0.003 spread is not tunable with these four parameters - trial_08's exact config remains the best found",
       "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "gamma_anneal": 0.4778054702498448,
+        "lr_gamma": 0.49828134136895796,
+        "lr_mu": 0.17111745770682502,
+        "mu_anneal": 0.36267417761888476
+      },
+      "objective": 0.11268476619442071,
+      "uncertainty": 0.0826898598075554,
+      "summary": "Trial 14 (lr_mu=0.1711, mu_anneal=0.3627, lr_gamma=0.4983, gamma_anneal=0.4778): objective 0.1127 +/- 0.0827 with 0 diverged cells; sampling just past trial_08 (travel 0.140) matched trial_01 but did not beat trial_08 (0.1099), with an excellent 1nW T60 (+0.5%) but large mid-T overshoots",
+      "key_insight": "Travel 0.140 (between trial_08's 0.134 and trial_11's 0.159) lands at 0.1127, so the optimum is confirmed at ~0.134 and the region 0.128-0.140 is flat to ~0.003 - trial_08 remains the best found",
+      "notebook": "trial_14.ipynb"
     }
   ],
   "protocol": {
