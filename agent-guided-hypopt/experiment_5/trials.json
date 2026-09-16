@@ -13,6 +13,20 @@
       "summary": "Trial 01 (lr_mu=0.1551, mu_anneal=0.4535, lr_gamma=0.7990, gamma_anneal=0.2968): objective 0.1127 +/- 0.0825, 0 diverged cells; gamma within ~1% at T100 but under-recovered at low T (-45/-29% at T05), while mu overshoots at mid transmission (+137-157%) and undershoots at high T (-23 to -38%)",
       "key_insight": "The residual is a mu-location problem (large low/mid-T overshoot plus high-T undershoot, the latter weighted most), not a gamma-divergence one: gamma is accurate at high T and degrades only in the known low-count regime, with no diverged cell",
       "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "gamma_anneal": 0.2474724311154343,
+        "lr_gamma": 0.674561364131813,
+        "lr_mu": 0.2833215030763119,
+        "mu_anneal": 0.15006226330533612
+      },
+      "objective": 0.1448977746441728,
+      "uncertainty": 0.09980504793880615,
+      "summary": "Trial 02 (lr_mu=0.2833, mu_anneal=0.1501, lr_gamma=0.6746, gamma_anneal=0.2475): objective 0.1449 +/- 0.0998 with 1 diverged cell (1nW T05, gamma -2.20); more sustained mu travel worsened every mu error (rel-RMSE 77% -> 136%, mid/low-T overshoot up to +275%) versus trial_01",
+      "key_insight": "Increasing sustained mu travel (higher lr_mu, lower mu_anneal) is the wrong direction on this benchmark: it aggravates the mid/low-T mu overshoot and additionally induced a low-T gamma divergence, so the smaller-travel mu schedule of trial_01 is preferred",
+      "notebook": "trial_02.ipynb"
     }
   ],
   "protocol": {
