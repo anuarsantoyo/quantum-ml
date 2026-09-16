@@ -1,14 +1,12 @@
-# experiment_5 — AG-HYPOPT on Anuar's μ reward + the `sigma_prop` score fix (real data)
+# experiment_5 — AG-HYPOPT: schedule tuning for the series-21 μ mechanism (real data, NO clipping)
 
 ## The idea
-Tune the μ/γ learning-rate **schedules** of the series-21 mechanism, where the μ REINFORCE reward is
-**Anuar's per-run Gaussian likelihood** and the μ score denominator is the **experiment's own
-`sigma_prop`** (the 21h fix). Every trial = the frozen 21-series model (100×30, real targets, 8-exp
-benchmark) with one candidate schedule; the objective is the combined relative MSE of (μ, γ).
-
-This is the first campaign whose μ mechanism is *not* the 21a/17g responsibility reward — the previous
-real-data campaign (`experiment_4`) found μ knobs-insensitive at the 0.5× attractor, so tuning that
-reward was structurally capped. Here we let the campaign choose the schedules for the *new* mechanism.
+Tune the **learning-rate schedules** of the series-21 mechanism:
+- μ reward = **Anuar's per-run likelihood** (`MU_REWARD='loglik_mean'`, i.e. `r_j = mean_i log W_ij`);
+- μ score denominator = the experiment's own **`sigma_prop`** (`MU_SCORE='sigma_prop'`, the "21h fix");
+- **no gradient clipping and no parameter clamps** (21i showed the clip was masking a *scale* problem:
+  unclipped + a rescaled LR took μ from rel-RMSE 550% to 41%).
+Everything else is the frozen 17g/series-21 model (real targets, 100×30, 8-exp benchmark).
 
 ## Benchmark
 8 of the 14 experiments (`BENCHMARK_SUBSET`): 1nW/3nW × {Trans05, Trans20, Trans60, Trans100}.
@@ -17,38 +15,45 @@ reward was structurally capped. Here we let the campaign choose the schedules fo
 `USE_REAL_DATA = True` — real measured FWHM targets from `data/processed/fwhm_linewidths.csv`
 (15-series load & filter: raw ×1000 → MHz, keep `fit_error/fwhm < 10`).
 
-## Search space (5 tunables, `space.json`)
+## Search space (4 tunables, `space.json`) — no `clip` dimension
 | tunable | range | note |
 |---|---|---|
-| `lr_mu` | 0.05 – 10 | μ step; reward scale is large, so low values matter |
-| `lr_gamma` | 0.2 – 1.0 | γ step |
-| `gamma_anneal` | 0.0 – 0.75 | γ LR anneal coefficient |
-| `mu_anneal` | 0.0 – 1.0 | **NEW** — μ LR anneal coefficient (was hard-coded to 1.0) |
-| `clip` | 1.0 – 50.0 | gradient clip (interacts with the reward scale) |
+| `lr_mu` | 0.005 – 0.5 | measured raw \|grad_mu\| (mean reward) = 2.0 / 11.2 / 176.6 (min/median/max) |
+| `mu_anneal` | 0.0 – 1.0 | μ LR decay coefficient (was hard-coded to 1.0) |
+| `lr_gamma` | 0.05 – 1.0 | γ step (raw \|grad_gamma\| ≤ 4.5) |
+| `gamma_anneal` | 0.0 – 0.9 | γ LR decay — the lever against the low-T γ divergence |
 
-`n_runs`/`n_iter` are **fixed by the protocol, not searched** (they are budget/feasibility: a bigger
-`n_runs` scores better partly by variance reduction and costs more — mixing them into TPE confounds the
-campaign). If the `n_runs` effect is wanted, run it as a separate 1-D scan.
+`n_runs`/`n_iter` are **fixed by the protocol, not searched** (budget/feasibility knobs).
+
+## No clipping + divergence guard
+- `CLIP = float('inf')`; the parameter clamps are **removed** (μ, γ unbounded).
+- `DIVERGENCE_GUARD = {'mu': (0.2, 1500.0), 'gamma': (0.02, 500.0)}` — if a parameter leaves the band the
+  experiment **stops** (recorded `diverged`/`diverged_at`). This is a *stop*, not a clamp: it only prevents
+  a runaway photon count from stalling the fits.
+
+## Objective (pre-registered)
+```
+err_i = min(rel_sq_i, CAP)              # CAP = 1.0  (≈100% relative error)
+w(T)  = 0.25 + 0.75 * T/100             # T = transmission (5…100): graded toward high T, 0.25 floor
+objective = Σ w_i * err_i / Σ w_i       # T-weighted mean over the 2*n_exps channel errors
+uncertainty = std(err_i)/sqrt(n)        # sampling SE across cells (reporting only; NO Fisher)
+```
+The trial report keeps the **unweighted per-cell table** (with a `!D` flag on diverged cells) so the full
+T-behaviour stays visible even though the search is graded toward high T.
 
 ## Fixed parameters (`DEFAULT_CONFIG`)
-`n_runs=100`, `n_iter=30` (21-series budget), `h_s_min=0.05`, `sigma_ref=10.0` (retained for reference —
-**unused** while `MU_SCORE='sigma_prop'`).
-
-## The μ mechanism (module flags in `ag_hypopt.py`)
-- `MU_REWARD = 'loglik_mean'` → reward `r_j = mean_i log W_ij` (Anuar's per-run likelihood, per real
-  scan). Other options: `'loglik_sum'` (exact 21g form; scale ∝ n_target) and `'responsibility'` (the
-  21a/17g baseline). `loglik_mean` is the default so the reward scale does not vary with `n_target` and
-  the schedule hyperparameters are meaningful across experiments.
-- `MU_SCORE = 'sigma_prop'` → score denominator `(n_j − μ)/σ_prop²` (the 21h fix; correct REINFORCE
-  score, consistent with the Fisher). Other option: `'sigma_ref'` (old fixed 10).
-- μ schedule: `lr_mu · (1 − mu_anneal·t/n_iter)`; γ schedule: `lr_gamma · (1 − gamma_anneal·t/n_iter)`.
+`n_runs=100`, `n_iter=30`, `mu_anneal=0.5`, `gamma_anneal=0.5`, `lr_mu=0.05`, `lr_gamma=0.5`,
+`clip=inf`, `h_s_min=0.05`, `sigma_ref=10.0` (retained for reference; **unused**).
 
 ## Frozen structural choices
-- z-form γ-score (`GAMMA_SCALE=True`, `H_REF=1.0`)
-- `LAMBDA_MEAN = 0` (mean-matching anchor disabled)
+- z-form γ-score (`GAMMA_SCALE=True`, `H_REF=1.0`), `LAMBDA_MEAN=0`
 - 2-D `(FWHM, σ_fit)` KDE kernel, Scott bandwidths, Lorentzian fit (2 params)
+- init at `0.5 × truth`
 
-## Running the campaign
-Per-trial worksheet: `trial_01.ipynb` (unexecuted), registry: `trials.json`. Cap: `MAX_TRIALS=40`.
-A trial on the 8-exp benchmark at 100×30 is ≈ 9 min. Self-test:
-`python3 ag_hypopt.py` (template API + tiny run).
+## Running
+Trial worksheet: `trial_01.ipynb` (unexecuted); registry/protocol: `trials.json`.
+Cap: `MAX_TRIALS=40` (~7.5 min/trial at 100×30 on the 8-exp benchmark ⇒ ~5 h).
+Self-test: `python3 ag_hypopt.py`.
+
+## Success bar
+γ finite on all 8 cells **and** μ rel-RMSE < 40% with μ bias → 0 (beat 21i's 40.6% / +7.3%).

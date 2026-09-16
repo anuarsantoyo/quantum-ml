@@ -1,3 +1,32 @@
 {
-  "trials": []
+  "trials": [],
+  "protocol": {
+    "model": "series-21 (17g) model on REAL data; mu reward = Anuar's per-run likelihood (MU_REWARD=loglik_mean), mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
+    "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
+    "divergence_guard": {
+      "mu": [
+        0.2,
+        1500.0
+      ],
+      "gamma": [
+        0.02,
+        500.0
+      ],
+      "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band (guards the photon-count blow-up)"
+    },
+    "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
+    "budget": {
+      "n_runs": 100,
+      "n_iter": 30,
+      "benchmark": "8-exp subset (1nW/3nW x Trans05/20/60/100)",
+      "max_trials": 40
+    },
+    "frozen": [
+      "z-form gamma-score (GAMMA_SCALE, H_REF=1)",
+      "LAMBDA_MEAN=0",
+      "Lorentzian fit (2 params)",
+      "Scott bandwidths, 2-D (FWHM, sigma_fit) kernel",
+      "init 0.5x true"
+    ]
+  }
 }

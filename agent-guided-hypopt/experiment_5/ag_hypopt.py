@@ -105,6 +105,11 @@ LAMBDA_MEAN = 0.0     # mean-matching anchor weight (0.0 = disabled)
 MU_REWARD = 'loglik_mean'
 MU_SCORE  = 'sigma_prop'
 
+# ---- experiment_5 protocol: NO clipping; divergence guard; capped + T-weighted objective ----
+DIVERGENCE_GUARD = {'mu': (0.2, 1500.0), 'gamma': (0.02, 500.0)}   # STOP (not clamp) if left
+CAP     = 1.0     # per-cell rel-sq error cap (~100% rel error) -- stops one blow-up dominating
+W_FLOOR = 0.25    # objective weight w(T) = W_FLOOR + (1-W_FLOOR)*T/100 (graded toward high T)
+
 # Parallelism: 4 workers, one experiment at a time.
 N_WORKERS = 4
 N_EXP_PARALLEL = 1
@@ -124,8 +129,8 @@ CALLS_PER_HOUR = 160_000   # total fit calls across all workers (measured)
 DEFAULT_CONFIG = dict(
     n_runs=100, n_iter=30,   # experiment_5 budget (21-series 100x30); n_runs/n_iter are FEASIBILITY,
                              # not search dims (fixed per protocol).
-    lr_mu=1.0, lr_gamma=0.5, sigma_ref=10.0,   # sigma_ref kept for reference (unused under MU_SCORE='sigma_prop')
-    clip=10.0, gamma_anneal=0.5, mu_anneal=1.0, h_s_min=0.05,
+    lr_mu=0.05, lr_gamma=0.5, sigma_ref=10.0,   # sigma_ref kept for reference (unused under MU_SCORE='sigma_prop')
+    clip=float('inf'), gamma_anneal=0.5, mu_anneal=0.5, h_s_min=0.05,   # no gradient clipping
 )
 
 def benchmark():
@@ -747,6 +752,7 @@ def _run_experiment(exp, cfg, pool):
     mu_val = float(mu_init)
     gamma_val = float(gamma_init)
     history = []
+    diverged = False; diverged_at = None
     t_start = time.time()
 
     for step in range(n_iter):
@@ -791,23 +797,27 @@ def _run_experiment(exp, cfg, pool):
             grad_gamma_mean = -math.copysign(1.0, mean_sim - mean_tgt) * d_mean_dgamma
             grad_gamma = float(max(min(grad_gamma + LAMBDA_MEAN * grad_gamma_mean, clip), -clip))
 
-        # ---- updates (μ anneal now TUNABLE via mu_anneal; γ anneal via gamma_anneal) ----
+        # ---- updates: NO clamps (experiment_5); μ anneal AND γ anneal both tunable ----
         lr_mu_decay = lr_mu * (1.0 - mu_anneal * step / n_iter)
         mu_val -= lr_mu_decay * grad_mu
-        mu_val = max(1.0, min(200.0, mu_val))
         gamma_val -= lr_gamma * (1.0 - gamma_anneal * step / n_iter) * grad_gamma
-        gamma_val = max(0.1, min(100.0, gamma_val))
 
         history.append(dict(step=step, mu=mu_val, gamma=gamma_val, nll=float(nll_val),
                             grad_mu=grad_mu, grad_gamma=grad_gamma, mean_loss=mean_loss,
                             mean_n=float(nt.mean())))
+        # divergence guard: stop (do NOT clamp) if a parameter leaves the sane band
+        if (not (DIVERGENCE_GUARD['mu'][0] <= mu_val <= DIVERGENCE_GUARD['mu'][1])) or \
+           (not (DIVERGENCE_GUARD['gamma'][0] <= gamma_val <= DIVERGENCE_GUARD['gamma'][1])):
+            diverged = True; diverged_at = step
+            break
 
     return dict(exp=exp['name'], power=exp['power'],
                 mu_true=mu_true, gamma_true=gamma_true,
                 mu_init=mu_init, gamma_init=gamma_init,
                 mu_final=history[-1]['mu'], gamma_final=history[-1]['gamma'],
                 nll_final=history[-1]['nll'], mean_loss_final=history[-1]['mean_loss'],
-                history=history, H_F=H_F, H_S=H_S, t_elapsed=time.time() - t_start)
+                history=history, H_F=H_F, H_S=H_S, t_elapsed=time.time() - t_start,
+                diverged=diverged, diverged_at=diverged_at)
 
 def run_trial(config, experiments=None, verbose=True):
     """Run one trial on the benchmark. Returns dict with per-experiment results.
@@ -859,15 +869,21 @@ def compute_objective(run):
     results = run['results'] if isinstance(run, dict) else run
     rows = []
     for r in results:
-        rel_mu = ((r['mu_final'] - r['mu_true']) / r['mu_true']) ** 2
-        rel_g = ((r['gamma_final'] - r['gamma_true']) / r['gamma_true']) ** 2
-        rows.append(dict(exp=r['exp'], rel_sq_mu=rel_mu, rel_sq_gamma=rel_g,
+        T = int(str(r['exp']).split('Trans')[-1])
+        # CAP each per-cell error so a single blow-up / divergence cannot dominate the mean
+        rel_mu = min(((r['mu_final'] - r['mu_true']) / r['mu_true']) ** 2, CAP)
+        rel_g = min(((r['gamma_final'] - r['gamma_true']) / r['gamma_true']) ** 2, CAP)
+        # grade toward high transmission (series-21 goal), with a floor so low-T still counts
+        w = W_FLOOR + (1.0 - W_FLOOR) * (T / 100.0)
+        rows.append(dict(exp=r['exp'], T=T, w=w, rel_sq_mu=rel_mu, rel_sq_gamma=rel_g,
+                         diverged=bool(r.get('diverged', False)), diverged_at=r.get('diverged_at'),
                          mu_true=r['mu_true'], mu_final=r['mu_final'],
                          gamma_true=r['gamma_true'], gamma_final=r['gamma_final'],
                          mu_err=r['mu_final'] - r['mu_true'],
                          gamma_err=r['gamma_final'] - r['gamma_true']))
-    errs = np.array([v for row in rows for v in (row['rel_sq_mu'], row['rel_sq_gamma'])])
-    objective = float(errs.mean())
+    errs = np.array([row['rel_sq_mu'] for row in rows] + [row['rel_sq_gamma'] for row in rows])
+    wts = np.array([row['w'] for row in rows] + [row['w'] for row in rows])
+    objective = float((wts * errs).sum() / wts.sum())          # T-weighted mean (capped)
     uncertainty = float(errs.std(ddof=1) / np.sqrt(len(errs))) if len(errs) > 1 else 0.0
 
     mu_e = np.array([row['mu_err'] for row in rows])
@@ -880,22 +896,28 @@ def compute_objective(run):
         gamma=dict(bias=float(g_e.mean()), mse=float((g_e ** 2).mean()),
                    rmse=float(np.sqrt((g_e ** 2).mean())),
                    rel_rmse=float(np.sqrt(((g_e / np.array([r['gamma_true'] for r in results])) ** 2).mean()))),
-        rows=rows,
+        rows=rows, n_diverged=int(sum(row['diverged'] for row in rows)),
+        objective_weighted=objective, cap=CAP, w_floor=W_FLOOR,
     )
     return objective, uncertainty, breakdown
 
 def format_report(breakdown):
     """Per-experiment report table printed in the trial notebook cell."""
-    lines = [f"{'exp':<12}{'μ_true':>8}{'μ_fit':>8}{'Δμ%':>8} | "
+    lines = [f"{'exp':<15}{'μ_true':>8}{'μ_fit':>8}{'Δμ%':>8} | "
              f"{'γ_true':>8}{'γ_fit':>8}{'Δγ%':>8}"]
     for r in breakdown['rows']:
+        tag = ' !D' if r.get('diverged') else ('    ' if 'diverged' in r else '')
         lines.append(
-            f"{r['exp']:<12}{r['mu_true']:>8.2f}{r['mu_final']:>8.2f}"
+            f"{(r['exp']+tag):<15}{r['mu_true']:>8.2f}{r['mu_final']:>8.2f}"
             f"{r['mu_err'] / r['mu_true'] * 100:>+8.1f} | "
             f"{r['gamma_true']:>8.2f}{r['gamma_final']:>8.2f}"
             f"{r['gamma_err'] / r['gamma_true'] * 100:>+8.1f}")
     m, g = breakdown['mu'], breakdown['gamma']
     lines.append("")
+    if 'objective_weighted' in breakdown:
+        lines.append(f"weighted objective (T-graded, cap={breakdown['cap']}) = "
+                     f"{breakdown['objective_weighted']:.4f} | diverged cells: "
+                     f"{breakdown.get('n_diverged', 0)}")
     lines.append(f"μ: RMSE {m['rmse']:.3f} (rel {m['rel_rmse']*100:.1f}%, "
                  f"bias {m['bias']:+.3f}) | "
                  f"γ: RMSE {g['rmse']:.3f} (rel {g['rel_rmse']*100:.1f}%, "
