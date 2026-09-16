@@ -167,6 +167,20 @@
       "summary": "Trial 12 (lr_mu=0.1552, mu_anneal=0.3494, lr_gamma=0.4774, gamma_anneal=0.4797): objective 0.1115 +/- 0.0824 with 0 diverged cells; essentially trial_08's mu knobs with different gamma knobs, it landed second-best (just above trial_08's 0.1099), so gamma-schedule changes at the mu optimum do not beat trial_08",
       "key_insight": "At the mu optimum (travel ~0.13), changing the gamma schedule (lr_gamma 0.416 -> 0.477, gamma_anneal 0.532 -> 0.480) leaves the objective essentially unchanged (0.1099 -> 0.1115), and even the 1nW high-T mu result no longer reproduces exactly - the objective is flat to ~0.002 here and trial_08 stays best",
       "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "gamma_anneal": 0.4498768055175392,
+        "lr_gamma": 0.4911584818438782,
+        "lr_mu": 0.16169528129896782,
+        "mu_anneal": 0.34456493938741944
+      },
+      "objective": 0.11320635471241772,
+      "uncertainty": 0.08245304467141917,
+      "summary": "Trial 13 (lr_mu=0.1617, mu_anneal=0.3446, lr_gamma=0.4912, gamma_anneal=0.4499): objective 0.1132 +/- 0.0825 with 0 diverged cells; a second exact sample at trial_08's mu optimum with a different gamma schedule again failed to beat it (0.1132 vs 0.1099), confirming the optimum region is flat to ~0.003",
+      "key_insight": "Repeated sampling at the mu optimum (travel 0.13) with varied gamma schedules yields 0.1099-0.1132 with no clean dependence on any knob, so the remaining ~0.003 spread is not tunable with these four parameters - trial_08's exact config remains the best found",
+      "notebook": "trial_13.ipynb"
     }
   ],
   "protocol": {
