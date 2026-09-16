@@ -69,6 +69,20 @@
       "summary": "Trial 05 (lr_mu=0.1056, mu_anneal=0.3249, lr_gamma=0.4648, gamma_anneal=0.4530): objective 0.1135 +/- 0.0748 with 0 diverged cells; effectively tied with trial_01 (0.1127) but with much better mu accuracy (rel-RMSE 77% -> 57%) and gamma finite on all 8 cells - the first run since trial_01 to avoid the 1nW T05 gamma blow-up",
       "key_insight": "Moderately reducing mu travel (0.120 -> 0.088) together with a lower gamma step reaches trial_01's objective (0.1135) while eliminating the 1nW T05 gamma divergence and cutting mu rel-RMSE from 77% to 57%, making this the best-behaved configuration so far",
       "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "gamma_anneal": 0.5329696776700628,
+        "lr_gamma": 0.4057719273084882,
+        "lr_mu": 0.10219551860759397,
+        "mu_anneal": 0.39254973584470565
+      },
+      "objective": 0.11875327481251179,
+      "uncertainty": 0.0821207078833414,
+      "summary": "Trial 06 (lr_mu=0.1022, mu_anneal=0.3925, lr_gamma=0.4058, gamma_anneal=0.5330): objective 0.1188 +/- 0.0821 with 0 diverged cells; the highest-EI proposal refined the good region (mu travel 0.082, gamma finite on all cells) but did not beat trial_01/trial_05, with mu rel-RMSE 57.6% and the high-T undershoot unchanged",
+      "key_insight": "The expected-improvement model picked a point right beside trial_05 and reproduced its clean behaviour, but a further travel reduction to 0.082 bought nothing - the local optimum for the objective at fixed gamma settings sits at trial_05's small-but-not-minimal mu travel (0.088)",
+      "notebook": "trial_06.ipynb"
     }
   ],
   "protocol": {
