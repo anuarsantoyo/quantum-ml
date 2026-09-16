@@ -97,6 +97,20 @@
       "summary": "Trial 07 (lr_mu=0.1159, mu_anneal=0.3324, lr_gamma=0.8120, gamma_anneal=0.3019): objective 0.1140 +/- 0.0820 with 0 diverged cells; combining the small-travel mu region with trial_01's gamma schedule gave gamma accuracy essentially tied with trial_01 for best of the campaign (rel-RMSE 21.6%) and a third straight divergence-free run, landing just behind trial_01/trial_05",
       "key_insight": "Trial_01's gamma schedule (lr_gamma~0.81, gamma_anneal~0.30) reproduces the divergence-free low-T gamma behaviour even when paired with a small mu travel, so gamma stability is a property of the schedule combination rather than of mu travel alone - and the objective now sits in a tight 0.1127-0.1140 cluster",
       "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "gamma_anneal": 0.5318125665888704,
+        "lr_gamma": 0.41569674448218774,
+        "lr_mu": 0.1616202216631109,
+        "mu_anneal": 0.34751938411695454
+      },
+      "objective": 0.10986498319265624,
+      "uncertainty": 0.0826369409263023,
+      "summary": "Trial 08 (lr_mu=0.1616, mu_anneal=0.3475, lr_gamma=0.4157, gamma_anneal=0.5318): objective 0.1099 +/- 0.0826 with 0 diverged cells - a new campaign best, beating trial_01 (0.1127); the larger mu travel (0.134) fixed the heavily-weighted 1nW high-T mu undershoot (T60 -2.7%, T100 -2.5%) at the cost of larger low/mid-T overshoots",
+      "key_insight": "The upper edge of the good mu-travel band (0.134) beats the lower edge (0.082-0.097): larger travel nearly eliminates the heavily-weighted 1nW high-T mu undershoot, and that gain outweighs the larger low/mid-T overshoots it brings",
+      "notebook": "trial_08.ipynb"
     }
   ],
   "protocol": {
