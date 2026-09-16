@@ -195,6 +195,20 @@
       "summary": "Trial 14 (lr_mu=0.1711, mu_anneal=0.3627, lr_gamma=0.4983, gamma_anneal=0.4778): objective 0.1127 +/- 0.0827 with 0 diverged cells; sampling just past trial_08 (travel 0.140) matched trial_01 but did not beat trial_08 (0.1099), with an excellent 1nW T60 (+0.5%) but large mid-T overshoots",
       "key_insight": "Travel 0.140 (between trial_08's 0.134 and trial_11's 0.159) lands at 0.1127, so the optimum is confirmed at ~0.134 and the region 0.128-0.140 is flat to ~0.003 - trial_08 remains the best found",
       "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "gamma_anneal": 0.5062423011096853,
+        "lr_gamma": 0.45037580491905266,
+        "lr_mu": 0.15427602870079982,
+        "mu_anneal": 0.3545851963503213
+      },
+      "objective": 0.11029823654022611,
+      "uncertainty": 0.082474959951289,
+      "summary": "Trial 15 (lr_mu=0.1543, mu_anneal=0.3546, lr_gamma=0.4504, gamma_anneal=0.5062): objective 0.1103 +/- 0.0825 with 0 diverged cells; another optimum-region sample (travel 0.127) came within 0.0004 of trial_08 (0.1099), which remains the best",
+      "key_insight": "The optimum region (travel 0.12-0.14) keeps producing 0.1099-0.1132; trial_15's 0.1103 is the closest yet to trial_08 but still does not beat it, reinforcing that the best achievable value with this schedule family is ~0.110 and further tuning yields no real gain",
+      "notebook": "trial_15.ipynb"
     }
   ],
   "protocol": {
