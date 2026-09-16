@@ -125,6 +125,20 @@
       "summary": "Trial 09 (lr_mu=0.1486, mu_anneal=0.3504, lr_gamma=0.4805, gamma_anneal=0.5416): objective 0.1126 +/- 0.0827 with 0 diverged cells; a fine refinement next to trial_08 reproduced the good 1nW high-T mu behaviour (T60 -0.3%) but only matched trial_01's level, so trial_08 (0.1099) stays the best",
       "key_insight": "The good mu-travel band is flat to about +/-0.003 in objective (0.1099-0.1140 over travels 0.097-0.134), with trial_08's slightly larger travel the current best; tuning inside this band yields diminishing returns",
       "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "gamma_anneal": 0.5214574375871789,
+        "lr_gamma": 0.44717373017471373,
+        "lr_mu": 0.1193843757751678,
+        "mu_anneal": 0.33762705247345415
+      },
+      "objective": 0.19748997326790735,
+      "uncertainty": 0.09510898600026421,
+      "summary": "Trial 10 (lr_mu=0.1194, mu_anneal=0.3376, lr_gamma=0.4472, gamma_anneal=0.5215): objective 0.1975 +/- 0.0951 with 1 diverged cell (3nW T60, gamma 2.85e15) - the worst run of the campaign; the highest-EI proposal diverged at a new, heavily-weighted high-transmission cell, so gamma instability is not confined to 1nW T05",
+      "key_insight": "The gamma blow-up is not tied to the low-T/1nW cell: it appeared at 3nW T60 here (with lr_gamma=0.447, lower than several finite runs), so the divergence is a sporadic instability of the small-travel regime that can hit a different, high-weight cell",
+      "notebook": "trial_10.ipynb"
     }
   ],
   "protocol": {
