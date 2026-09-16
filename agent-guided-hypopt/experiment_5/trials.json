@@ -251,6 +251,20 @@
       "summary": "Trial 18 (lr_mu=0.1682, mu_anneal=0.3588, lr_gamma=0.4519, gamma_anneal=0.4218): objective 0.1121 +/- 0.0826 with 0 diverged cells; another optimum sample (travel 0.138) landed fifth-best, so the plateau holds and trial_08 (0.1099) stays best",
       "key_insight": "The optimum region returns 0.1099-0.1132 for any near-optimal schedule, with no remaining gradient in either mu travel or the gamma knobs; eight sub-0.113 samples now indicate ~0.110 is the practical floor for this schedule family",
       "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "gamma_anneal": 0.465163394070567,
+        "lr_gamma": 0.4585382156835163,
+        "lr_mu": 0.1525604246991761,
+        "mu_anneal": 0.36053038804378457
+      },
+      "objective": 0.11352027438166691,
+      "uncertainty": 0.08227805609933884,
+      "summary": "Trial 19 (lr_mu=0.1526, mu_anneal=0.3605, lr_gamma=0.4585, gamma_anneal=0.4652): objective 0.1135 +/- 0.0823 with 0 diverged cells; a conservative optimum sample (travel 0.125) matched trial_05 exactly and added to the plateau, so trial_08 (0.1099) stays best",
+      "key_insight": "Choosing the safer of two near-tied EI candidates gave a clean, divergence-free run with excellent gamma (22.0%), but the plateau value is unchanged at ~0.11 - the schedule family has converged and trial_08 remains the best",
+      "notebook": "trial_19.ipynb"
     }
   ],
   "protocol": {
