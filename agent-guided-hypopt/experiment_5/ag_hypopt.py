@@ -116,7 +116,7 @@ BUDGET_HOURS = 3.5
 CALLS_PER_HOUR = 160_000   # total fit calls across all workers (measured)
 
 # Defaults merged under every trial config (missing keys are filled from here).
-# Only the space.json tunables (sigma_ref, lr_mu, lr_gamma, gamma_anneal, clip)
+# Only the space.json tunables (lr_mu, lr_gamma, gamma_anneal, mu_anneal, clip)
 # are proposed; the rest are fixed by this experiment. Current budget
 # n_runs x n_iter = 100 x 100 (~1h/trial); bump to 200 x 200 for the full budget
 # once the loop is validated. Structural choices stay frozen (z-form gamma,
