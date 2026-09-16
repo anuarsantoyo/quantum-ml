@@ -83,6 +83,20 @@
       "summary": "Trial 06 (lr_mu=0.1022, mu_anneal=0.3925, lr_gamma=0.4058, gamma_anneal=0.5330): objective 0.1188 +/- 0.0821 with 0 diverged cells; the highest-EI proposal refined the good region (mu travel 0.082, gamma finite on all cells) but did not beat trial_01/trial_05, with mu rel-RMSE 57.6% and the high-T undershoot unchanged",
       "key_insight": "The expected-improvement model picked a point right beside trial_05 and reproduced its clean behaviour, but a further travel reduction to 0.082 bought nothing - the local optimum for the objective at fixed gamma settings sits at trial_05's small-but-not-minimal mu travel (0.088)",
       "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "gamma_anneal": 0.30186251133011566,
+        "lr_gamma": 0.8120366737603734,
+        "lr_mu": 0.11588718218605815,
+        "mu_anneal": 0.3324244871539392
+      },
+      "objective": 0.11396083499519438,
+      "uncertainty": 0.0819820908220425,
+      "summary": "Trial 07 (lr_mu=0.1159, mu_anneal=0.3324, lr_gamma=0.8120, gamma_anneal=0.3019): objective 0.1140 +/- 0.0820 with 0 diverged cells; combining the small-travel mu region with trial_01's gamma schedule gave gamma accuracy essentially tied with trial_01 for best of the campaign (rel-RMSE 21.6%) and a third straight divergence-free run, landing just behind trial_01/trial_05",
+      "key_insight": "Trial_01's gamma schedule (lr_gamma~0.81, gamma_anneal~0.30) reproduces the divergence-free low-T gamma behaviour even when paired with a small mu travel, so gamma stability is a property of the schedule combination rather than of mu travel alone - and the objective now sits in a tight 0.1127-0.1140 cluster",
+      "notebook": "trial_07.ipynb"
     }
   ],
   "protocol": {
