@@ -1,5 +1,20 @@
 {
-  "trials": [],
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_anneal": 0.29675854484918296,
+        "lr_gamma": 0.7990072682569841,
+        "lr_mu": 0.15508144049936426,
+        "mu_anneal": 0.4534978894806515
+      },
+      "objective": 0.11274904040229218,
+      "uncertainty": 0.08250123422479742,
+      "summary": "Trial 01 (lr_mu=0.1551, mu_anneal=0.4535, lr_gamma=0.7990, gamma_anneal=0.2968): objective 0.1127 +/- 0.0825, 0 diverged cells; gamma within ~1% at T100 but under-recovered at low T (-45/-29% at T05), while mu overshoots at mid transmission (+137-157%) and undershoots at high T (-23 to -38%)",
+      "key_insight": "The residual is a mu-location problem (large low/mid-T overshoot plus high-T undershoot, the latter weighted most), not a gamma-divergence one: gamma is accurate at high T and degrades only in the known low-count regime, with no diverged cell",
+      "notebook": "trial_01.ipynb"
+    }
+  ],
   "protocol": {
     "model": "series-21 (17g) model on REAL data; mu reward = Anuar's per-run likelihood (MU_REWARD=loglik_mean), mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
     "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
