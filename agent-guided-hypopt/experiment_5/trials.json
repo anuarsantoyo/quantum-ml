@@ -335,6 +335,20 @@
       "summary": "Trial 24 (lr_mu=0.1615, mu_anneal=0.3513, lr_gamma=0.4691, gamma_anneal=0.4896): objective 0.1108 +/- 0.0826 with 0 diverged cells; a near-optimal sample (travel 0.133) with a perfect 1nW T60 (mu +0.0%) landed fifth-best, so trial_21 (0.1074) remains best",
       "key_insight": "Balanced gamma at travel ~0.13 keeps producing sub-0.111 results (now five runs), but trial_21's exact point at travel 0.138 is still the lowest - the optimum is a narrow, high-performing spike",
       "notebook": "trial_24.ipynb"
+    },
+    {
+      "trial_id": "trial_25",
+      "config": {
+        "gamma_anneal": 0.5242496357697499,
+        "lr_gamma": 0.46649903214266486,
+        "lr_mu": 0.16661102060140487,
+        "mu_anneal": 0.3513506553556998
+      },
+      "objective": 0.11256502668569424,
+      "uncertainty": 0.08234422577403055,
+      "summary": "Trial 25 (lr_mu=0.1666, mu_anneal=0.3514, lr_gamma=0.4665, gamma_anneal=0.5242): objective 0.1126 +/- 0.0823 with 0 diverged cells; a resample right at the best travel (0.137) landed mid-plateau (0.1126) rather than at 0.1074, so trial_21 remains the best",
+      "key_insight": "Resampling trial_22's exact travel (0.137) with slightly different gamma knobs gave 0.1126 instead of 0.1095, so the residual spread within the best band is a small-cell (1nW T20/T60) effect - the best point is narrow and possibly somewhat sensitive",
+      "notebook": "trial_25.ipynb"
     }
   ],
   "protocol": {
