@@ -545,6 +545,20 @@
       "summary": "Trial 39 (lr_mu=0.1637, mu_anneal=0.3511, lr_gamma=0.4585, gamma_anneal=0.5271): objective 0.1131 +/- 0.0826 with 0 diverged cells; another divergence-free optimum sample (travel 0.135) landed mid-band, so the region's level stays ~0.108-0.113 and trial_21 (0.1074) is best with one trial left",
       "key_insight": "Trial 39 confirms the plateau at the optimum; the campaign is essentially complete, with trial_21's 0.1074 the best of a tight ~0.108-0.113 band and the sporadic divergence the only residual",
       "notebook": "trial_39.ipynb"
+    },
+    {
+      "trial_id": "trial_40",
+      "config": {
+        "gamma_anneal": 0.48622798154217073,
+        "lr_gamma": 0.41811323989683746,
+        "lr_mu": 0.16307690798004648,
+        "mu_anneal": 0.3491389002147382
+      },
+      "objective": 0.11117699101636123,
+      "uncertainty": 0.08251861162913596,
+      "summary": "Trial 40 (lr_mu=0.1631, mu_anneal=0.3491, lr_gamma=0.4181, gamma_anneal=0.4862): objective 0.1112 +/- 0.0825 with 0 diverged cells; the final trial closed the campaign with another divergence-free optimum sample at 0.1112, leaving trial_21 (0.1074) as the overall best",
+      "key_insight": "The campaign finishes converged: the best schedule (travel ~0.137-0.138, balanced gamma) yields ~0.108-0.113 whenever the 1nW T05 cell survives, with the sporadic divergence the only residual - final best remains trial_21 at 0.1074",
+      "notebook": "trial_40.ipynb"
     }
   ],
   "protocol": {
