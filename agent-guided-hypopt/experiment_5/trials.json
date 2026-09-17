@@ -293,6 +293,20 @@
       "summary": "Trial 21 (lr_mu=0.1669, mu_anneal=0.3455, lr_gamma=0.4716, gamma_anneal=0.4723): objective 0.1074 +/- 0.0825 with 0 diverged cells - a new campaign best, beating trial_08 (0.1099); the optimum travel (0.138) with a balanced gamma schedule gave small but real gains across cells",
       "key_insight": "At the optimum, a balanced gamma schedule (lr_gamma=0.472, gamma_anneal=0.472, nearly equal) edged past trial_08 by 0.0025, showing the plateau is not perfectly flat and that a mid-range gamma balance is marginally favourable",
       "notebook": "trial_21.ipynb"
+    },
+    {
+      "trial_id": "trial_22",
+      "config": {
+        "gamma_anneal": 0.4882206519882266,
+        "lr_gamma": 0.4568877930333853,
+        "lr_mu": 0.1658462284704711,
+        "mu_anneal": 0.3487087177212092
+      },
+      "objective": 0.1095454652019385,
+      "uncertainty": 0.08235182642657471,
+      "summary": "Trial 22 (lr_mu=0.1658, mu_anneal=0.3487, lr_gamma=0.4569, gamma_anneal=0.4882): objective 0.1095 +/- 0.0824 with 0 diverged cells; a near-neighbour of the new best (travel 0.137) landed second-best but did not beat trial_21 (0.1074), so trial_21 stays best",
+      "key_insight": "The trial_21 neighbourhood (travel ~0.137, balanced gamma ~0.46-0.49) is confirmed as the campaign's best region - two of the three best runs sit here - but trial_21's exact point remains the lowest at 0.1074",
+      "notebook": "trial_22.ipynb"
     }
   ],
   "protocol": {
