@@ -391,6 +391,20 @@
       "summary": "Trial 28 (lr_mu=0.1681, mu_anneal=0.3456, lr_gamma=0.4647, gamma_anneal=0.4916): objective 0.1370 +/- 0.0973 with 1 diverged cell (1nW T05, gamma -5.0e13); a third near-optimum run to blow up at 1nW T05, confirming the divergence is frequent and trial_21's 0.1074 is partly a lucky draw",
       "key_insight": "The optimum travel (~0.138) diverges at 1nW T05 in roughly half of recent attempts (trials 26 and 28 diverged, 21/22/25 survived), so trial_21's divergence-free 0.1074 is not reliably reproducible and the honest expected performance is the typical ~0.110-0.113",
       "notebook": "trial_28.ipynb"
+    },
+    {
+      "trial_id": "trial_29",
+      "config": {
+        "gamma_anneal": 0.4618202325963348,
+        "lr_gamma": 0.48130054871052286,
+        "lr_mu": 0.15717876317106066,
+        "mu_anneal": 0.3486727611617326
+      },
+      "objective": 0.13310575276425796,
+      "uncertainty": 0.09751291785039737,
+      "summary": "Trial 29 (lr_mu=0.1572, mu_anneal=0.3487, lr_gamma=0.4813, gamma_anneal=0.4618): objective 0.1331 +/- 0.0975 with 1 diverged cell (1nW T05, gamma -1.7e16); a third consecutive near-optimum divergence, so the 1nW T05 blow-up now strikes ~half of runs at the optimum",
+      "key_insight": "Three consecutive near-optimum runs (26, 28, 29) all diverged at 1nW T05 while the earlier three (21, 22, 25) did not, so the low-count gamma divergence is roughly a coin flip at the optimum and the headline best (0.1074) is partly a lucky draw - the honest level is ~0.110-0.113",
+      "notebook": "trial_29.ipynb"
     }
   ],
   "protocol": {
