@@ -489,6 +489,20 @@
       "summary": "Trial 35 (lr_mu=0.1475, mu_anneal=0.3510, lr_gamma=0.4228, gamma_anneal=0.4942): objective 0.1167 +/- 0.0824 with 0 diverged cells; a divergence-free sample at the lower edge of the band (travel 0.122) landed well off the optimum, so the band edge is genuinely worse and trial_21 (0.1074) stays best",
       "key_insight": "Travel 0.122 gives 0.1167 - notably worse than 0.127-0.138 - confirming the optimum band is narrow and centred at ~0.137, and that the fall-off below it is a real schedule effect rather than a divergence artifact",
       "notebook": "trial_35.ipynb"
+    },
+    {
+      "trial_id": "trial_36",
+      "config": {
+        "gamma_anneal": 0.46781381390960064,
+        "lr_gamma": 0.4092538193922949,
+        "lr_mu": 0.16252746775100127,
+        "mu_anneal": 0.34873330762113314
+      },
+      "objective": 0.11169137750727574,
+      "uncertainty": 0.08250353238536849,
+      "summary": "Trial 36 (lr_mu=0.1625, mu_anneal=0.3487, lr_gamma=0.4093, gamma_anneal=0.4678): objective 0.1117 +/- 0.0825 with 0 diverged cells; a divergence-free optimum sample (travel 0.134) landed mid-band, keeping the region's typical ~0.108-0.112 and trial_21 (0.1074) as best",
+      "key_insight": "Trial 36 adds an eighth surviving sample at or below 0.112 at the optimum, so the schedule level is fully characterised at ~0.108-0.112 and only the sporadic 1nW T05 divergence remains as a source of variance",
+      "notebook": "trial_36.ipynb"
     }
   ],
   "protocol": {
