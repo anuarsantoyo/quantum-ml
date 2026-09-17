@@ -377,6 +377,20 @@
       "summary": "Trial 27 (lr_mu=0.2350, mu_anneal=0.3511, lr_gamma=0.4547, gamma_anneal=0.5010): objective 0.1149 +/- 0.0825 with 0 diverged cells; the large-travel probe (0.194) gave a safe but worse run (mid-T mu overshoots +211%), so no second lower region exists and trial_21 (0.1074) stays best",
       "key_insight": "Travel 0.194 (between trial_11's 0.159 and trial_02's 0.264) lands at 0.1149 with huge mid-T overshoots, confirming the objective rises monotonically away from the ~0.137 optimum - the larger-travel region offers nothing",
       "notebook": "trial_27.ipynb"
+    },
+    {
+      "trial_id": "trial_28",
+      "config": {
+        "gamma_anneal": 0.49161656355839223,
+        "lr_gamma": 0.464681927181863,
+        "lr_mu": 0.16806044205966658,
+        "mu_anneal": 0.3456301904184459
+      },
+      "objective": 0.13703657325398458,
+      "uncertainty": 0.09725371575641331,
+      "summary": "Trial 28 (lr_mu=0.1681, mu_anneal=0.3456, lr_gamma=0.4647, gamma_anneal=0.4916): objective 0.1370 +/- 0.0973 with 1 diverged cell (1nW T05, gamma -5.0e13); a third near-optimum run to blow up at 1nW T05, confirming the divergence is frequent and trial_21's 0.1074 is partly a lucky draw",
+      "key_insight": "The optimum travel (~0.138) diverges at 1nW T05 in roughly half of recent attempts (trials 26 and 28 diverged, 21/22/25 survived), so trial_21's divergence-free 0.1074 is not reliably reproducible and the honest expected performance is the typical ~0.110-0.113",
+      "notebook": "trial_28.ipynb"
     }
   ],
   "protocol": {
