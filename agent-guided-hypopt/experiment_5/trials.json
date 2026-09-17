@@ -531,6 +531,20 @@
       "summary": "Trial 38 (lr_mu=0.1564, mu_anneal=0.3485, lr_gamma=0.3957, gamma_anneal=0.5164): objective 0.1128 +/- 0.0825 with 0 diverged cells; another divergence-free optimum sample (travel 0.129) landed mid-band, keeping the region's level at ~0.108-0.113 and trial_21 (0.1074) as best",
       "key_insight": "Trial 38 is the ninth surviving sample at or below 0.113; the optimum's schedule level is fully characterised at ~0.108-0.113 and the sporadic 1nW T05 divergence remains the only significant residual",
       "notebook": "trial_38.ipynb"
+    },
+    {
+      "trial_id": "trial_39",
+      "config": {
+        "gamma_anneal": 0.5270986888591708,
+        "lr_gamma": 0.45848740690622686,
+        "lr_mu": 0.16373334816693025,
+        "mu_anneal": 0.35114634685466717
+      },
+      "objective": 0.11309464656425597,
+      "uncertainty": 0.08259249781091246,
+      "summary": "Trial 39 (lr_mu=0.1637, mu_anneal=0.3511, lr_gamma=0.4585, gamma_anneal=0.5271): objective 0.1131 +/- 0.0826 with 0 diverged cells; another divergence-free optimum sample (travel 0.135) landed mid-band, so the region's level stays ~0.108-0.113 and trial_21 (0.1074) is best with one trial left",
+      "key_insight": "Trial 39 confirms the plateau at the optimum; the campaign is essentially complete, with trial_21's 0.1074 the best of a tight ~0.108-0.113 band and the sporadic divergence the only residual",
+      "notebook": "trial_39.ipynb"
     }
   ],
   "protocol": {
