@@ -475,6 +475,20 @@
       "summary": "Trial 34 (lr_mu=0.1587, mu_anneal=0.3492, lr_gamma=0.4599, gamma_anneal=0.5168): objective 0.1380 +/- 0.0972 with 1 diverged cell (1nW T05, gamma 1.8e14); another optimum-region divergence, keeping the rate at roughly one in three and leaving trial_21 (0.1074) as best",
       "key_insight": "The optimum band has now produced seven sub-0.111 survivals and four divergences (26, 28, 29, 34) at near-identical schedules, so the 1nW T05 gamma blow-up is confirmed to be a coin-flip hazard and the schedule search itself is exhausted at ~0.108",
       "notebook": "trial_34.ipynb"
+    },
+    {
+      "trial_id": "trial_35",
+      "config": {
+        "gamma_anneal": 0.4942414384837883,
+        "lr_gamma": 0.4227784347247818,
+        "lr_mu": 0.14745614043069002,
+        "mu_anneal": 0.3509779709635278
+      },
+      "objective": 0.11671509058071337,
+      "uncertainty": 0.08237966953284806,
+      "summary": "Trial 35 (lr_mu=0.1475, mu_anneal=0.3510, lr_gamma=0.4228, gamma_anneal=0.4942): objective 0.1167 +/- 0.0824 with 0 diverged cells; a divergence-free sample at the lower edge of the band (travel 0.122) landed well off the optimum, so the band edge is genuinely worse and trial_21 (0.1074) stays best",
+      "key_insight": "Travel 0.122 gives 0.1167 - notably worse than 0.127-0.138 - confirming the optimum band is narrow and centred at ~0.137, and that the fall-off below it is a real schedule effect rather than a divergence artifact",
+      "notebook": "trial_35.ipynb"
     }
   ],
   "protocol": {
