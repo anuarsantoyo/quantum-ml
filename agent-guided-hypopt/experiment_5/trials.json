@@ -517,6 +517,20 @@
       "summary": "Trial 37 (lr_mu=0.1654, mu_anneal=0.3518, lr_gamma=0.3440, gamma_anneal=0.4960): objective 0.1134 +/- 0.0825 with 0 diverged cells; a divergence-free optimum sample with a lower lr_gamma (0.344) landed at the band edge of the plateau (0.1134), so lower lr_gamma does not help and trial_21 (0.1074) stays best",
       "key_insight": "Reducing lr_gamma to 0.344 at the optimum gives 0.1134 - slightly worse than the 0.409-0.481 runs (0.1074-0.1106) - so the gamma step should stay in roughly 0.40-0.49 and the schedule level is ~0.108-0.113",
       "notebook": "trial_37.ipynb"
+    },
+    {
+      "trial_id": "trial_38",
+      "config": {
+        "gamma_anneal": 0.5163876009994693,
+        "lr_gamma": 0.39573960747638715,
+        "lr_mu": 0.15644858773580594,
+        "mu_anneal": 0.34854510936950966
+      },
+      "objective": 0.11280083043997771,
+      "uncertainty": 0.0824942051955076,
+      "summary": "Trial 38 (lr_mu=0.1564, mu_anneal=0.3485, lr_gamma=0.3957, gamma_anneal=0.5164): objective 0.1128 +/- 0.0825 with 0 diverged cells; another divergence-free optimum sample (travel 0.129) landed mid-band, keeping the region's level at ~0.108-0.113 and trial_21 (0.1074) as best",
+      "key_insight": "Trial 38 is the ninth surviving sample at or below 0.113; the optimum's schedule level is fully characterised at ~0.108-0.113 and the sporadic 1nW T05 divergence remains the only significant residual",
+      "notebook": "trial_38.ipynb"
     }
   ],
   "protocol": {
