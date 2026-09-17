@@ -503,6 +503,20 @@
       "summary": "Trial 36 (lr_mu=0.1625, mu_anneal=0.3487, lr_gamma=0.4093, gamma_anneal=0.4678): objective 0.1117 +/- 0.0825 with 0 diverged cells; a divergence-free optimum sample (travel 0.134) landed mid-band, keeping the region's typical ~0.108-0.112 and trial_21 (0.1074) as best",
       "key_insight": "Trial 36 adds an eighth surviving sample at or below 0.112 at the optimum, so the schedule level is fully characterised at ~0.108-0.112 and only the sporadic 1nW T05 divergence remains as a source of variance",
       "notebook": "trial_36.ipynb"
+    },
+    {
+      "trial_id": "trial_37",
+      "config": {
+        "gamma_anneal": 0.4960236421813321,
+        "lr_gamma": 0.34401631502969865,
+        "lr_mu": 0.1653730506876873,
+        "mu_anneal": 0.35182124068691784
+      },
+      "objective": 0.11341681283875164,
+      "uncertainty": 0.08254103484035753,
+      "summary": "Trial 37 (lr_mu=0.1654, mu_anneal=0.3518, lr_gamma=0.3440, gamma_anneal=0.4960): objective 0.1134 +/- 0.0825 with 0 diverged cells; a divergence-free optimum sample with a lower lr_gamma (0.344) landed at the band edge of the plateau (0.1134), so lower lr_gamma does not help and trial_21 (0.1074) stays best",
+      "key_insight": "Reducing lr_gamma to 0.344 at the optimum gives 0.1134 - slightly worse than the 0.409-0.481 runs (0.1074-0.1106) - so the gamma step should stay in roughly 0.40-0.49 and the schedule level is ~0.108-0.113",
+      "notebook": "trial_37.ipynb"
     }
   ],
   "protocol": {
