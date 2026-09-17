@@ -461,6 +461,20 @@
       "summary": "Trial 33 (lr_mu=0.1733, mu_anneal=0.3498, lr_gamma=0.4138, gamma_anneal=0.4779): objective 0.1120 +/- 0.0825 with 0 diverged cells; sampling just above the optimum (travel 0.143) landed mid-band, so the spike does not extend upward and trial_21 (0.1074) stays best",
       "key_insight": "Travel 0.143 gives 0.1120, slightly worse than the 0.137-0.138 optimum, confirming the spike peaks at ~0.137-0.138 and falls off both ways",
       "notebook": "trial_33.ipynb"
+    },
+    {
+      "trial_id": "trial_34",
+      "config": {
+        "gamma_anneal": 0.5167889193666546,
+        "lr_gamma": 0.4598853415782271,
+        "lr_mu": 0.15872829156666646,
+        "mu_anneal": 0.34923114163867675
+      },
+      "objective": 0.13799386369112035,
+      "uncertainty": 0.09718432601375157,
+      "summary": "Trial 34 (lr_mu=0.1587, mu_anneal=0.3492, lr_gamma=0.4599, gamma_anneal=0.5168): objective 0.1380 +/- 0.0972 with 1 diverged cell (1nW T05, gamma 1.8e14); another optimum-region divergence, keeping the rate at roughly one in three and leaving trial_21 (0.1074) as best",
+      "key_insight": "The optimum band has now produced seven sub-0.111 survivals and four divergences (26, 28, 29, 34) at near-identical schedules, so the 1nW T05 gamma blow-up is confirmed to be a coin-flip hazard and the schedule search itself is exhausted at ~0.108",
+      "notebook": "trial_34.ipynb"
     }
   ],
   "protocol": {
