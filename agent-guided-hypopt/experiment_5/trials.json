@@ -349,6 +349,20 @@
       "summary": "Trial 25 (lr_mu=0.1666, mu_anneal=0.3514, lr_gamma=0.4665, gamma_anneal=0.5242): objective 0.1126 +/- 0.0823 with 0 diverged cells; a resample right at the best travel (0.137) landed mid-plateau (0.1126) rather than at 0.1074, so trial_21 remains the best",
       "key_insight": "Resampling trial_22's exact travel (0.137) with slightly different gamma knobs gave 0.1126 instead of 0.1095, so the residual spread within the best band is a small-cell (1nW T20/T60) effect - the best point is narrow and possibly somewhat sensitive",
       "notebook": "trial_25.ipynb"
+    },
+    {
+      "trial_id": "trial_26",
+      "config": {
+        "gamma_anneal": 0.46487064324721966,
+        "lr_gamma": 0.4711193851666182,
+        "lr_mu": 0.1653026566996843,
+        "mu_anneal": 0.3451342624231235
+      },
+      "objective": 0.13680719181595627,
+      "uncertainty": 0.09676792993097319,
+      "summary": "Trial 26 (lr_mu=0.1653, mu_anneal=0.3451, lr_gamma=0.4711, gamma_anneal=0.4649): objective 0.1368 +/- 0.0968 with 1 diverged cell (1nW T05, gamma 3.0e16); despite being a near-exact copy of the best trial_21, it diverged at the very cell trial_21 survived",
+      "key_insight": "A near-exact resample of the best configuration (all four knobs within ~0.007 of trial_21) diverged at 1nW T05 while trial_21 did not, so the sporadic gamma blow-up is chaotic/unpredictable at this resolution and trial_21's divergence-free best result may be partly luck",
+      "notebook": "trial_26.ipynb"
     }
   ],
   "protocol": {
