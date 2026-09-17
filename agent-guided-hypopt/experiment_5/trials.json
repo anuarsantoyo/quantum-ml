@@ -419,6 +419,20 @@
       "summary": "Trial 30 (lr_mu=0.1631, mu_anneal=0.3502, lr_gamma=0.4535, gamma_anneal=0.4853): objective 0.1083 +/- 0.0828 with 0 diverged cells; a surviving optimum sample (travel 0.134) landed second-best, breaking the divergence streak and confirming the typical surviving level near 0.108-0.110",
       "key_insight": "With a divergence-free draw the optimum travel (0.134) gives 0.1083, close to trial_21's 0.1074 - so the typical surviving performance is ~0.108-0.112 and it is the sporadic 1nW T05 divergence, not the schedule, that separates good runs from bad ones",
       "notebook": "trial_30.ipynb"
+    },
+    {
+      "trial_id": "trial_31",
+      "config": {
+        "gamma_anneal": 0.5157520283350054,
+        "lr_gamma": 0.4131123463772112,
+        "lr_mu": 0.1591098615686672,
+        "mu_anneal": 0.3486480702900511
+      },
+      "objective": 0.11063016682540873,
+      "uncertainty": 0.08251163121128371,
+      "summary": "Trial 31 (lr_mu=0.1591, mu_anneal=0.3486, lr_gamma=0.4131, gamma_anneal=0.5158): objective 0.1106 +/- 0.0825 with 0 diverged cells; another divergence-free optimum sample (travel 0.131) landed sixth-best, consistent with the region's typical ~0.107-0.111",
+      "key_insight": "The optimum keeps delivering 0.107-0.111 when the low-count cell survives (now six sub-0.111 runs), reinforcing that the achievable level with this schedule family is ~0.108 and that all larger objectives come from the sporadic 1nW T05 divergence",
+      "notebook": "trial_31.ipynb"
     }
   ],
   "protocol": {
