@@ -279,6 +279,20 @@
       "summary": "Trial 20 (lr_mu=0.1754, mu_anneal=0.3548, lr_gamma=0.4620, gamma_anneal=0.4671): objective 0.1126 +/- 0.0825 with 0 diverged cells; an optimum sample (travel 0.144) matched trial_09 exactly, so the plateau holds and trial_08 (0.1099) stays best",
       "key_insight": "The optimum region keeps returning 0.1099-0.1135 for any near-optimal schedule; with fifteen divergence-free samples the plateau is definitive and trial_08 remains the best of the campaign",
       "notebook": "trial_20.ipynb"
+    },
+    {
+      "trial_id": "trial_21",
+      "config": {
+        "gamma_anneal": 0.47227943878293116,
+        "lr_gamma": 0.4716158160640441,
+        "lr_mu": 0.16690567035774542,
+        "mu_anneal": 0.34550376211493733
+      },
+      "objective": 0.10739462538937855,
+      "uncertainty": 0.08245800327308324,
+      "summary": "Trial 21 (lr_mu=0.1669, mu_anneal=0.3455, lr_gamma=0.4716, gamma_anneal=0.4723): objective 0.1074 +/- 0.0825 with 0 diverged cells - a new campaign best, beating trial_08 (0.1099); the optimum travel (0.138) with a balanced gamma schedule gave small but real gains across cells",
+      "key_insight": "At the optimum, a balanced gamma schedule (lr_gamma=0.472, gamma_anneal=0.472, nearly equal) edged past trial_08 by 0.0025, showing the plateau is not perfectly flat and that a mid-range gamma balance is marginally favourable",
+      "notebook": "trial_21.ipynb"
     }
   ],
   "protocol": {
