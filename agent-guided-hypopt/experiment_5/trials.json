@@ -433,6 +433,20 @@
       "summary": "Trial 31 (lr_mu=0.1591, mu_anneal=0.3486, lr_gamma=0.4131, gamma_anneal=0.5158): objective 0.1106 +/- 0.0825 with 0 diverged cells; another divergence-free optimum sample (travel 0.131) landed sixth-best, consistent with the region's typical ~0.107-0.111",
       "key_insight": "The optimum keeps delivering 0.107-0.111 when the low-count cell survives (now six sub-0.111 runs), reinforcing that the achievable level with this schedule family is ~0.108 and that all larger objectives come from the sporadic 1nW T05 divergence",
       "notebook": "trial_31.ipynb"
+    },
+    {
+      "trial_id": "trial_32",
+      "config": {
+        "gamma_anneal": 0.5220754356321338,
+        "lr_gamma": 0.41733921515603717,
+        "lr_mu": 0.1656109291081796,
+        "mu_anneal": 0.3487142119036593
+      },
+      "objective": 0.10972421448159755,
+      "uncertainty": 0.08251629562071122,
+      "summary": "Trial 32 (lr_mu=0.1656, mu_anneal=0.3487, lr_gamma=0.4173, gamma_anneal=0.5221): objective 0.1097 +/- 0.0825 with 0 diverged cells; another survival at the optimum (travel 0.137) landed fourth-best, so the region's typical level stays ~0.108-0.110 and trial_21 (0.1074) remains best",
+      "key_insight": "The optimum region now has seven surviving samples below 0.111 (0.1074-0.1106), so the level is tightly reproducible at ~0.108-0.110 whenever the low-count cell survives - the schedule search is exhausted and the divergence is the only remaining factor",
+      "notebook": "trial_32.ipynb"
     }
   ],
   "protocol": {
