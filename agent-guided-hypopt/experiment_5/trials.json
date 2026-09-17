@@ -405,6 +405,20 @@
       "summary": "Trial 29 (lr_mu=0.1572, mu_anneal=0.3487, lr_gamma=0.4813, gamma_anneal=0.4618): objective 0.1331 +/- 0.0975 with 1 diverged cell (1nW T05, gamma -1.7e16); a third consecutive near-optimum divergence, so the 1nW T05 blow-up now strikes ~half of runs at the optimum",
       "key_insight": "Three consecutive near-optimum runs (26, 28, 29) all diverged at 1nW T05 while the earlier three (21, 22, 25) did not, so the low-count gamma divergence is roughly a coin flip at the optimum and the headline best (0.1074) is partly a lucky draw - the honest level is ~0.110-0.113",
       "notebook": "trial_29.ipynb"
+    },
+    {
+      "trial_id": "trial_30",
+      "config": {
+        "gamma_anneal": 0.4852881795370443,
+        "lr_gamma": 0.45353342719513795,
+        "lr_mu": 0.16308080061550126,
+        "mu_anneal": 0.3502494066711197
+      },
+      "objective": 0.10830632593627558,
+      "uncertainty": 0.0827691605583724,
+      "summary": "Trial 30 (lr_mu=0.1631, mu_anneal=0.3502, lr_gamma=0.4535, gamma_anneal=0.4853): objective 0.1083 +/- 0.0828 with 0 diverged cells; a surviving optimum sample (travel 0.134) landed second-best, breaking the divergence streak and confirming the typical surviving level near 0.108-0.110",
+      "key_insight": "With a divergence-free draw the optimum travel (0.134) gives 0.1083, close to trial_21's 0.1074 - so the typical surviving performance is ~0.108-0.112 and it is the sporadic 1nW T05 divergence, not the schedule, that separates good runs from bad ones",
+      "notebook": "trial_30.ipynb"
     }
   ],
   "protocol": {
