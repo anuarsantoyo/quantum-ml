@@ -27,6 +27,20 @@
       "summary": "Trial 02 (sw=0.884, h_f=0.642, h_s=1.007, cap=0.054): objective 0.1287 +/- 0.0844, 0 diverged cells, gamma finite; gamma rel-RMSE 17.0% but mu blew up at low T (rel-RMSE 95.9%), worse than trial_01.",
       "key_insight": "Near-exp5 sigma settings with a sharpened FWHM kernel (h_f 0.64) worsen the low-T mu overshoot (mu rel-RMSE 95.9%) while improving gamma (17.0%); low-T mu accuracy, not sigma damping alone, is the binding problem.",
       "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_rel_cap": 0.2153140102070889,
+        "h_f_scale": 2.4504946428930277,
+        "h_s_scale": 3.0168917023456006,
+        "sigma_weight": 0.9562672548360985
+      },
+      "objective": 0.10399841945804793,
+      "uncertainty": 0.05822409537730788,
+      "summary": "Trial 03 (sw=0.956, h_f=2.450, h_s=3.017, cap=0.215): objective 0.1040 +/- 0.0582 - new best, below the exp5 honest level and the 0.1074 headline; 0 diverged cells, gamma finite on all 8 (mu rel-RMSE 45.8%, gamma rel-RMSE 23.3%).",
+      "key_insight": "Restoring near-full sigma weight (sw 0.96) while keeping both kernels flat (h_f 2.45, h_s 3.02) beats the exp5 level at 0.1040, so the flat-kernel score design rather than sigma damping carries the improvement.",
+      "notebook": "trial_03.ipynb"
     }
   ],
   "protocol": {
