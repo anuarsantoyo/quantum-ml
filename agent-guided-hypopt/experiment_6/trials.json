@@ -363,6 +363,20 @@
       "summary": "Trial 26 (sw=0.919, h_f=4.0, h_s=3.608, cap=0.163): objective 0.0807 +/- 0.0228 - second best, essentially tied with trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 35.2%, gamma rel-RMSE 25.4%).",
       "key_insight": "A high-sigma-weight design (sw 0.919) with a mid cap (0.163) reached 0.0807, matching trial_07 within noise, so the optimum is not unique: a second near-optimal point exists in the high-sw corner.",
       "notebook": "trial_26.ipynb"
+    },
+    {
+      "trial_id": "trial_27",
+      "config": {
+        "gamma_rel_cap": 0.4973398012701983,
+        "h_f_scale": 3.989631433418793,
+        "h_s_scale": 3.683366475017465,
+        "sigma_weight": 0.8664365178290101
+      },
+      "objective": 0.09458123740507128,
+      "uncertainty": 0.03471998469856094,
+      "summary": "Trial 27 (sw=0.866, h_f=3.990, h_s=3.683, cap=0.497): objective 0.0946 +/- 0.0347 - worst trial, worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.3%, gamma rel-RMSE 32.6%).",
+      "key_insight": "With optimal sigma weight and kernels, a very large gamma cap (0.497) let gamma collapse in the lowest-count cell (1nW Trans05 -70.8%), giving the worst objective (0.0946); at this sigma weight the cap must stay small.",
+      "notebook": "trial_27.ipynb"
     }
   ],
   "protocol": {
