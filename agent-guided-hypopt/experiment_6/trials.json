@@ -111,6 +111,20 @@
       "summary": "Trial 08 (sw=0.869, h_f=3.985, h_s=3.624, cap=0.295): objective 0.0876 +/- 0.0238 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 37.0%, gamma rel-RMSE 24.6%).",
       "key_insight": "In the best kernel/sigma region, a larger gamma cap (0.295 vs trial_07 0.107) worsened the objective (0.0876 vs 0.0803), so a small gamma trust region is preferred.",
       "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "gamma_rel_cap": 0.23092007808116063,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.603032821431027,
+        "sigma_weight": 0.8468371632421319
+      },
+      "objective": 0.08391656515354673,
+      "uncertainty": 0.025249530950892975,
+      "summary": "Trial 09 (sw=0.847, h_f=4.0, h_s=3.603, cap=0.231): objective 0.0839 +/- 0.0252 - third best; 0 diverged cells, gamma finite (mu rel-RMSE 35.5%, gamma rel-RMSE 27.9%).",
+      "key_insight": "A larger gamma cap (0.231) again raised the gamma error (27.9% vs trial_07 22.3% at cap 0.107), reinforcing that a small gamma trust region is best in the optimum region.",
+      "notebook": "trial_09.ipynb"
     }
   ],
   "protocol": {
