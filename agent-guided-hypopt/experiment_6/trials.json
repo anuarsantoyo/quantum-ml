@@ -55,6 +55,20 @@
       "summary": "Trial 04 (sw=0.959, h_f=2.101, h_s=2.126, cap=0.249): objective 0.1177 +/- 0.0687 - second best, worse than trial_03; 0 diverged cells, gamma finite (mu rel-RMSE 50.4%, gamma rel-RMSE 28.9%).",
       "key_insight": "Sharpening both KDE kernels (h_f 2.45->2.10, h_s 3.02->2.13) from the best point raised the objective 0.1040->0.1177, so kernel flatness rather than the sigma weight drives trial_03 advantage.",
       "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "gamma_rel_cap": 0.21747377611257102,
+        "h_f_scale": 3.9031982247222077,
+        "h_s_scale": 3.616291030407058,
+        "sigma_weight": 0.844231037608741
+      },
+      "objective": 0.08215797802746053,
+      "uncertainty": 0.024443486244350016,
+      "summary": "Trial 05 (sw=0.844, h_f=3.903, h_s=3.616, cap=0.217): objective 0.0822 +/- 0.0244 - new best by a wide margin, well below the exp5 level and the 0.1074 headline; 0 diverged cells, gamma finite (mu rel-RMSE 36.7%, gamma rel-RMSE 21.0%).",
+      "key_insight": "Pushing both KDE kernels toward their upper bounds (h_f 3.90, h_s 3.62) with a strong sigma link gave the best result yet (0.0822), confirming kernel flatness as the dominant lever over the sigma weight.",
+      "notebook": "trial_05.ipynb"
     }
   ],
   "protocol": {
