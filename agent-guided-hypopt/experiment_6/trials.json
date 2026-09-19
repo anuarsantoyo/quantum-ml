@@ -335,6 +335,20 @@
       "summary": "Trial 24 (sw=0.899, h_f=3.993, h_s=3.614, cap=0.216): objective 0.0871 +/- 0.0282 - worse than trial_20 and trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 35.4%, gamma rel-RMSE 29.4%).",
       "key_insight": "A close copy of trial_20 high-sw design scored 0.0871 rather than ~0.082, showing the objective is sharply sensitive to small configuration changes; no stable second optimum exists.",
       "notebook": "trial_24.ipynb"
+    },
+    {
+      "trial_id": "trial_25",
+      "config": {
+        "gamma_rel_cap": 0.21796267739189867,
+        "h_f_scale": 3.949672273247696,
+        "h_s_scale": 3.6190958233443817,
+        "sigma_weight": 0.9720116980365028
+      },
+      "objective": 0.0864600563498753,
+      "uncertainty": 0.024482345602045607,
+      "summary": "Trial 25 (sw=0.972, h_f=3.950, h_s=3.619, cap=0.218): objective 0.0865 +/- 0.0245 - worse than trial_07 and trial_20; 0 diverged cells, gamma finite (mu rel-RMSE 36.5%, gamma rel-RMSE 25.9%).",
+      "key_insight": "Very high sigma weight (0.972) with a trial_20-like cap gave 0.0865, worse than trial_20 0.0821 at sw 0.922; the sigma-weight optimum is interior, near ~0.87-0.92.",
+      "notebook": "trial_25.ipynb"
     }
   ],
   "protocol": {
