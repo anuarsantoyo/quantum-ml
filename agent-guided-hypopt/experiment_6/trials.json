@@ -209,6 +209,20 @@
       "summary": "Trial 15 (sw=0.794, h_f=4.0, h_s=3.779, cap=0.144): objective 0.0865 +/- 0.0239 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.5%, gamma rel-RMSE 24.7%).",
       "key_insight": "Another in-region near-copy (lower sw 0.794) did not beat trial_07, so the campaign is fully converged on trial_07 configuration.",
       "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "gamma_rel_cap": 0.14034204296916925,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.607939150628629,
+        "sigma_weight": 0.5119470434183231
+      },
+      "objective": 0.08499543374949702,
+      "uncertainty": 0.022381965886651187,
+      "summary": "Trial 16 (sw=0.512, h_f=4.0, h_s=3.608, cap=0.140): objective 0.0850 +/- 0.0224 - fourth best, worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 34.8%, gamma rel-RMSE 26.8%).",
+      "key_insight": "The moderate-low sigma weight (0.512) again gave strong mu (34.8%) but the objective (0.0850) stays above trial_07, so no single point beats trial_07 mu-gamma balance.",
+      "notebook": "trial_16.ipynb"
     }
   ],
   "protocol": {
