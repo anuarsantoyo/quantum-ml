@@ -279,6 +279,20 @@
       "summary": "Trial 20 (sw=0.922, h_f=3.899, h_s=3.615, cap=0.203): objective 0.0821 +/- 0.0234 - second best, essentially tied with trial_05, just above trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 34.6%, gamma rel-RMSE 26.9%).",
       "key_insight": "A higher sigma weight (0.922) with flat kernels and a moderate cap gave the second-best objective (0.0821) and near-best mu (34.6%), so the strong-sigma side of the optimum is competitive but does not surpass trial_07.",
       "notebook": "trial_20.ipynb"
+    },
+    {
+      "trial_id": "trial_21",
+      "config": {
+        "gamma_rel_cap": 0.15691133973938487,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.6178635406937967,
+        "sigma_weight": 0.9222238330560042
+      },
+      "objective": 0.08515419212358113,
+      "uncertainty": 0.021975405550462672,
+      "summary": "Trial 21 (sw=0.922, h_f=4.0, h_s=3.618, cap=0.157): objective 0.0852 +/- 0.0220 - worse than trial_20 and trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.0%, gamma rel-RMSE 26.8%).",
+      "key_insight": "Lowering the cap from 0.203 (trial_20) to 0.157 with the same high sigma weight worsened the objective (0.0852 vs 0.0821), so the optimal gamma cap depends on the sigma weight rather than being a single fixed value.",
+      "notebook": "trial_21.ipynb"
     }
   ],
   "protocol": {
