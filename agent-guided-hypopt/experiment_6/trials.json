@@ -391,6 +391,20 @@
       "summary": "Trial 28 (sw=0.901, h_f=3.901, h_s=3.585, cap=0.174): objective 0.0845 +/- 0.0248 - worse than trial_07 and trial_26; 0 diverged cells, gamma finite (mu rel-RMSE 36.1%, gamma rel-RMSE 24.4%).",
       "key_insight": "A near-copy of trial_26 (sw 0.901 vs 0.919, cap 0.174 vs 0.163) scored 0.0845 rather than 0.081, again confirming sharp sensitivity in the high-sw corner and that the two near-optimal points are isolated.",
       "notebook": "trial_28.ipynb"
+    },
+    {
+      "trial_id": "trial_29",
+      "config": {
+        "gamma_rel_cap": 0.141456937894344,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.6030489427593033,
+        "sigma_weight": 0.8430118296656312
+      },
+      "objective": 0.08601157934393294,
+      "uncertainty": 0.02262934108964262,
+      "summary": "Trial 29 (sw=0.843, h_f=4.0, h_s=3.603, cap=0.141): objective 0.0860 +/- 0.0226 - worse than trial_07 and trial_26; 0 diverged cells, gamma finite (mu rel-RMSE 36.7%, gamma rel-RMSE 25.9%).",
+      "key_insight": "A draw spanning the corridor between trial_07 and trial_26 (sw 0.843, cap 0.141) still scored 0.0860, confirming the two optima are isolated points and no interpolation between them is better.",
+      "notebook": "trial_29.ipynb"
     }
   ],
   "protocol": {
