@@ -377,6 +377,20 @@
       "summary": "Trial 27 (sw=0.866, h_f=3.990, h_s=3.683, cap=0.497): objective 0.0946 +/- 0.0347 - worst trial, worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.3%, gamma rel-RMSE 32.6%).",
       "key_insight": "With optimal sigma weight and kernels, a very large gamma cap (0.497) let gamma collapse in the lowest-count cell (1nW Trans05 -70.8%), giving the worst objective (0.0946); at this sigma weight the cap must stay small.",
       "notebook": "trial_27.ipynb"
+    },
+    {
+      "trial_id": "trial_28",
+      "config": {
+        "gamma_rel_cap": 0.17431298815555912,
+        "h_f_scale": 3.9014656147170377,
+        "h_s_scale": 3.5851951258545167,
+        "sigma_weight": 0.90080909363769
+      },
+      "objective": 0.08452262629411172,
+      "uncertainty": 0.024764500245539008,
+      "summary": "Trial 28 (sw=0.901, h_f=3.901, h_s=3.585, cap=0.174): objective 0.0845 +/- 0.0248 - worse than trial_07 and trial_26; 0 diverged cells, gamma finite (mu rel-RMSE 36.1%, gamma rel-RMSE 24.4%).",
+      "key_insight": "A near-copy of trial_26 (sw 0.901 vs 0.919, cap 0.174 vs 0.163) scored 0.0845 rather than 0.081, again confirming sharp sensitivity in the high-sw corner and that the two near-optimal points are isolated.",
+      "notebook": "trial_28.ipynb"
     }
   ],
   "protocol": {
