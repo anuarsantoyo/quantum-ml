@@ -41,6 +41,20 @@
       "summary": "Trial 03 (sw=0.956, h_f=2.450, h_s=3.017, cap=0.215): objective 0.1040 +/- 0.0582 - new best, below the exp5 honest level and the 0.1074 headline; 0 diverged cells, gamma finite on all 8 (mu rel-RMSE 45.8%, gamma rel-RMSE 23.3%).",
       "key_insight": "Restoring near-full sigma weight (sw 0.96) while keeping both kernels flat (h_f 2.45, h_s 3.02) beats the exp5 level at 0.1040, so the flat-kernel score design rather than sigma damping carries the improvement.",
       "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "gamma_rel_cap": 0.24893379939268723,
+        "h_f_scale": 2.101074377335431,
+        "h_s_scale": 2.125848210057797,
+        "sigma_weight": 0.9585822861092472
+      },
+      "objective": 0.11771185715563715,
+      "uncertainty": 0.06870436329851608,
+      "summary": "Trial 04 (sw=0.959, h_f=2.101, h_s=2.126, cap=0.249): objective 0.1177 +/- 0.0687 - second best, worse than trial_03; 0 diverged cells, gamma finite (mu rel-RMSE 50.4%, gamma rel-RMSE 28.9%).",
+      "key_insight": "Sharpening both KDE kernels (h_f 2.45->2.10, h_s 3.02->2.13) from the best point raised the objective 0.1040->0.1177, so kernel flatness rather than the sigma weight drives trial_03 advantage.",
+      "notebook": "trial_04.ipynb"
     }
   ],
   "protocol": {
