@@ -405,6 +405,20 @@
       "summary": "Trial 29 (sw=0.843, h_f=4.0, h_s=3.603, cap=0.141): objective 0.0860 +/- 0.0226 - worse than trial_07 and trial_26; 0 diverged cells, gamma finite (mu rel-RMSE 36.7%, gamma rel-RMSE 25.9%).",
       "key_insight": "A draw spanning the corridor between trial_07 and trial_26 (sw 0.843, cap 0.141) still scored 0.0860, confirming the two optima are isolated points and no interpolation between them is better.",
       "notebook": "trial_29.ipynb"
+    },
+    {
+      "trial_id": "trial_30",
+      "config": {
+        "gamma_rel_cap": 0.15273302334167566,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.5985984360836647,
+        "sigma_weight": 0.9099316884003905
+      },
+      "objective": 0.09199898226805032,
+      "uncertainty": 0.026513772823714584,
+      "summary": "Trial 30 (sw=0.910, h_f=4.0, h_s=3.599, cap=0.153): objective 0.0920 +/- 0.0265 - worse than trial_07; final trial of the campaign, 0 diverged cells, gamma finite (mu rel-RMSE 37.0%, gamma rel-RMSE 28.4%).",
+      "key_insight": "The final trial, a near-copy of trial_26 (sw 0.910 vs 0.919, cap 0.153 vs 0.163), scored 0.0920, closing the campaign: trial_07 (0.0803) is the best and remains an isolated sharp optimum.",
+      "notebook": "trial_30.ipynb"
     }
   ],
   "protocol": {
