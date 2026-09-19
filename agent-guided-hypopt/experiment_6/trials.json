@@ -97,6 +97,20 @@
       "summary": "Trial 07 (sw=0.865, h_f=4.0, h_s=3.675, cap=0.107): objective 0.0803 +/- 0.0239 - new best, marginally over trial_05; 0 diverged cells, gamma finite (mu rel-RMSE 35.9%, gamma rel-RMSE 22.3%).",
       "key_insight": "Combining trial_05 strong sigma weight (0.865) with trial_06 max-flat kernels (h_f 4.0, h_s 3.68) gave the new best 0.0803, so the two design choices are complementary rather than redundant.",
       "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "gamma_rel_cap": 0.2954514258827058,
+        "h_f_scale": 3.985487510961152,
+        "h_s_scale": 3.6238517830981807,
+        "sigma_weight": 0.8685847580364594
+      },
+      "objective": 0.08758545601289358,
+      "uncertainty": 0.023846338695282077,
+      "summary": "Trial 08 (sw=0.869, h_f=3.985, h_s=3.624, cap=0.295): objective 0.0876 +/- 0.0238 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 37.0%, gamma rel-RMSE 24.6%).",
+      "key_insight": "In the best kernel/sigma region, a larger gamma cap (0.295 vs trial_07 0.107) worsened the objective (0.0876 vs 0.0803), so a small gamma trust region is preferred.",
+      "notebook": "trial_08.ipynb"
     }
   ],
   "protocol": {
