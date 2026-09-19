@@ -195,6 +195,20 @@
       "summary": "Trial 14 (sw=0.849, h_f=4.0, h_s=3.646, cap=0.167): objective 0.0904 +/- 0.0264 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.9%, gamma rel-RMSE 28.0%).",
       "key_insight": "An intermediate gamma cap (0.167) also did not beat trial_07, further confirming a tight cap optimum around ~0.1 and no improvement over trial_07 across trials 08-14.",
       "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "gamma_rel_cap": 0.1437300057224823,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.7793667447884416,
+        "sigma_weight": 0.7941994158509887
+      },
+      "objective": 0.08654475648431173,
+      "uncertainty": 0.02386671718147117,
+      "summary": "Trial 15 (sw=0.794, h_f=4.0, h_s=3.779, cap=0.144): objective 0.0865 +/- 0.0239 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.5%, gamma rel-RMSE 24.7%).",
+      "key_insight": "Another in-region near-copy (lower sw 0.794) did not beat trial_07, so the campaign is fully converged on trial_07 configuration.",
+      "notebook": "trial_15.ipynb"
     }
   ],
   "protocol": {
