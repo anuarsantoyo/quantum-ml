@@ -153,6 +153,20 @@
       "summary": "Trial 11 (sw=0.788, h_f=3.995, h_s=3.671, cap=0.115): objective 0.0859 +/- 0.0250 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.3%, gamma rel-RMSE 26.8%).",
       "key_insight": "Lowering the sigma weight slightly (0.865 -> 0.788) within the optimum region did not help (0.0859 vs 0.0803), so trial_07 strong sigma weight remains the best value.",
       "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "gamma_rel_cap": 0.14601889896979928,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.608080967754886,
+        "sigma_weight": 0.8460340202579169
+      },
+      "objective": 0.08816437518143341,
+      "uncertainty": 0.02473542479033765,
+      "summary": "Trial 12 (sw=0.846, h_f=4.0, h_s=3.608, cap=0.146): objective 0.0882 +/- 0.0247 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.5%, gamma rel-RMSE 28.1%).",
+      "key_insight": "An in-region gamma cap of 0.146 still did not beat trial_07, so the optimum is a narrow plateau around trial_07 configuration with objective ~0.08.",
+      "notebook": "trial_12.ipynb"
     }
   ],
   "protocol": {
