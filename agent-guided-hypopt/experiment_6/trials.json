@@ -1,5 +1,20 @@
 {
-  "trials": [],
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_rel_cap": 0.15591572600524273,
+        "h_f_scale": 1.8374741836471586,
+        "h_s_scale": 3.3538847268266565,
+        "sigma_weight": 0.4091991363691613
+      },
+      "objective": 0.12433620163379622,
+      "uncertainty": 0.08086878806903983,
+      "summary": "Trial 01 (sw=0.409, h_f=1.837, h_s=3.354, cap=0.156): objective 0.1243 +/- 0.0809 above the exp5 honest level; 0 diverged cells, gamma finite on all 8 (mu rel-RMSE 58.1%, gamma rel-RMSE 27.3%).",
+      "key_insight": "Moderate sigma damping (sw 0.41) + flat sigma kernel (h_s 3.35) keeps gamma finite and divergence-free, but mu stays strongly biased, so the score design alone does not yet beat the frozen exp5 level.",
+      "notebook": "trial_01.ipynb"
+    }
+  ],
   "protocol": {
     "model": "series-21 (17g) model on REAL data; mu reward = Anuar's per-run likelihood (MU_REWARD=loglik_mean), mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
     "question": "experiment_6 - score-DESIGN campaign for failure mode #8: the learning-rate schedule is FROZEN to the experiment_5 winner (trial_21) and the campaign tunes the sigma_fit KDE channel (damping + bandwidths) and a relative gamma trust region.",
@@ -12,8 +27,14 @@
     },
     "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
     "divergence_guard": {
-      "mu": [0.2, 1500.0],
-      "gamma": [0.02, 500.0],
+      "mu": [
+        0.2,
+        1500.0
+      ],
+      "gamma": [
+        0.02,
+        500.0
+      ],
       "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band (guards the photon-count blow-up)"
     },
     "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
