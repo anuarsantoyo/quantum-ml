@@ -321,6 +321,20 @@
       "summary": "Trial 23 (sw=0.884, h_f=4.0, h_s=3.614, cap=0.114): objective 0.0892 +/- 0.0241 - worse than trial_07 despite near-exact replica; 0 diverged cells, gamma finite (mu rel-RMSE 37.0%, gamma rel-RMSE 26.1%).",
       "key_insight": "A second near-exact replica of trial_07 (sw 0.884, cap 0.114) scored 0.0892, so trial_07 0.0803 is an isolated sharp optimum that neighbouring configurations do not reproduce.",
       "notebook": "trial_23.ipynb"
+    },
+    {
+      "trial_id": "trial_24",
+      "config": {
+        "gamma_rel_cap": 0.21563631252430548,
+        "h_f_scale": 3.9932009378193487,
+        "h_s_scale": 3.6135334980352414,
+        "sigma_weight": 0.8988866763984664
+      },
+      "objective": 0.08710062796467512,
+      "uncertainty": 0.028214442504344718,
+      "summary": "Trial 24 (sw=0.899, h_f=3.993, h_s=3.614, cap=0.216): objective 0.0871 +/- 0.0282 - worse than trial_20 and trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 35.4%, gamma rel-RMSE 29.4%).",
+      "key_insight": "A close copy of trial_20 high-sw design scored 0.0871 rather than ~0.082, showing the objective is sharply sensitive to small configuration changes; no stable second optimum exists.",
+      "notebook": "trial_24.ipynb"
     }
   ],
   "protocol": {
