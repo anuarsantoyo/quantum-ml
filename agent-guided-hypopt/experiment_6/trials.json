@@ -181,6 +181,20 @@
       "summary": "Trial 13 (sw=0.844, h_f=4.0, h_s=3.799, cap=0.102): objective 0.0888 +/- 0.0244 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.8%, gamma rel-RMSE 25.9%).",
       "key_insight": "Flattening h_s further (3.675 -> 3.799) did not help, so the kernel-flatness optimum is interior to the sampled range (h_s ~3.6-3.7), not at the boundary.",
       "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "gamma_rel_cap": 0.16710972894385737,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.645628986736452,
+        "sigma_weight": 0.8488354641914216
+      },
+      "objective": 0.09037167197291204,
+      "uncertainty": 0.026431980924866632,
+      "summary": "Trial 14 (sw=0.849, h_f=4.0, h_s=3.646, cap=0.167): objective 0.0904 +/- 0.0264 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.9%, gamma rel-RMSE 28.0%).",
+      "key_insight": "An intermediate gamma cap (0.167) also did not beat trial_07, further confirming a tight cap optimum around ~0.1 and no improvement over trial_07 across trials 08-14.",
+      "notebook": "trial_14.ipynb"
     }
   ],
   "protocol": {
