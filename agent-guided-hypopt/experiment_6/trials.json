@@ -293,6 +293,20 @@
       "summary": "Trial 21 (sw=0.922, h_f=4.0, h_s=3.618, cap=0.157): objective 0.0852 +/- 0.0220 - worse than trial_20 and trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 36.0%, gamma rel-RMSE 26.8%).",
       "key_insight": "Lowering the cap from 0.203 (trial_20) to 0.157 with the same high sigma weight worsened the objective (0.0852 vs 0.0821), so the optimal gamma cap depends on the sigma weight rather than being a single fixed value.",
       "notebook": "trial_21.ipynb"
+    },
+    {
+      "trial_id": "trial_22",
+      "config": {
+        "gamma_rel_cap": 0.1311339058029719,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.605560474797711,
+        "sigma_weight": 0.7957781824001294
+      },
+      "objective": 0.08534754449979011,
+      "uncertainty": 0.024204389301489364,
+      "summary": "Trial 22 (sw=0.796, h_f=4.0, h_s=3.606, cap=0.131): objective 0.0853 +/- 0.0242 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 37.3%, gamma rel-RMSE 24.2%).",
+      "key_insight": "Another in-region draw with slightly lower sw (0.796) and a good cap landed at 0.0853, again above trial_07; trials 08-22 confirm the campaign has converged on trial_07.",
+      "notebook": "trial_22.ipynb"
     }
   ],
   "protocol": {
