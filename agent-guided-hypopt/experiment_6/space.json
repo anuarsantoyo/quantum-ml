@@ -1,0 +1,9 @@
+{
+  "parameters": {
+    "sigma_weight":  {"type": "float", "low": 0.0,  "high": 1.0},
+    "h_f_scale":     {"type": "float", "low": 0.25, "high": 4.0},
+    "h_s_scale":     {"type": "float", "low": 0.25, "high": 4.0},
+    "gamma_rel_cap": {"type": "float", "low": 0.0,  "high": 0.5}
+  },
+  "dependencies": {}
+}
