@@ -307,6 +307,20 @@
       "summary": "Trial 22 (sw=0.796, h_f=4.0, h_s=3.606, cap=0.131): objective 0.0853 +/- 0.0242 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 37.3%, gamma rel-RMSE 24.2%).",
       "key_insight": "Another in-region draw with slightly lower sw (0.796) and a good cap landed at 0.0853, again above trial_07; trials 08-22 confirm the campaign has converged on trial_07.",
       "notebook": "trial_22.ipynb"
+    },
+    {
+      "trial_id": "trial_23",
+      "config": {
+        "gamma_rel_cap": 0.1140590996800363,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.614464212858521,
+        "sigma_weight": 0.8839765047534572
+      },
+      "objective": 0.08916357577882424,
+      "uncertainty": 0.024096765386952438,
+      "summary": "Trial 23 (sw=0.884, h_f=4.0, h_s=3.614, cap=0.114): objective 0.0892 +/- 0.0241 - worse than trial_07 despite near-exact replica; 0 diverged cells, gamma finite (mu rel-RMSE 37.0%, gamma rel-RMSE 26.1%).",
+      "key_insight": "A second near-exact replica of trial_07 (sw 0.884, cap 0.114) scored 0.0892, so trial_07 0.0803 is an isolated sharp optimum that neighbouring configurations do not reproduce.",
+      "notebook": "trial_23.ipynb"
     }
   ],
   "protocol": {
