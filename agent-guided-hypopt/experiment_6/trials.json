@@ -349,6 +349,20 @@
       "summary": "Trial 25 (sw=0.972, h_f=3.950, h_s=3.619, cap=0.218): objective 0.0865 +/- 0.0245 - worse than trial_07 and trial_20; 0 diverged cells, gamma finite (mu rel-RMSE 36.5%, gamma rel-RMSE 25.9%).",
       "key_insight": "Very high sigma weight (0.972) with a trial_20-like cap gave 0.0865, worse than trial_20 0.0821 at sw 0.922; the sigma-weight optimum is interior, near ~0.87-0.92.",
       "notebook": "trial_25.ipynb"
+    },
+    {
+      "trial_id": "trial_26",
+      "config": {
+        "gamma_rel_cap": 0.16315733898046075,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.607756394671288,
+        "sigma_weight": 0.9186735056892578
+      },
+      "objective": 0.08067671696281424,
+      "uncertainty": 0.022761399680948403,
+      "summary": "Trial 26 (sw=0.919, h_f=4.0, h_s=3.608, cap=0.163): objective 0.0807 +/- 0.0228 - second best, essentially tied with trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 35.2%, gamma rel-RMSE 25.4%).",
+      "key_insight": "A high-sigma-weight design (sw 0.919) with a mid cap (0.163) reached 0.0807, matching trial_07 within noise, so the optimum is not unique: a second near-optimal point exists in the high-sw corner.",
+      "notebook": "trial_26.ipynb"
     }
   ],
   "protocol": {
