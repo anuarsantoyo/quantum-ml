@@ -251,6 +251,20 @@
       "summary": "Trial 18 (sw=0.870, h_f=4.0, h_s=3.620, cap=0.228): objective 0.0844 +/- 0.0247 - fourth best, above trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 35.9%, gamma rel-RMSE 26.4%).",
       "key_insight": "Despite near-optimal sigma weight and kernels, the larger gamma cap (0.228) kept the objective above trial_07 (0.0844 vs 0.0803), reinforcing the tight cap optimum near ~0.1.",
       "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "gamma_rel_cap": 0.1282870405608822,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.604673652477112,
+        "sigma_weight": 0.5800393958208585
+      },
+      "objective": 0.08744546970393288,
+      "uncertainty": 0.02092027180644147,
+      "summary": "Trial 19 (sw=0.580, h_f=4.0, h_s=3.605, cap=0.128): objective 0.0874 +/- 0.0209 - worse than trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 35.7%, gamma rel-RMSE 26.2%).",
+      "key_insight": "Mid-low sigma weight (0.580) with optimal kernels and cap again gave a strong mu (35.7%) but did not beat trial_07, confirming an in-region objective plateau at ~0.085 vs trial_07 0.0803.",
+      "notebook": "trial_19.ipynb"
     }
   ],
   "protocol": {
