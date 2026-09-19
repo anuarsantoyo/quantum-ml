@@ -237,6 +237,20 @@
       "summary": "Trial 17 (sw=0.883, h_f=4.0, h_s=3.676, cap=0.096): objective 0.0859 +/- 0.0245 - worse than trial_07 despite near-identical config; 0 diverged cells, gamma finite (mu rel-RMSE 36.4%, gamma rel-RMSE 26.3%).",
       "key_insight": "A near-exact replica of trial_07 (only sw 0.865->0.883, cap 0.107->0.096) scored 0.0859, so the optimum is sharp and trial_07 0.0803 is not reliably reproducible by its neighbours.",
       "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "gamma_rel_cap": 0.22791598604793598,
+        "h_f_scale": 4.0,
+        "h_s_scale": 3.619922612191697,
+        "sigma_weight": 0.8698140172246954
+      },
+      "objective": 0.08435955361298934,
+      "uncertainty": 0.024723713473750773,
+      "summary": "Trial 18 (sw=0.870, h_f=4.0, h_s=3.620, cap=0.228): objective 0.0844 +/- 0.0247 - fourth best, above trial_07; 0 diverged cells, gamma finite (mu rel-RMSE 35.9%, gamma rel-RMSE 26.4%).",
+      "key_insight": "Despite near-optimal sigma weight and kernels, the larger gamma cap (0.228) kept the objective above trial_07 (0.0844 vs 0.0803), reinforcing the tight cap optimum near ~0.1.",
+      "notebook": "trial_18.ipynb"
     }
   ],
   "protocol": {
