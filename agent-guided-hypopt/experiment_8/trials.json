@@ -323,6 +323,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1946 gives 0.0833, above the control, showing the basin scatter (~0.004) makes single-trial comparisons unreliable even at the best sw.",
       "key_insight": "Only the family mean (~0.077 over seventeen draws) is below the control; individual draws can exceed 0.083, so the winner must be judged on many draws and held-out validation.",
       "notebook": "trial_27.ipynb"
+    },
+    {
+      "trial_id": "trial_28",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19582508497664575
+      },
+      "objective": 0.07597383236614078,
+      "uncertainty": 0.02002019322743872,
+      "summary": "cvm_fwhm at sigma_weight 0.1958 gives 0.0760, under the control, keeping the family mean at ~0.0773 over eighteen draws (sixteen under the control).",
+      "key_insight": "The winner mean edge over the control is small (~0.003) but holds on sixteen of eighteen draws, while single draws can cross the control.",
+      "notebook": "trial_28.ipynb"
     }
   ],
   "protocol": {
