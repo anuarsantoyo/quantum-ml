@@ -203,6 +203,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.2048 gives 0.0781, a basin replication that brings the family mean to ~0.0772 (n=7) - consistently ~0.003 under the KDE control.",
       "key_insight": "The cvm_fwhm basin is a stable ~0.0772 +/- 0.002 plateau, so the winner margin over the control is small but reproducible across seven independent draws.",
       "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.3757060727228546
+      },
+      "objective": 0.07896348979611642,
+      "uncertainty": 0.02000849144326753,
+      "summary": "cvm_fwhm at sigma_weight 0.3757 gives 0.0790, still under the KDE control, showing the family advantage is broad in sw (eight points spanning sw 0.18-0.38, all at or under the control).",
+      "key_insight": "cvm_fwhm is robustly competitive across a wide sw range, so its win is a broad loss-form advantage rather than a lucky narrow sw setting.",
+      "notebook": "trial_18.ipynb"
     }
   ],
   "protocol": {
