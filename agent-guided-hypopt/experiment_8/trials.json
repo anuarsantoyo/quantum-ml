@@ -83,6 +83,18 @@
       "summary": "The KDE control at sigma_weight 0.2279 gives objective 0.0830, no better than its own reference (0.0803) and clearly behind cvm_fwhm (0.0764), so the low-sw region does not by itself produce the gain.",
       "key_insight": "The cvm_fwhm advantage is a genuine loss-FORM effect, not a sigma_weight-region artifact: KDE moved to the same sw stays at control level.",
       "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.1815539373627295
+      },
+      "objective": 0.07909183955002322,
+      "uncertainty": 0.0198542354704726,
+      "summary": "cvm_fwhm at sigma_weight 0.1816 gives objective 0.0791, still under the KDE control but worse than the same family at sw 0.2074 (0.0764), so the sw axis has a shallow minimum near 0.20-0.21.",
+      "key_insight": "cvm_fwhm sigma_weight response is non-monotone with a shallow minimum around sw ~0.20-0.21, so trial_06 setting is near the family optimum.",
+      "notebook": "trial_08.ipynb"
     }
   ],
   "protocol": {
