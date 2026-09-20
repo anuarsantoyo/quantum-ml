@@ -11,6 +11,18 @@
       "summary": "w1_2d (sigma_weight 0.4092) reaches objective 0.0895, about 0.009 worse than the KDE control 0.0803, with no divergences and error concentrated in the low-count mu channel.",
       "key_insight": "The bandwidth-free W1 loss is fully stable (no mu runaway, gamma finite) but recovers low-count mu worse than the KDE control, so it has not yet earned its keep.",
       "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "loss_family": "energy_2d",
+        "sigma_weight": 0.4227846732701278
+      },
+      "objective": 0.0996133412858028,
+      "uncertainty": 0.0317811029277488,
+      "summary": "energy_2d (sigma_weight 0.4228) reaches objective 0.0996, worse than trial_01 w1_2d (0.0895) and the KDE control (0.0803), no divergences, with a systematic low-count gamma undershoot.",
+      "key_insight": "The energy distance is stable but undershoots gamma in the low-count cells, making it the weakest loss form tested so far.",
+      "notebook": "trial_02.ipynb"
     }
   ],
   "protocol": {
