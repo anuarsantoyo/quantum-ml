@@ -38,6 +38,19 @@
       "summary": "Trial 3 (power rule, h_f 8.658, h_s 4.220) scores objective 0.1541 \u00b1 0.0791 with gamma finite and no divergence, the worst so far, driven by a mu overshoot of up to +123 % on the low-count cells.",
       "key_insight": "The `power` rule is the worst of the three; with {target, sim, power} at comparable scale giving {0.0837, 0.1249, 0.1541}, the bandwidth RULE is a first-order lever and `target` is the clear front-runner.",
       "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 9.82091327684388,
+        "h_s_scale": 2.9198059775843133
+      },
+      "objective": 0.09256187823396045,
+      "uncertainty": 0.020652335470824863,
+      "summary": "Trial 4 (target rule, h_f 9.821, h_s 2.920) scores objective 0.0926 \u00b1 0.0207, worse than trial_01 (0.0837), extending the target rule further above exp6's optimum on the wrong side.",
+      "key_insight": "On the target rule the objective rises monotonically with h_f above ~4 (0.0803 @4.0, 0.0837 @5.35, 0.0926 @9.82), so exp6's h_f = 4.0 already sat at the target-rule optimum and the extended upper bound buys nothing for this rule.",
+      "notebook": "trial_04.ipynb"
     }
   ],
   "protocol": {
