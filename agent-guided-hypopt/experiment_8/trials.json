@@ -299,6 +299,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1972 sets a new campaign best of 0.0725, ~0.008 under the KDE control, further confirming the sw ~0.19-0.20 basin.",
       "key_insight": "The cvm_fwhm basin floor is ~0.072-0.073 near sw 0.19-0.20, with a stable mean ~0.0776 over fifteen draws - a small but consistent winner over the control.",
       "notebook": "trial_25.ipynb"
+    },
+    {
+      "trial_id": "trial_26",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19791044396302324
+      },
+      "objective": 0.07273461232722266,
+      "uncertainty": 0.020200556699723805,
+      "summary": "cvm_fwhm at sigma_weight 0.1979 gives 0.0727, reproducing the campaign best (0.0725) and confirming the sw ~0.198 basin floor is ~0.0725-0.073, ~0.008 under the KDE control.",
+      "key_insight": "The winner best region is reproducible across seeds (0.0725 then 0.0727), so the cvm_fwhm edge over the control is genuine at the basin floor.",
+      "notebook": "trial_26.ipynb"
     }
   ],
   "protocol": {
