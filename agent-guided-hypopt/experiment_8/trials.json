@@ -179,6 +179,18 @@
       "summary": "The KDE control at sigma_weight 0.1895 gives objective 0.0866, no better than its own reference and well behind cvm_fwhm at the same sw, confirming the campaign winner is the Cramer-von Mises FWHM loss.",
       "key_insight": "At matched sw KDE is flat/immune to the low-sw region while cvm_fwhm improves, so the ~0.004-0.010 cvm_fwhm advantage is the loss form, not the sigma_weight.",
       "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "loss_family": "mmd_2d",
+        "sigma_weight": 0.20285705384738964
+      },
+      "objective": 0.1754563167166935,
+      "uncertainty": 0.05771662712047195,
+      "summary": "mmd_2d at sigma_weight 0.2029 gives 0.1755, essentially its high-sw value (0.1833), so MMD is sw-insensitive and by far the worst; this closes the family x sw matrix with cvm_fwhm the only family under the control.",
+      "key_insight": "MMD failure is a pure loss-form property (0.1755 low-sw vs 0.1833 high-sw), unaffected by sigma_weight - unlike cvm_fwhm, whose low-sw improvement is what carries the campaign win.",
+      "notebook": "trial_16.ipynb"
     }
   ],
   "protocol": {
