@@ -194,6 +194,19 @@
       "summary": "Trial 15 (target rule, h_f 3.194, h_s 7.663) scores objective 0.0826 \u00b1 0.0273, the best campaign sample since trial_05 and consistent with the flat target plateau.",
       "key_insight": "The target plateau's twelve samples span 0.0803-0.0920 with no trend; the low-h_f half of the plateau is as good as the middle, and exp6's 0.0803 still stands as the best single value.",
       "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 5.454312415527986,
+        "h_s_scale": 7.565099515505137
+      },
+      "objective": 0.09610922474938599,
+      "uncertainty": 0.025244764059476833,
+      "summary": "Trial 16 (target rule, h_f 5.454, h_s 7.565) scores objective 0.0961 \u00b1 0.0252, the thirteenth flat-plateau sample.",
+      "key_insight": "The target plateau's thirteen samples span 0.0803-0.0961 with no coefficient trend; exp6's 0.0803 remains the best and the plateau remains noise-flat.",
+      "notebook": "trial_16.ipynb"
     }
   ],
   "protocol": {
