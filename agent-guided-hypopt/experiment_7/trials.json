@@ -25,6 +25,19 @@
       "summary": "Trial 2 (sim rule, h_f 5.308, h_s 3.060) scores objective 0.1249 \u00b1 0.0398 with gamma finite and no divergence, far worse than trial_01 (0.0837) because gamma collapses in all four low-count cells.",
       "key_insight": "The `sim` bandwidth rule is decisively inferior to `target` at comparable bandwidth: it drives gamma to 31-40 % of truth on the Trans05/Trans20 cells and lifts the objective from 0.0837 to 0.1249.",
       "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "bandwidth_rule": "power",
+        "h_f_scale": 8.65837596337171,
+        "h_s_scale": 4.219928239137358
+      },
+      "objective": 0.15409053257615,
+      "uncertainty": 0.07912604577918861,
+      "summary": "Trial 3 (power rule, h_f 8.658, h_s 4.220) scores objective 0.1541 \u00b1 0.0791 with gamma finite and no divergence, the worst so far, driven by a mu overshoot of up to +123 % on the low-count cells.",
+      "key_insight": "The `power` rule is the worst of the three; with {target, sim, power} at comparable scale giving {0.0837, 0.1249, 0.1541}, the bandwidth RULE is a first-order lever and `target` is the clear front-runner.",
+      "notebook": "trial_03.ipynb"
     }
   ],
   "protocol": {
