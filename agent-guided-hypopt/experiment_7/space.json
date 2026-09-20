@@ -1,0 +1,8 @@
+{
+  "parameters": {
+    "bandwidth_rule": {"type": "choice", "values": ["target", "sim", "power"]},
+    "h_f_scale":      {"type": "float", "low": 1.0,  "high": 12.0},
+    "h_s_scale":      {"type": "float", "low": 1.0,  "high": 12.0}
+  },
+  "dependencies": {}
+}

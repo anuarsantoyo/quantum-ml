@@ -1,0 +1,54 @@
+{
+  "trials": [],
+  "protocol": {
+    "model": "series-21 (17g) model on REAL data; mu reward = Anuar's per-run likelihood (MU_REWARD=loglik_mean), mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
+    "question": "experiment_7 - bandwidth RULE family campaign: the learning-rate schedule (exp5 winner) and the score design (exp6 winner: sigma_weight=0.865, gamma_rel_cap=0.107) are FROZEN; the campaign tunes the KDE bandwidth rule (target | sim | power) and its coefficients h_f_scale / h_s_scale extended to [1, 12].",
+    "frozen_schedule": {
+      "lr_mu": 0.1669,
+      "mu_anneal": 0.3455,
+      "lr_gamma": 0.4716,
+      "gamma_anneal": 0.4723,
+      "note": "experiment_5 winning trial (trial_21); the schedule is a plateau and is NOT searched here"
+    },
+    "frozen_score_design": {
+      "sigma_weight": 0.865,
+      "gamma_rel_cap": 0.107,
+      "note": "experiment_6 winning trial (trial_07); the sigma-channel damping + gamma trust region are NOT searched here"
+    },
+    "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
+    "divergence_guard": {
+      "mu": [0.2, 1500.0],
+      "gamma": [0.02, 500.0],
+      "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band (guards the photon-count blow-up)"
+    },
+    "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
+    "budget": {
+      "n_runs": 100,
+      "n_iter": 30,
+      "benchmark": "8-exp subset (1nW/3nW x Trans05/20/60/100)",
+      "held_out": "6 exps (1nW/3nW x Trans10/40/80) - post-campaign validation only",
+      "max_trials": 30
+    },
+    "frozen": [
+      "z-form gamma-score (GAMMA_SCALE, H_REF=1)",
+      "LAMBDA_MEAN=0",
+      "Lorentzian fit (2 params)",
+      "2-D (FWHM, sigma_fit) kernel with per-dimension Scott exponent",
+      "init 0.5x true",
+      "Anuar's mu reward (loglik_mean) + sigma_prop score denominator",
+      "h_s_min = 0.05 MHz (sigma-kernel floor)",
+      "sigma_weight = 0.865 and gamma_rel_cap = 0.107 (exp6 winner)"
+    ],
+    "tunable": [
+      "bandwidth_rule  choice  target | sim | power   (how H_F/H_S are computed)",
+      "h_f_scale       float   1.0 .. 12.0           (multiplier on the FWHM-channel bandwidth)",
+      "h_s_scale       float   1.0 .. 12.0           (multiplier on the sigma-channel bandwidth; floored)"
+    ],
+    "bandwidth_rules": {
+      "target": "H = scale * std(real target) * N_target^(-1/6)  (exp5/exp6 design)",
+      "sim": "H = scale * std(sim cloud) * N_sim^(-1/6), recomputed every step (sim-adaptive)",
+      "power": "H = scale * std(pooled real targets of this laser power) * N^(-1/6)  (global / per-power)"
+    },
+    "success_bar": "beat the experiment_6 level (objective ~0.086, best 0.0803) on the same T-weighted capped metric, with gamma finite on all 8 cells; the winner must ALSO hold on the 6 held-out experiments."
+  }
+}
