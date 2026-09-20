@@ -1042,9 +1042,20 @@ def _run_experiment(exp, cfg, pool):
             grad_gamma = float(max(min(-s_gamma.mean(), clip), -clip))
         else:
             # ---- experiment_8: alternative distributional loss ----
-            # per-run reward r (= -loss) and pathwise g (= d(loss)/dgamma), already scaled
+            # gamma: pathwise gradient of the family loss (FAMILY_SCALE-normalized).
+            # mu: the per-run family reward is RESCALED per step to the CONTROL's reward
+            #     spread (the KDE log-likelihood on the very same draws) -- non-KDE per-run
+            #     losses span ~3 orders of magnitude in spread across cells (T05 vs T60),
+            #     which the frozen lr_mu cannot accommodate (trial_01 showed a mu runaway
+            #     to ~1120 on 1nW T05 with the raw, unnormalised reward).
+            _, _, _, _, W_ref = _kde_scores(ft, si_t, nt, dg_t, ds_t, target_f, target_s,
+                                            H_F, H_S, mu_val, sigma_prop, cfg)
+            r_ref = torch.log(W_ref.clamp_min(1e-30)).mean(dim=0)
             r, g, nll_val = _alt_scores(loss_family, ft, si_t, nt, dg_t, ds_t,
                                         target_f, target_s, H_F, H_S, sw, cfg)
+            rstd = float(r.std())
+            if rstd > 0.0:
+                r = (r - r.mean()) / rstd * float(r_ref.std())
             grad_gamma = float(max(min(float(g.mean()), clip), -clip))
 
         # ---- μ: REINFORCE with the per-run reward r (identical form for all families) ----
