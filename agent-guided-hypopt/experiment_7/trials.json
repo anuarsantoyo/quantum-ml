@@ -142,6 +142,19 @@
       "summary": "Trial 11 (target rule, h_f 5.061, h_s 2.518) scores objective 0.0873 \u00b1 0.0268, showing the low-sigma-coefficient corner gives no improvement over the plateau.",
       "key_insight": "Lowering h_s to 2.52 does not improve on exp6's 0.0803, so the target-rule plateau is flat in h_s as well as h_f and the objective there is entirely noise-limited.",
       "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 5.242827006464355,
+        "h_s_scale": 7.906253970206584
+      },
+      "objective": 0.09055254251838793,
+      "uncertainty": 0.021446696527011148,
+      "summary": "Trial 12 (target rule, h_f 5.243, h_s 7.906) scores objective 0.0906 \u00b1 0.0214, another sample from the flat target plateau.",
+      "key_insight": "Nine plateau samples now span 0.0803-0.0906 with no trend; the target-rule objective is flat/noise-limited across the whole tested band.",
+      "notebook": "trial_12.ipynb"
     }
   ],
   "protocol": {
