@@ -129,6 +129,19 @@
       "summary": "Trial 10 (target rule, h_f 4.698, h_s 7.535) scores objective 0.0831 \u00b1 0.0200, a mid-plateau sample consistent with the flat 0.080-0.089 target band.",
       "key_insight": "Seven plateau samples now span 0.0803-0.0890 with no internal trend, cementing that the target-rule objective is flat/noise-limited across h_f ~3.5-5.5 and that exp6's 0.0803 remains the best.",
       "notebook": "trial_10.ipynb"
+    },
+    {
+      "trial_id": "trial_11",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 5.060578865329001,
+        "h_s_scale": 2.5176488015365086
+      },
+      "objective": 0.08732386196951686,
+      "uncertainty": 0.026847777563833095,
+      "summary": "Trial 11 (target rule, h_f 5.061, h_s 2.518) scores objective 0.0873 \u00b1 0.0268, showing the low-sigma-coefficient corner gives no improvement over the plateau.",
+      "key_insight": "Lowering h_s to 2.52 does not improve on exp6's 0.0803, so the target-rule plateau is flat in h_s as well as h_f and the objective there is entirely noise-limited.",
+      "notebook": "trial_11.ipynb"
     }
   ],
   "protocol": {
