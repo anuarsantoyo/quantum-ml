@@ -64,6 +64,19 @@
       "summary": "Trial 5 (target rule, h_f 3.580, h_s 5.784) scores objective 0.0818 \u00b1 0.0239, a new campaign best, confirming the target rule is better just below exp6's h_f = 4.0 than above it.",
       "key_insight": "Placing the target rule below exp6's bound (h_f 5.35 -> 3.58) improves the objective (0.0837 -> 0.0818), so the target-rule optimum lies around h_f ~3.6-4.0 and the exp6 ceiling was close to optimal for this rule.",
       "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 3.6779179465318403,
+        "h_s_scale": 5.318777143045513
+      },
+      "objective": 0.08897661088582344,
+      "uncertainty": 0.023711202434006637,
+      "summary": "Trial 6 (target rule, h_f 3.678, h_s 5.319), the highest-EI proposal, scores objective 0.0890 \u00b1 0.0237, within sampling noise of the nearby best (trial_05 0.0818).",
+      "key_insight": "The target rule's objective is essentially flat/noise-limited across h_f ~3.5-5.4 (0.080-0.089, SE ~0.024), so further coefficient tuning of the target rule in that region does not reliably beat exp6's 0.0803.",
+      "notebook": "trial_06.ipynb"
     }
   ],
   "protocol": {
