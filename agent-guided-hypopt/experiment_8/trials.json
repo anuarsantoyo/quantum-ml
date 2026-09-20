@@ -263,6 +263,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.2049 gives 0.0799, keeping the family mean at ~0.0781 (eleven of twelve under the KDE control).",
       "key_insight": "The basin holds its ~0.078 mean across twelve draws; the margin over the control remains small (~0.002) and consistent.",
       "notebook": "trial_22.ipynb"
+    },
+    {
+      "trial_id": "trial_23",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20063383669421403
+      },
+      "objective": 0.07770305681140378,
+      "uncertainty": 0.02090310295016186,
+      "summary": "cvm_fwhm at sigma_weight 0.2006 gives 0.0777, keeping the family mean at ~0.0780 over thirteen draws (twelve under the KDE control).",
+      "key_insight": "The basin mean stays pinned at ~0.078; the winner edge over the control is a small, consistent ~0.002.",
+      "notebook": "trial_23.ipynb"
     }
   ],
   "protocol": {
