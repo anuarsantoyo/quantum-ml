@@ -45,11 +45,17 @@ and **γ** via a pathwise gradient. Each loss family supplies, per sim run *j*, 
 and a **pathwise derivative** `g_j = ∂loss_j/∂γ`; the γ update is `γ ← γ − lr·mean_j g_j`. This keeps the
 existing skeleton and is **exactly** the KDE mechanism when `loss_family='kde'`.
 
-### Scale normalization (`FAMILY_SCALE`)
+### Scale normalization (`FAMILY_SCALE` + per-step reward rescaling)
 Different losses live on different scales (nats vs MHz vs dimensionless), which would confound the comparison
-under a **frozen** γ learning rate. Each family is therefore multiplied by a constant `FAMILY_SCALE[family]`
-calibrated **once** so that, at the shared frozen start (0.5× truth), its `|∂loss/∂γ|` matches the KDE
-control's. So the campaign compares the loss **form**, not its scale. (`kde` = 1.0 by construction.)
+under a **frozen** learning rate. Two normalizations make it a test of the loss **form**:
+
+1. **γ channel:** each family is multiplied by `FAMILY_SCALE[family]`, calibrated **once** (see
+   `tools/calibrate_family_scales.py`) so that at the shared frozen start its `|∂loss/∂γ|` matches the KDE
+   control's. (`kde` = 1.0 by construction.)
+2. **μ channel:** the per-run family reward is **rescaled per step** to the control's reward spread (the KDE
+   log-likelihood on the very same draws). Necessary because non-KDE per-run losses span ~3 orders of
+   magnitude in spread across cells (T05 vs T60), which the frozen `lr_mu` cannot accommodate — without this,
+   `w1_2d` drove μ to ~1120 on 1nW T05 (a reward-scale artifact, removed → μ 4.7 → 6.0 there).
 
 ## Benchmark
 8 experiments (`BENCHMARK_SUBSET`): 1nW/3nW × {Trans05, Trans20, Trans60, Trans100}. **Held-out** = the 6
