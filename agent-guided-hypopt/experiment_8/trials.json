@@ -239,6 +239,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.2078 gives 0.0778, another basin replication bringing the family mean to ~0.0781 over ten draws, nine of which are under the KDE control.",
       "key_insight": "The cvm_fwhm mean (~0.0781) sits ~0.002 under the control, a small but mostly consistent margin; the held-out set will decide its significance.",
       "notebook": "trial_20.ipynb"
+    },
+    {
+      "trial_id": "trial_21",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20105727843060625
+      },
+      "objective": 0.077287640534488,
+      "uncertainty": 0.020675891408931064,
+      "summary": "cvm_fwhm at sigma_weight 0.2011 gives 0.0773, another basin draw taking the family mean to ~0.0780 over eleven points (ten under the KDE control).",
+      "key_insight": "The cvm_fwhm mean is stable at ~0.078 - a small (~0.002), mostly consistent edge over the KDE control.",
+      "notebook": "trial_21.ipynb"
     }
   ],
   "protocol": {
