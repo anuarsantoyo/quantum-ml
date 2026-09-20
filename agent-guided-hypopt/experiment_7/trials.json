@@ -285,6 +285,19 @@
       "summary": "Trial 22 (target rule, h_f 2.840, h_s 7.740) scores objective 0.0934 \u00b1 0.0375, the nineteenth flat-plateau sample.",
       "key_insight": "The target plateau's nineteen samples span 0.0803-0.0961 with no coefficient trend; exp6's 0.0803 remains the best and the plateau is noise-flat.",
       "notebook": "trial_22.ipynb"
+    },
+    {
+      "trial_id": "trial_23",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 4.0704475014152255,
+        "h_s_scale": 7.62319864435137
+      },
+      "objective": 0.0836222904200863,
+      "uncertainty": 0.020646755597248132,
+      "summary": "Trial 23 (target rule, h_f 4.070, h_s 7.623) scores objective 0.0836 \u00b1 0.0206, the twentieth flat-plateau sample.",
+      "key_insight": "The target plateau's twenty samples span 0.0803-0.0961 with no coefficient trend; exp6's 0.0803 remains the best.",
+      "notebook": "trial_23.ipynb"
     }
   ],
   "protocol": {
