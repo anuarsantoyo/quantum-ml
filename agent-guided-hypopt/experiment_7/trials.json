@@ -12,6 +12,19 @@
       "summary": "Trial 1 (target rule, h_f 5.349, h_s 7.652) scores objective 0.0837 \u00b1 0.0211 with gamma finite on all 8 cells and no divergence, clearing the success bar but sitting just above exp6's 0.0803.",
       "key_insight": "Pushing the winning target rule from exp6's h_f 4.0 up to 5.35 (and h_s 3.675 -> 7.65) does not improve the objective (0.0803 -> 0.0837), the first sign of a turnover above exp6's optimum.",
       "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "bandwidth_rule": "sim",
+        "h_f_scale": 5.307873163880288,
+        "h_s_scale": 3.0597782669210787
+      },
+      "objective": 0.12485907198140875,
+      "uncertainty": 0.039762840815786474,
+      "summary": "Trial 2 (sim rule, h_f 5.308, h_s 3.060) scores objective 0.1249 \u00b1 0.0398 with gamma finite and no divergence, far worse than trial_01 (0.0837) because gamma collapses in all four low-count cells.",
+      "key_insight": "The `sim` bandwidth rule is decisively inferior to `target` at comparable bandwidth: it drives gamma to 31-40 % of truth on the Trans05/Trans20 cells and lifts the objective from 0.0837 to 0.1249.",
+      "notebook": "trial_02.ipynb"
     }
   ],
   "protocol": {
