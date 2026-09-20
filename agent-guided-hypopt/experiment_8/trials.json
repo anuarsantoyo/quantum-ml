@@ -1,5 +1,18 @@
 {
-  "trials": [],
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "loss_family": "w1_2d",
+        "sigma_weight": 0.4091991363691613
+      },
+      "objective": 0.198174880119841,
+      "uncertainty": 0.10565999417943839,
+      "summary": "Trial 01 (w1_2d, sw=0.409) scores 0.1982, far above the 0.0803 KDE control, with mu runaway above truth in the low-count T05/T20 cells.",
+      "key_insight": "The bandwidth-free W1-2d reward pushes mu far above truth in low-count cells (1nW T05 -> 1120) rather than into the KDE control low-mu mode, so the objective is dominated by the low-T mu errors.",
+      "notebook": "trial_01.ipynb"
+    }
+  ],
   "protocol": {
     "model": "series-21 (17g) model on REAL data; the mu reward and the gamma pathwise channel are both derived from the selected distributional LOSS (loss_family); mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
     "question": "experiment_8 - loss-FUNCTION campaign: the schedule (exp5 winner), the bandwidth (exp7 winner) and the gamma trust region (exp6 winner) are FROZEN; the campaign tunes the distributional loss (loss_family) and the sigma-channel weight (sigma_weight).",
@@ -19,8 +32,14 @@
     "frozen_gamma_rel_cap": 0.10735617789825944,
     "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
     "divergence_guard": {
-      "mu": [0.2, 1500.0],
-      "gamma": [0.02, 500.0],
+      "mu": [
+        0.2,
+        1500.0
+      ],
+      "gamma": [
+        0.02,
+        500.0
+      ],
       "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band"
     },
     "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
