@@ -51,6 +51,19 @@
       "summary": "Trial 4 (target rule, h_f 9.821, h_s 2.920) scores objective 0.0926 \u00b1 0.0207, worse than trial_01 (0.0837), extending the target rule further above exp6's optimum on the wrong side.",
       "key_insight": "On the target rule the objective rises monotonically with h_f above ~4 (0.0803 @4.0, 0.0837 @5.35, 0.0926 @9.82), so exp6's h_f = 4.0 already sat at the target-rule optimum and the extended upper bound buys nothing for this rule.",
       "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 3.579612218368063,
+        "h_s_scale": 5.784423074476562
+      },
+      "objective": 0.08176475948117629,
+      "uncertainty": 0.023894708170184596,
+      "summary": "Trial 5 (target rule, h_f 3.580, h_s 5.784) scores objective 0.0818 \u00b1 0.0239, a new campaign best, confirming the target rule is better just below exp6's h_f = 4.0 than above it.",
+      "key_insight": "Placing the target rule below exp6's bound (h_f 5.35 -> 3.58) improves the objective (0.0837 -> 0.0818), so the target-rule optimum lies around h_f ~3.6-4.0 and the exp6 ceiling was close to optimal for this rule.",
+      "notebook": "trial_05.ipynb"
     }
   ],
   "protocol": {
