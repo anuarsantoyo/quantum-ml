@@ -335,6 +335,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1958 gives 0.0760, under the control, keeping the family mean at ~0.0773 over eighteen draws (sixteen under the control).",
       "key_insight": "The winner mean edge over the control is small (~0.003) but holds on sixteen of eighteen draws, while single draws can cross the control.",
       "notebook": "trial_28.ipynb"
+    },
+    {
+      "trial_id": "trial_29",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19235415119471488
+      },
+      "objective": 0.07986604521432261,
+      "uncertainty": 0.020537623785639184,
+      "summary": "cvm_fwhm at sigma_weight 0.1924 gives 0.0799, under the control, keeping the family mean at ~0.0774 over nineteen draws (seventeen under the control).",
+      "key_insight": "With one trial left the conclusion is stable: cvm_fwhm is the only family whose mean beats the KDE control, by ~0.003.",
+      "notebook": "trial_29.ipynb"
     }
   ],
   "protocol": {
