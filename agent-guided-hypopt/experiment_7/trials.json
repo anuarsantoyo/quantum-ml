@@ -155,6 +155,19 @@
       "summary": "Trial 12 (target rule, h_f 5.243, h_s 7.906) scores objective 0.0906 \u00b1 0.0214, another sample from the flat target plateau.",
       "key_insight": "Nine plateau samples now span 0.0803-0.0906 with no trend; the target-rule objective is flat/noise-limited across the whole tested band.",
       "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 5.203279242672982,
+        "h_s_scale": 7.961689283885901
+      },
+      "objective": 0.09044634880309496,
+      "uncertainty": 0.019568891725960144,
+      "summary": "Trial 13 (target rule, h_f 5.203, h_s 7.962) scores objective 0.0904 \u00b1 0.0196, the tenth sample from the flat target plateau.",
+      "key_insight": "The target plateau's ten samples span 0.0803-0.0906 with no coefficient trend, reinforcing that exp6's frozen target/4.0 point is as good as any on the plateau.",
+      "notebook": "trial_13.ipynb"
     }
   ],
   "protocol": {
