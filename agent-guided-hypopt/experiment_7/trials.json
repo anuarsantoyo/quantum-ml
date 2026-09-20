@@ -103,6 +103,19 @@
       "summary": "Trial 8 (target rule, h_f 3.779, h_s 7.279) scores objective 0.0882 \u00b1 0.0251, another plateau sample consistent with the flat 0.081-0.089 band around the target-rule optimum.",
       "key_insight": "The target plateau now has five samples in 0.081-0.089 with no internal trend, confirming the objective in h_f ~3-5.5 is noise-flat and that exp6's 0.0803 is the best value the target rule reaches.",
       "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 4.04487962612002,
+        "h_s_scale": 7.567134771575903
+      },
+      "objective": 0.08591033392299349,
+      "uncertainty": 0.02103017674538204,
+      "summary": "Trial 9 (target rule, h_f 4.045, h_s 7.567) scores objective 0.0859 \u00b1 0.0210, a plateau sample that holds h_f at exp6's 4.0 while raising h_s, and is slightly worse than exp6 (0.0803).",
+      "key_insight": "Holding h_f at exp6's optimum but raising h_s (3.675 -> 7.567) costs 0.0803 -> 0.0859, a weak (within-SE) hint that a smaller sigma-channel coefficient is mildly better.",
+      "notebook": "trial_09.ipynb"
     }
   ],
   "protocol": {
