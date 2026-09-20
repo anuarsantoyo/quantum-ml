@@ -155,6 +155,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1910 sets a new campaign best of 0.0733, deepening the confirmed sw ~0.19 basin and putting the family ~0.007 under the KDE control.",
       "key_insight": "The cvm_fwhm win is robust and reproducible (four points in 0.073-0.079 across sw 0.18-0.23), so it is the campaign clear winner over the KDE control.",
       "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19499926094772702
+      },
+      "objective": 0.07975324742681515,
+      "uncertainty": 0.02060083287467251,
+      "summary": "cvm_fwhm at sigma_weight 0.1950 gives 0.0798, near-identical sw to trial_11 (0.0760), showing the basin seed scatter is ~0.004; the family sits at ~0.077 on average, just under the KDE control.",
+      "key_insight": "Within the flat cvm_fwhm basin the sw dependence is smaller than the seed scatter, so cvm_fwhm beats the control by a small (~0.003) but consistent margin.",
+      "notebook": "trial_14.ipynb"
     }
   ],
   "protocol": {
