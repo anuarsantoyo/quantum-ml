@@ -35,6 +35,18 @@
       "summary": "mmd_2d (sigma_weight 0.4331) reaches objective 0.1833, far worse than w1_2d (0.0895), energy_2d (0.0996) and the KDE control (0.0803), with mu low almost everywhere and no divergences.",
       "key_insight": "With the median-heuristic MMD kernel the mu reward is systematically too weak, leaving mu far below truth at every transmission; MMD is the weakest loss form tested.",
       "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "loss_family": "w1_fwhm",
+        "sigma_weight": 0.5113275528143616
+      },
+      "objective": 0.09077055396456549,
+      "uncertainty": 0.03054370380364642,
+      "summary": "w1_fwhm (sigma_weight 0.5113) reaches objective 0.0908, statistically identical to the two-channel w1_2d (0.0895) and still worse than the KDE control (0.0803), with no divergences.",
+      "key_insight": "Dropping the sigma channel from the W1 loss changes the result essentially not at all (0.0908 vs 0.0895), so the W1 shortfall is a property of the FWHM loss itself, not of the sigma link.",
+      "notebook": "trial_04.ipynb"
     }
   ],
   "protocol": {
