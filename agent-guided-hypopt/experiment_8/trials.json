@@ -311,6 +311,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1979 gives 0.0727, reproducing the campaign best (0.0725) and confirming the sw ~0.198 basin floor is ~0.0725-0.073, ~0.008 under the KDE control.",
       "key_insight": "The winner best region is reproducible across seeds (0.0725 then 0.0727), so the cvm_fwhm edge over the control is genuine at the basin floor.",
       "notebook": "trial_26.ipynb"
+    },
+    {
+      "trial_id": "trial_27",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19463715708004303
+      },
+      "objective": 0.0832670643452046,
+      "uncertainty": 0.020490177762495454,
+      "summary": "cvm_fwhm at sigma_weight 0.1946 gives 0.0833, above the control, showing the basin scatter (~0.004) makes single-trial comparisons unreliable even at the best sw.",
+      "key_insight": "Only the family mean (~0.077 over seventeen draws) is below the control; individual draws can exceed 0.083, so the winner must be judged on many draws and held-out validation.",
+      "notebook": "trial_27.ipynb"
     }
   ],
   "protocol": {
