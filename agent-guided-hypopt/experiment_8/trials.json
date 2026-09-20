@@ -59,6 +59,18 @@
       "summary": "cvm_fwhm (sigma_weight 0.2345) reaches objective 0.0777, a new campaign best that edges past the KDE control (0.0803), driven by the best gamma recovery of any trial.",
       "key_insight": "A FWHM-only Cramer-von Mises loss currently beats the KDE control, with the gain coming from the gamma channel rather than mu, which stays low at high T.",
       "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20743926620697473
+      },
+      "objective": 0.07637870697766329,
+      "uncertainty": 0.02050351475163737,
+      "summary": "cvm_fwhm (sigma_weight 0.2074) improves the campaign best to objective 0.0764, reproducing the family win over the KDE control (0.0803) with the best gamma of the campaign.",
+      "key_insight": "The cvm_fwhm advantage is reproducible across two seeds (0.0777 then 0.0764) and its benefit lives in the gamma channel, while mu stays at the same rel ~33 percent level as every other family.",
+      "notebook": "trial_06.ipynb"
     }
   ],
   "protocol": {
