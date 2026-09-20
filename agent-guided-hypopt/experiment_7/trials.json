@@ -376,6 +376,19 @@
       "summary": "Trial 29 (target rule, h_f 3.757, h_s 11.475) scores objective 0.0863 \u00b1 0.0261, the twenty-sixth flat-plateau sample, extending the flat h_s range up to the cap.",
       "key_insight": "Even at h_s 11.5 (near the cap) the target-rule objective stays in the plateau (0.0863), so the sigma coefficient is flat all the way to the boundary; exp6's 0.0803 remains the best.",
       "notebook": "trial_29.ipynb"
+    },
+    {
+      "trial_id": "trial_30",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 3.5011407284692506,
+        "h_s_scale": 5.1998326062549864
+      },
+      "objective": 0.08878227357226721,
+      "uncertainty": 0.026327474791145708,
+      "summary": "Final trial 30 (target rule, h_f 3.501, h_s 5.200) scores objective 0.0888 \u00b1 0.0263; the campaign closes with the target rule flat-best and exp6's 0.0803 unbeaten.",
+      "key_insight": "Across 30 trials the bandwidth RULE is the decisive lever (target << sim < power) while the coefficients are flat/noise-limited, so the frozen exp6 default (target, h_f 4.0) was already at the bandwidth-rule optimum; remaining error is the low-count model gap, not a tuning gap.",
+      "notebook": "trial_30.ipynb"
     }
   ],
   "protocol": {
