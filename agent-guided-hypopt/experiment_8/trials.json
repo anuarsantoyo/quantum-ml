@@ -1,0 +1,59 @@
+{
+  "trials": [],
+  "protocol": {
+    "model": "series-21 (17g) model on REAL data; the mu reward and the gamma pathwise channel are both derived from the selected distributional LOSS (loss_family); mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
+    "question": "experiment_8 - loss-FUNCTION campaign: the schedule (exp5 winner), the bandwidth (exp7 winner) and the gamma trust region (exp6 winner) are FROZEN; the campaign tunes the distributional loss (loss_family) and the sigma-channel weight (sigma_weight).",
+    "frozen_schedule": {
+      "lr_mu": 0.1669,
+      "mu_anneal": 0.3455,
+      "lr_gamma": 0.4716,
+      "gamma_anneal": 0.4723,
+      "note": "experiment_5 winning trial (trial_21) - NOT searched"
+    },
+    "frozen_bandwidth": {
+      "bandwidth_rule": "target",
+      "h_f_scale": 4.0,
+      "h_s_scale": 3.674548492934102,
+      "note": "experiment_7 winner (rule=target); NOT searched"
+    },
+    "frozen_gamma_rel_cap": 0.10735617789825944,
+    "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
+    "divergence_guard": {
+      "mu": [0.2, 1500.0],
+      "gamma": [0.02, 500.0],
+      "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band"
+    },
+    "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
+    "budget": {
+      "n_runs": 100,
+      "n_iter": 30,
+      "benchmark": "8-exp subset (1nW/3nW x Trans05/20/60/100)",
+      "held_out": "6 exps (1nW/3nW x Trans10/40/80) - post-campaign validation only",
+      "max_trials": 30
+    },
+    "frozen": [
+      "z-form gamma-score convention (kept for the control)",
+      "Lorentzian fit (2 params)",
+      "init 0.5x true",
+      "sigma_prop score denominator for mu",
+      "h_s_min = 0.05 MHz (sigma-kernel floor)",
+      "bandwidth_rule='target' (exp7), h_f_scale=4.0, h_s_scale=3.6745 (exp6/7 winner)",
+      "gamma_rel_cap = 0.10736 (exp6 winner)",
+      "schedule = exp5 winner"
+    ],
+    "tunable": [
+      "loss_family   choice  kde | w1_2d | energy_2d | mmd_2d | w1_fwhm | cvm_fwhm",
+      "sigma_weight  float   0.0 .. 1.0   (weight of the sigma_fit channel: loss = loss_FWHM + sw*loss_sigma)"
+    ],
+    "families": {
+      "kde": "2-D KDE negative log-likelihood (exp5/6/7 design) - CONTROL, reproduces exp6 0.0803",
+      "w1_2d": "Wasserstein-1 (sorted quantile matching) on FWHM + sigma_fit - bandwidth-free",
+      "energy_2d": "energy distance on FWHM + sigma_fit - bandwidth-free",
+      "mmd_2d": "RBF-kernel MMD^2 over the 2-D cloud, median-heuristic kernel width (per step)",
+      "w1_fwhm": "Wasserstein-1 on FWHM only (drops the sigma link) - control",
+      "cvm_fwhm": "Cramer-von Mises-style squared quantile distance on FWHM only - control"
+    },
+    "family_scale": "each family is multiplied by FAMILY_SCALE so its |d(loss)/dgamma| at the frozen start matches the KDE control (compares the loss FORM, not its scale)",
+    "success_bar": "beat the experiment_6 level (objective ~0.086, best 0.0803) on the same T-weighted capped metric, with gamma finite on all 8 cells; the winner must ALSO hold on the 6 held-out experiments."
+  }
+}

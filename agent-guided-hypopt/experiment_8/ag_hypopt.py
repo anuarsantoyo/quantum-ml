@@ -1,0 +1,1473 @@
+"""AG-HYPOPT — Agent-Guided Hyperparameter Optimization.
+
+experiment_8 module (algorithm + trial harness; per instructions.md, algorithm +
+harness live in ag_hypopt.py + src/). Sections:
+  * EXPERIMENT 8 (created 2026-09-20): the SCHEDULE (exp5 winner), the SCORE DESIGN
+    (exp6 winner), and the BANDWIDTH (exp7: rule='target', h_f=4.0, h_s=3.675) are all
+    FROZEN. This module replaces the 2-D KDE negative log-likelihood with a family of
+    ALTERNATIVE DISTRIBUTIONAL LOSSES (`loss_family`) and searches which one drives the
+    (mu, gamma) optimizer best.
+
+    Motivation: exp5/6/7 all bottom out at objective ~0.078-0.082 and the residual is
+    the sim/target model gap (FM#8: sim sigma_fit 1.04-4.25x too narrow; FM#6). exp7
+    showed bandwidth tuning is exhausted. The KDE NLL leans on the MIS-SCALED sigma
+    channel; a bandwidth-free / robust discrepancy (Wasserstein, energy, MMD) may stop
+    the optimizer from trusting that channel's wrong scale -- a different attack on the
+    same wall.
+
+    Families (loss_family, all differentiable in gamma; two 1-D channels combined as
+    loss = loss_FWHM + sigma_weight * loss_sigma, mirroring the KDE sigma-channel damping):
+
+      'kde'       : 2-D KDE NLL (the exp5/6/7 design) -- CONTROL, reproduces exp6 0.0803
+      'w1_2d'     : Wasserstein-1 (sorted quantile matching) on FWHM + sigma  [bandwidth-free]
+      'energy_2d' : energy distance on FWHM + sigma                         [bandwidth-free]
+      'mmd_2d'    : RBF-kernel MMD^2 over the 2-D cloud (kernel width = H_F,H_S)
+      'w1_fwhm'   : Wasserstein-1 on FWHM only (drops the mu link -- control)
+      'cvm_fwhm'  : Cramer-von Mises-style squared quantile distance on FWHM only
+
+    Each family's contribution is scaled by FAMILY_SCALE so that, at the shared frozen
+    start, its gamma-gradient magnitude matches the KDE control -- the campaign compares
+    the loss FORM, not its scale, under the frozen schedule.
+    Search knobs (space.json): loss_family (choice) x sigma_weight (channel weight).
+  1. Protocol constants   — 14-ex synthetic benchmark (true params from Gregor's
+                            fits), seeds, fixed structural choices, runtime budget
+  2. Space + feasibility  — declared space lives in space.json (consumed by the
+                            AGHyperopt class); benchmark()/runtime_cap()/feasible()
+  3. Algorithm            — AGHyperopt: uncertainty-aware tree-structured Parzen
+                            Estimator (worst-case good/bad split, variable-
+                            bandwidth KDEs, uniform prior, two phases:
+                            uniform draws until n_initial, then trials-based proposals
+                            (batches reserve explore_slots fully-random members)). Template contract:
+                                opt = AGHyperopt()
+                                opt.fit(SPACE_PATH, TRIALS_PATH)
+                                cands = opt.propose_trials(10)   # prints table, returns batch
+  4. Harness: frozen experiment objective, per-photon fit + implicit diff,
+                            2D KDE likelihood, Anuar's mu REINFORCE reward
+                            (per-run log-likelihood r_j = mean_i log W_ij) with the
+                            per-experiment sigma_prop score denominator + z-form
+                            gamma-score (H_REF), anneal (tunable mu_anneal and
+                            gamma_anneal), clip, deterministic seeds.
+                            Objective = combined relative MSE of (mu, gamma) + SE.
+
+Interface (algorithm-swappable — future experiment_2 can ship GPBO/CMA-ES):
+    AGHyperopt().fit(space, trials).propose_trials(n) -> [{'params','ei',...}]
+    run_trial(config) -> results          (deterministic per config, SEED=42)
+    compute_objective(results) -> (objective, uncertainty, breakdown)
+    format_report(breakdown) -> str
+    plot_paths(results) -> fig            (inline (mu,gamma) phase-space paths, no Fisher, 2x7)
+"""
+import json
+import math
+import os
+import sys
+import time
+
+import multiprocessing as _mp
+from concurrent.futures import ProcessPoolExecutor as _PPE
+
+# ---- path bootstrap: climb to repo root (dir containing src/) ----
+_REPO = os.getcwd()
+while _REPO != os.path.dirname(_REPO) and not os.path.isdir(os.path.join(_REPO, 'src')):
+    _REPO = os.path.dirname(_REPO)
+if _REPO not in sys.path:
+    sys.path.insert(0, _REPO)
+
+import numpy as np
+import torch
+from scipy.stats import norm
+
+torch.set_default_dtype(torch.float32)
+
+from src.fitting import nll, fwhm_from_theta, fit_profile
+from src.samplers import draw_fixed_noise
+from src.implicit import compute_fwhm_and_dgamma
+
+EXPERIMENTS = [
+    dict(name='1nW Trans05',  power='1nW', mu_true=9.393,   sigma_prop=2.576,  lam=2.232, gamma_true=8.5,  n_target=61),
+    dict(name='1nW Trans10',  power='1nW', mu_true=12.372,  sigma_prop=3.445,  lam=2.122, gamma_true=8.5,  n_target=358),
+    dict(name='1nW Trans20',  power='1nW', mu_true=17.316,  sigma_prop=4.141,  lam=2.286, gamma_true=8.5,  n_target=1138),
+    dict(name='1nW Trans40',  power='1nW', mu_true=38.405,  sigma_prop=7.198,  lam=2.351, gamma_true=8.5,  n_target=2428),
+    dict(name='1nW Trans60',  power='1nW', mu_true=61.374,  sigma_prop=9.851,  lam=2.593, gamma_true=8.5,  n_target=2424),
+    dict(name='1nW Trans80',  power='1nW', mu_true=79.365,  sigma_prop=12.627, lam=2.758, gamma_true=8.5,  n_target=2487),
+    dict(name='1nW Trans100', power='1nW', mu_true=70.817,  sigma_prop=17.221, lam=2.636, gamma_true=8.5,  n_target=2455),
+    dict(name='3nW Trans05',  power='3nW', mu_true=13.204,  sigma_prop=3.724,  lam=2.186, gamma_true=14.1, n_target=252),
+    dict(name='3nW Trans10',  power='3nW', mu_true=24.476,  sigma_prop=5.639,  lam=2.158, gamma_true=14.1, n_target=1572),
+    dict(name='3nW Trans20',  power='3nW', mu_true=34.279,  sigma_prop=8.319,  lam=2.264, gamma_true=14.1, n_target=2171),
+    dict(name='3nW Trans40',  power='3nW', mu_true=84.892,  sigma_prop=24.013, lam=2.475, gamma_true=14.1, n_target=3742),
+    dict(name='3nW Trans60',  power='3nW', mu_true=103.203, sigma_prop=23.95,  lam=2.741, gamma_true=14.1, n_target=2541),
+    dict(name='3nW Trans80',  power='3nW', mu_true=137.537, sigma_prop=32.107, lam=2.911, gamma_true=14.1, n_target=2508),
+    dict(name='3nW Trans100', power='3nW', mu_true=175.707, sigma_prop=40.975, lam=3.087, gamma_true=14.1, n_target=2516),
+]
+
+# Reduced benchmark: the 1st, 3rd, 5th, 7th transmissions (Trans05/20/60/100)
+# at both powers = 8 of the 14 experiments, so trials run faster.
+BENCHMARK_SUBSET = [
+    '1nW Trans05', '1nW Trans20', '1nW Trans60', '1nW Trans100',
+    '3nW Trans05', '3nW Trans20', '3nW Trans60', '3nW Trans100',
+]
+
+# Held-out experiments: the 6 NOT in the benchmark (mid/low/mid-high T at both powers).
+# Used only for the post-campaign generalization check — never for proposal/selection.
+HELD_OUT = [
+    '1nW Trans10', '1nW Trans40', '1nW Trans80',
+    '3nW Trans10', '3nW Trans40', '3nW Trans80',
+]
+
+SYNTH_SEED = 12345    # target generation seed (identical targets every trial)
+SEED = 42             # per-step noise seed base (deterministic runs)
+
+# ---- target data source -------------------------------------------------
+# True = real measured FWHM targets (15-series load & filter: raw * 1000 -> MHz,
+# keep valid rows with err/fwhm < 10). False = the synthetic benchmark
+# (targets generated at the true parameters with SYNTH_SEED).
+USE_REAL_DATA = True
+REAL_CSV = os.path.join(_REPO, 'data', 'processed', 'fwhm_linewidths.csv')
+
+# Fixed structural choices (frozen, NOT tunable this campaign):
+GAMMA_SCALE = True    # z-form γ-score (bandwidth-normalized, fixed reference)
+H_REF = 1.0           # fixed reference bandwidth for the γ-score
+LAMBDA_MEAN = 0.0     # mean-matching anchor weight (0.0 = disabled)
+
+# ---- experiment_5 μ mechanism (Anuar's reward + the 21h score fix) ----
+# MU_REWARD: which per-sim-draw reward drives the μ REINFORCE covariance.
+#   'loglik_mean'  = mean_i log W_ij   (Anuar's per-run likelihood, per real scan)   [default]
+#   'loglik_sum'   = sum_i  log W_ij   (exact 21g form; scale ∝ n_target)
+#   'responsibility' = mean_i w_ij     (the 21a/17g baseline reward)
+# MU_SCORE: score denominator for (n_j - mu).
+#   'sigma_prop'   = the experiment's own count scatter  [21h fix, default]
+#   'sigma_ref'    = the fixed SIGMA_REF (old behaviour)
+MU_REWARD = 'loglik_mean'
+MU_SCORE  = 'sigma_prop'
+
+# ---- experiment_5 protocol: NO clipping; divergence guard; capped + T-weighted objective ----
+DIVERGENCE_GUARD = {'mu': (0.2, 1500.0), 'gamma': (0.02, 500.0)}   # STOP (not clamp) if left
+CAP     = 1.0     # per-cell rel-sq error cap (~100% rel error) -- stops one blow-up dominating
+W_FLOOR = 0.25    # objective weight w(T) = W_FLOOR + (1-W_FLOOR)*T/100 (graded toward high T)
+
+# Parallelism: 4 workers, one experiment at a time.
+N_WORKERS = 4
+N_EXP_PARALLEL = 1
+
+# Runtime budget: an n_runs*n_iter = 40k trial (~3.5h at the measured speed) is
+# feasible for the full 14-exp benchmark (40k inner steps x 14 exps / 4 workers).
+# BUDGET_HOURS is a protocol decision; lowering it requires a reduced benchmark.
+BUDGET_HOURS = 3.5
+CALLS_PER_HOUR = 160_000   # total fit calls across all workers (measured)
+
+# Defaults merged under every trial config (missing keys are filled from here).
+# Experiment_8: the SCHEDULE (exp5 winner), the SCORE DESIGN (exp6 winner) and the
+# BANDWIDTH (exp7: rule='target', h_f=4.0, h_s=3.675) are all FROZEN. The space.json
+# tunables are the LOSS knobs (loss_family x sigma_weight); everything else fixed here.
+# With loss_family='kde' this module reproduces the exp6/exp7 mechanism EXACTLY (0.080328).
+DEFAULT_CONFIG = dict(
+    n_runs=100, n_iter=30,   # experiment_8 budget (same 100x30 as series 21/exp5/6/7);
+                             # n_runs/n_iter are FEASIBILITY, not search dims.
+    # ---- FROZEN schedule: experiment_5 winning trial (trial_21) ----
+    lr_mu=0.1669, mu_anneal=0.3455, lr_gamma=0.4716, gamma_anneal=0.4723,
+    sigma_ref=10.0,          # kept for reference (unused under MU_SCORE='sigma_prop')
+    clip=float('inf'),       # no gradient clipping (21i)
+    gamma_rel_cap=0.10735617789825944,  # FROZEN (exp6 winner): per-step RELATIVE gamma trust region
+    # ---- FROZEN bandwidth (exp7 winner: the 'target' rule at the exp6 coefficients) ----
+    bandwidth_rule='target',
+    h_f_scale=4.0,
+    h_s_scale=3.674548492934102,
+    h_s_min=0.05,            # absolute sigma-kernel floor (MHz), fixed
+    # ---- experiment_8 LOSS knobs ----
+    loss_family='kde',       # 'kde' | 'w1_2d' | 'energy_2d' | 'mmd_2d' | 'w1_fwhm' | 'cvm_fwhm'
+    sigma_weight=0.8648862719598797,   # sigma-channel weight (FROZEN default = exp6 winner; SEARCHED)
+)
+
+def benchmark():
+    """Effective benchmark list (full 14 or the configured subset)."""
+    if BENCHMARK_SUBSET is None:
+        return EXPERIMENTS
+    return [e for e in EXPERIMENTS if e['name'] in BENCHMARK_SUBSET]
+
+def runtime_cap(n_exps=None):
+    """Max n_runs*n_iter for a ~BUDGET_HOURS trial on the effective benchmark."""
+    n_exps = n_exps or len(benchmark())
+    return int(BUDGET_HOURS * CALLS_PER_HOUR / n_exps)
+
+def feasible(config, cap=None):
+    return config.get('n_runs', 0) * config.get('n_iter', 0) <= (cap if cap is not None else runtime_cap())
+
+
+
+def _budget_feasible(config):
+    """Default feasibility for AGHyperopt: enforce the runtime budget."""
+    return feasible(config)
+
+def load_space_config(space_config):
+    """Normalize space_config (path, full dict, or plain parameter map).
+
+    Returns {'parameters': {...}, 'dependencies': {...}}.
+    """
+    if space_config is None:
+        return {'parameters': None, 'dependencies': {}}
+    if isinstance(space_config, (str, os.PathLike)):
+        with open(space_config) as f:
+            cfg = json.load(f)
+    else:
+        cfg = dict(space_config)
+    if 'parameters' in cfg:
+        return {'parameters': dict(cfg['parameters']),
+                'dependencies': dict(cfg.get('dependencies', {}))}
+    return {'parameters': cfg, 'dependencies': {}}
+
+
+def load_trials(source):
+    """Normalize trials to the AGHyperopt input format.
+
+    Accepts a path to a JSON file (trials.json: config -> params, objective -> loss)
+    or a list of dicts already in {'params', 'loss', 'uncertainty'} form.
+    """
+    if isinstance(source, (str, os.PathLike)):
+        with open(source) as f:
+            data = json.load(f)
+        raw = data['trials'] if isinstance(data, dict) and 'trials' in data else data
+    else:
+        raw = list(source)
+    out = []
+    for t in raw:
+        if not isinstance(t, dict):
+            continue
+        params = t.get('params') or t.get('config')
+        loss = t.get('loss', t.get('objective'))
+        if not params or loss is None:
+            continue
+        out.append({'params': dict(params), 'loss': float(loss),
+                    'uncertainty': float(t.get('uncertainty', 0.0) or 0.0)})
+    return out
+
+class _ContinuousModel:
+    """Variable-bandwidth KDE + uniform prior over [lo, hi] for one parameter.
+
+    h_base = magic-clipped Scott bandwidth; h_i = h_base * (sigma_i/sigma_med)^beta.
+    g(x) = [prior_weight*U(x) + sum_i N(x|mu_i, h_i^2)] / (prior_weight + n).
+    """
+
+    def __init__(self, values, uncertainties, lo, hi, int_flag,
+                 prior_weight, bandwidth_beta):
+        v = np.asarray(values, dtype=float)
+        u = np.asarray(uncertainties, dtype=float)
+        self.lo, self.hi = float(lo), float(hi)
+        self.int_flag = int_flag
+        self.n = int(v.size)
+        self.prior_weight = prior_weight
+
+        if self.n == 0:
+            self.mus = None
+            return
+
+        rng_obs = float(np.ptp(v)) if self.n > 1 else 0.0
+        if rng_obs >= 1e-12:
+            h_min = rng_obs / min(self.n, 100)
+            h_max = rng_obs
+            if self.n >= 2:
+                sig = float(v.std(ddof=1))
+                q1, q3 = np.percentile(v, [25, 75])
+                iqr = float(q3 - q1)
+                scott_sig = min(sig, iqr / 1.34) if iqr > 0 else sig
+                h_scott = 1.059 * (self.n ** -0.2) * scott_sig
+            else:
+                h_scott = h_min
+            h_base = min(max(h_scott, h_min), h_max)
+        else:
+            h_max = (self.hi - self.lo) if self.hi > self.lo else 1.0
+            h_base = max(1e-6, 0.05 * h_max)
+            h_min = h_scott = h_base
+
+        u_med = float(np.median(u)) if self.n else 0.0
+        if u_med >= 1e-12:
+            h_i = h_base * np.power(np.maximum(u, 1e-12) / u_med, bandwidth_beta)
+        else:
+            h_i = np.full(self.n, h_base)
+        if h_max > 1e-12:
+            h_i = np.minimum(h_i, h_max)
+        h_i = np.maximum(h_i, 1e-6)
+
+        self.mus = v
+        self.h_i = h_i
+        self.h_base = float(h_base)
+        self.h_min = float(h_min)
+        self.h_max = float(h_max)
+        self.h_scott = float(h_scott)
+        self.sigma_med = u_med
+        self._denom = prior_weight + self.n
+        self._u_val = 1.0 / (self.hi - self.lo) if self.hi > self.lo else 0.0
+
+    def logpdf(self, x):
+        if self.mus is None:
+            return -float('inf')
+        z = (float(x) - self.mus) / self.h_i
+        pdfs = norm.pdf(z) / self.h_i
+        dens = float(pdfs.sum())
+        if self._u_val > 0 and self.lo <= float(x) <= self.hi:
+            dens += self.prior_weight * self._u_val
+        return float(np.log(dens / self._denom))
+
+    def sample(self, rng):
+        if self.mus is None:
+            return None
+        probs = np.full(self.n + 1, 1.0 / self._denom)
+        probs[0] = self.prior_weight / self._denom
+        comp = int(rng.choice(self.n + 1, p=probs))
+        if comp == 0:
+            x = rng.uniform(self.lo, self.hi) if self.hi > self.lo else self.lo
+        else:
+            x = rng.normal(self.mus[comp - 1], self.h_i[comp - 1])
+        if self.int_flag:
+            x = int(round(x))
+            return int(max(int(self.lo), min(int(self.hi), x)))
+        return float(max(self.lo, min(self.hi, x)))
+
+
+class _CategoricalModel:
+    """Laplace-smoothed multinomial over the category universe."""
+
+    def __init__(self, values, categories):
+        self.categories = [str(c) for c in categories]
+        self.n = len(values)
+        if self.n == 0:
+            self.probs = None
+            return
+        counts = np.array([sum(1 for vv in values if str(vv) == c)
+                           for c in self.categories], dtype=float)
+        self.probs = (counts + 1.0) / (self.n + len(self.categories))
+
+    def logpdf(self, x):
+        if self.probs is None:
+            return -float('inf')
+        x = str(x)
+        if x in self.categories:
+            return float(np.log(self.probs[self.categories.index(x)]))
+        return -float('inf')
+
+    def sample(self, rng):
+        if self.probs is None:
+            return None
+        return str(rng.choice(self.categories, p=self.probs))
+
+
+class AGHyperopt:
+    """Tree-structured Parzen Estimator (TPE), sklearn-style.
+
+    - uncertainty-aware Good/Bad split: loss_adj = loss + lcb_lambda*uncertainty
+      (worst-case comparison: a trial is good only if even its upper bound is low)
+    - variable-bandwidth KDEs: magic-clipped Scott bandwidth, then uncertainty scaling
+    - a uniform prior component in every density (stable EI everywhere + soft exploration)
+    - tree-structured (conditional) params from the space dependencies
+    - propose_trials returns the batch in draw order (never sorted), so the table does not bias the agent.
+    - every trials-phase batch reserves explore_slots fully-uniform candidates, so a guaranteed
+      entirely-random member is always present once the model is being used.
+
+    Parameters
+    ----------
+    n_initial: completed trials needed before switching from uniform random draws
+        to trials-based proposals (default 5).
+    explore_slots: number of fully-uniform (entirely random) candidate slots reserved in
+        every trials-phase batch (default 2). Bounded to [0, n_candidates]. In the uniform
+        phase all candidates are random already, so the slots only apply to the trials phase.
+    space: path to JSON or dict. Two accepted shapes:
+        {'parameters': {name: {type, low, high | values}}, 'dependencies': {...}}
+        or a plain parameters map (dependencies empty).
+    feasible: optional callable(config) -> bool; rejects infeasible draws
+        (e.g. n_runs*n_iter > runtime_cap).
+    """
+
+    def __init__(self, n_initial=5, space=None, quantile=0.25, lcb_lambda=0.5,
+                 bandwidth_beta=0.5, prior_weight=1.0, explore_slots=2,
+                 feasible=None, seed=42):
+        self.n_initial = n_initial
+        self.quantile = quantile
+        self.lcb_lambda = lcb_lambda
+        self.bandwidth_beta = bandwidth_beta
+        self.prior_weight = prior_weight
+        self.explore_slots = explore_slots
+        self.seed = seed
+
+        self._set_space(space)
+        self.feasible = feasible if feasible is not None else _budget_feasible
+
+        self.history_ = []
+        self.good_trials_ = []
+        self.bad_trials_ = []
+        self.good_models_ = {}
+        self.bad_models_ = {}
+        self.param_meta_ = {}
+        self.params_ = []
+        self.is_fitted = False
+
+    def _set_space(self, space):
+        cfg = load_space_config(space)
+        self.parameters_ = cfg['parameters']
+        self.dependencies_ = cfg['dependencies']
+        self._validate_dependencies()
+
+    def _validate_dependencies(self):
+        deps = self.dependencies_
+        for child, spec in deps.items():
+            if not isinstance(spec, dict) or 'parent' not in spec or 'parent_value' not in spec:
+                raise ValueError(
+                    f"dependency for '{child}' must be {{'parent', 'parent_value'}}")
+            if spec['parent'] == child:
+                raise ValueError(f"self-dependency for '{child}'")
+
+    def _discover_params(self, trials):
+        """Parameter universe for the proposal models.
+
+        If a space is declared it is authoritative: params are exactly the
+        declared ones, so keys recorded in trials but not declared (e.g. fixed
+        defaults that landed in a config) never become proposal params. Without
+        a declared space, the universe is the union of keys seen in the trials.
+        """
+        if self.parameters_:
+            return sorted(self.parameters_.keys())
+        params = set()
+        for t in trials:
+            params.update(t['params'].keys())
+        return sorted(params)
+
+    def _param_meta(self, param):
+        declared = (self.parameters_ or {}).get(param) or {}
+        vals = []
+        for t in self.good_trials_ + self.bad_trials_:
+            if param in t['params']:
+                vals.append(t['params'][param])
+        ptype = declared.get('type')
+        if ptype is None:
+            if vals and all(isinstance(v, str) for v in vals):
+                ptype = 'choice'
+            elif vals and all(isinstance(v, int) for v in vals):
+                ptype = 'int'
+            else:
+                ptype = 'float'
+        if ptype == 'choice':
+            values = declared.get('values') or sorted({str(v) for v in vals})
+            return {'type': 'choice', 'values': values}
+        num = [float(v) for v in vals if isinstance(v, (int, float))]
+        lo = declared.get('low') if declared.get('low') is not None else \
+            (min(num) if num else 0.0)
+        hi = declared.get('high') if declared.get('high') is not None else \
+            (max(num) if num else 1.0)
+        return {'type': ptype, 'low': float(lo), 'high': float(hi)}
+
+    def _build_model(self, meta, pairs):
+        """pairs: list of (value, uncertainty). Returns a model, or None (no trials)."""
+        if not pairs:
+            return None
+        vals = [p[0] for p in pairs]
+        if meta['type'] == 'choice':
+            return _CategoricalModel(vals, meta['values'])
+        uncs = [p[1] for p in pairs]
+        return _ContinuousModel(vals, uncs, meta['low'], meta['high'],
+                                meta['type'] == 'int', self.prior_weight,
+                                self.bandwidth_beta)
+
+    def fit(self, space=None, trials=None):
+        """Load space + trials and decide the proposal phase. Returns self.
+
+        Template contract: fit(SPACE_PATH, TRIALS_PATH). Both arguments may be
+        paths or preloaded dicts/lists; fit(trials) alone is accepted (space then
+        falls back to the constructor's space).
+
+        Phase rule (trials are assumed valid and completed; that check happens
+        elsewhere):
+            len(trials) <  n_initial  -> phase 'uniform' (random proposals)
+            len(trials) >= n_initial  -> phase 'trials'  (proposals from trials)
+
+        In the trials phase the Good/Bad split is uncertainty-aware: the ranking
+        uses loss_adj = objective + lcb_lambda * uncertainty.
+        """
+        if trials is None:
+            trials, space = space, None
+        if space is not None:
+            self._set_space(space)
+        trials = load_trials(trials)
+        self.history_ = trials
+        self.n_completed_ = len(trials)
+        self.phase = 'uniform' if len(trials) < self.n_initial else 'trials'
+        self.is_fitted = False
+        if self.phase != 'trials' or len(trials) < 2:
+            return self
+
+        losses = np.array([t['loss'] for t in trials], dtype=float)
+        uncs = np.array([t.get('uncertainty', 0.0) for t in trials], dtype=float)
+        loss_adj = losses + self.lcb_lambda * uncs
+        n = len(trials)
+        n_good = int(round(self.quantile * n))
+        n_good = max(1, min(n - 1, n_good))
+        order = np.argsort(loss_adj, kind='stable')
+        good_idx = order[:n_good]
+        bad_idx = order[n_good:]
+
+        self.good_trials_ = [trials[i] for i in good_idx.tolist()]
+        self.bad_trials_ = [trials[i] for i in bad_idx.tolist()]
+
+        params = self._discover_params(trials)
+        self.params_ = params
+        self.good_models_, self.bad_models_ = {}, {}
+        for param in params:
+            meta = self._param_meta(param)
+            self.param_meta_[param] = meta
+            g_pairs = [(t['params'][param], t.get('uncertainty', 0.0))
+                       for t in self.good_trials_ if param in t['params']]
+            b_pairs = [(t['params'][param], t.get('uncertainty', 0.0))
+                       for t in self.bad_trials_ if param in t['params']]
+            self.good_models_[param] = self._build_model(meta, g_pairs)
+            self.bad_models_[param] = self._build_model(meta, b_pairs)
+        self.is_fitted = True
+        return self
+
+    def _sample_order(self):
+        """Params sorted so every parent comes before its children (topological)."""
+        deps = self.dependencies_
+        order = []
+        remaining = set(self.params_)
+        while remaining:
+            ready = [p for p in remaining
+                     if p not in deps or deps[p]['parent'] not in remaining]
+            if not ready:
+                raise ValueError("dependency cycle detected among params")
+            order.extend(sorted(ready))
+            remaining -= set(ready)
+        return order
+
+    def _sample_one(self, rng):
+        """Draw one config from the Good model, respecting conditional deps."""
+        cfg = {}
+        for param in self._sample_order():
+            dep = self.dependencies_.get(param)
+            if dep is not None and cfg.get(dep['parent']) != dep['parent_value']:
+                continue
+            model = self.good_models_.get(param)
+            if model is None:
+                continue
+            x = model.sample(rng)
+            if x is not None:
+                cfg[param] = x
+        return cfg
+
+    def _joint_log_density(self, cfg, which):
+        """Product of per-param densities over active params; inactive factor = 1."""
+        models = self.good_models_ if which == 'g' else self.bad_models_
+        logd = 0.0
+        for param, x in cfg.items():
+            model = models.get(param)
+            if model is None:
+                continue
+            lp = model.logpdf(x)
+            if lp == -float('inf'):
+                return -float('inf')
+            logd += lp
+        return logd
+
+    def _score(self, cfg):
+        """Return (log_g, log_l, ei) for one config."""
+        lg = self._joint_log_density(cfg, 'g')
+        ll = self._joint_log_density(cfg, 'l')
+        if lg <= -1e15 and ll <= -1e15:
+            ratio = 1.0
+        elif ll <= -1e15:
+            ratio = 0.0
+        elif lg <= -1e15:
+            ratio = 1e15
+        else:
+            ratio = float(np.exp(np.clip(ll - lg, -700.0, 700.0)))
+        ei = 1.0 / (self.quantile + (1.0 - self.quantile) * ratio)
+        return lg, ll, float(ei)
+
+    def _print_table(self, batch):
+        """Compact candidate table: ID | ei | params JSON (same order as the list)."""
+        phase = getattr(self, 'phase', 'uniform')
+        print(f'phase = {phase}  ({self.n_completed_}/{self.n_initial} trials)')
+        print(f"{'ID':>2} | {'ei':>6} | params")
+        for i, c in enumerate(batch, 1):
+            ei = '-' if c.get('ei') is None else f"{c['ei']:.4f}"
+            print(f"{i:>2} | {ei:>6} | {json.dumps(c['params'])}")
+
+    def propose_trials(self, n_candidates=10):
+        """Propose n_candidates configs for the current phase (template contract).
+
+        uniform phase: independent uniform draws from the declared space
+            (ei = None, origin = 'uniform').
+        trials phase: draws informed by the fitted trials, uncertainties included
+            in the Good/Bad split (ei computed, origin = 'trials'); the last
+            explore_slots candidates are entirely random (origin = 'explore', ei = None).
+
+        The batch is never sorted: it is returned and printed in draw order, so
+        the table does not push the agent toward any specific candidate.
+
+        Returns [{'params', 'ei', 'origin'}, ...]  (row N == list[N-1]).
+        """
+        if getattr(self, 'phase', None) is None:
+            raise RuntimeError('call fit(space, trials) before propose_trials()')
+        if self.phase == 'uniform':
+            batch = self._uniform_propose(n_candidates)
+        else:
+            batch = self._trials_propose(n_candidates)
+        self._print_table(batch)
+        return batch
+
+    def _uniform_propose(self, n_candidates):
+        """n_candidates independent uniform draws from the declared space."""
+        rng = np.random.default_rng(self.seed)
+        out = []
+        attempts = 0
+        max_attempts = 200 * n_candidates
+        while len(out) < n_candidates and attempts < max_attempts:
+            attempts += 1
+            cfg = self._sample_uniform_declared(rng)
+            if self.feasible is not None and not self.feasible(cfg):
+                continue
+            out.append({'params': cfg, 'ei': None, 'origin': 'uniform'})
+        return out
+
+    def _sample_uniform_declared(self, rng):
+        """One config sampled uniformly from the declared space (deps-aware)."""
+        cfg = {}
+        for param in self._declared_order():
+            dep = self.dependencies_.get(param)
+            if dep is not None and cfg.get(dep['parent']) != dep['parent_value']:
+                continue
+            spec = (self.parameters_ or {}).get(param)
+            if spec is None:
+                continue
+            if spec.get('type') == 'choice':
+                vals = spec.get('values') or []
+                if not vals:
+                    continue
+                cfg[param] = str(rng.choice(list(vals)))
+            else:
+                lo = float(spec.get('low', 0.0))
+                hi = float(spec.get('high', 1.0))
+                x = float(rng.uniform(lo, hi)) if hi > lo else lo
+                if spec.get('type') == 'int':
+                    x = int(round(x))
+                    x = int(max(int(lo), min(int(hi), x)))
+                cfg[param] = x
+        return cfg
+
+    def _declared_order(self):
+        """Declared params in dependency order (parents before children)."""
+        deps = self.dependencies_
+        order = []
+        remaining = set((self.parameters_ or {}).keys())
+        while remaining:
+            ready = [p for p in remaining
+                     if p not in deps or deps[p]['parent'] not in remaining]
+            if not ready:
+                raise ValueError('dependency cycle detected among params')
+            order.extend(sorted(ready))
+            remaining -= set(ready)
+        return order
+
+    def _trials_propose(self, n_candidates):
+        """Model draws + reserved explore slots (draw order, no sort).
+
+        The first (n_candidates - n_explore) candidates are drawn from the fitted
+        Good model; the last n_explore are entirely random (fully-uniform draws
+        from the declared space). n_explore = clamp(explore_slots, 0, n_candidates).
+        """
+        if not self.is_fitted:
+            raise RuntimeError('fit() did not produce densities (trials phase)')
+        n_explore = int(max(0, min(self.explore_slots, n_candidates)))
+        n_model = n_candidates - n_explore
+        rng = np.random.default_rng(self.seed)
+        out = []
+        attempts = 0
+        max_attempts = 200 * n_candidates
+        # ---- model-informed draws (Good model) ----
+        while len(out) < n_model and attempts < max_attempts:
+            attempts += 1
+            cfg = self._sample_one(rng)
+            if not cfg:
+                continue
+            if self.feasible is not None and not self.feasible(cfg):
+                continue
+            lg, ll, ei = self._score(cfg)
+            out.append({'params': cfg, 'ei': float(ei), 'origin': 'trials'})
+        # ---- reserved entirely-random slots ----
+        attempts = 0
+        while len(out) < n_candidates and attempts < max_attempts:
+            attempts += 1
+            cfg = self._sample_uniform_declared(rng)
+            if self.feasible is not None and not self.feasible(cfg):
+                continue
+            out.append({'params': cfg, 'ei': None, 'origin': 'explore'})
+        return out
+
+
+AGHyperopt.propose_candidates = AGHyperopt.propose_trials
+
+
+# ============================================================
+# 4. HARNESS — run one trial + objective
+# ============================================================
+def _kde_scores(sim_f, sim_s, sim_n, sim_df, sim_ds, data_f, data_s, h_f, h_s, mu, sigma_prop, cfg):
+    """2D KDE negative log-likelihood + per-data-point scores.
+
+    experiment_6: the sigma_fit channel is DAMPED by cfg['sigma_weight'] (FM#8).
+    W = exp(-0.5*(dF/H_F)^2 - 0.5*sw*(dS/H_S)^2) and the sigma part of the gamma
+    score carries the same sw, so the two stay consistent. sw=1 is the frozen
+    experiment_5 design; sw=0 disables the sigma channel (FWHM-only control).
+    """
+    sw = float(cfg.get('sigma_weight', 1.0))
+    d_f = data_f[:, None] - sim_f[None, :]
+    d_s = data_s[:, None] - sim_s[None, :]
+    W = torch.exp(-0.5 * (d_f / h_f) ** 2 - 0.5 * sw * (d_s / h_s) ** 2)
+    w = W / W.sum(dim=1, keepdim=True).clamp_min(1e-12)
+    score = (sim_n[None, :] - mu) / sigma_prop ** 2
+    s_mu = (w * score).sum(dim=1)
+    if GAMMA_SCALE:
+        # z-form: ONE power of bandwidth (unitless distances), fixed reference.
+        dlogG = ((d_f * sim_df[None, :]) / h_f + sw * (d_s * sim_ds[None, :]) / h_s) / H_REF
+    else:
+        dlogG = (d_f * sim_df[None, :]) / h_f ** 2 + sw * (d_s * sim_ds[None, :]) / h_s ** 2
+    s_gamma = (w * dlogG).sum(dim=1)
+    logp = torch.log((W.sum(dim=1) / len(sim_f)).clamp_min(1e-30))
+    nll_val = -logp.mean()
+    return s_mu, s_gamma, nll_val, w, W
+
+def _fit_fn(ph):
+    return fit_profile(ph, n_iters=80, model='lorentzian', uniform_bg=False)
+
+def _fwhm_fn(th):
+    return fwhm_from_theta(th, model='lorentzian')
+
+def _nll_fn(th, ph):
+    return nll(th, ph, model='lorentzian', uniform_bg=False)
+
+import multiprocessing as _mp
+from concurrent.futures import ProcessPoolExecutor as _PPE
+
+def _run_one(args):
+    gamma_val, u, b = args
+    return compute_fwhm_and_dgamma(gamma_val, u, b, _fit_fn, _fwhm_fn, _nll_fn, n_params=2)
+
+def _init_worker():
+    torch.set_num_threads(1)
+
+def _parallel_map(pool, tasks):
+    return list(pool.map(_run_one, tasks, chunksize=8))
+
+def _load_real_target(exp):
+    """Real measured FWHM target for `exp` (15-series convention).
+
+    Reads data/processed/fwhm_linewidths.csv, selects this experiment's
+    (power_nW, transmission), scales raw -> MHz (x1000), and keeps valid rows with
+    fit-error/FWHM < 10. Returns (target_f, target_s) float32 tensors (MHz).
+    Used when USE_REAL_DATA is True (see experiment_4).
+    """
+    import pandas as pd
+    power_nW = int(str(exp['power']).replace('nW', ''))
+    trans = int(str(exp['name']).split('Trans')[-1])
+    df = pd.read_csv(REAL_CSV)
+    sub = df[(df['power_nW'] == power_nW) & (df['transmission'] == trans)]
+    f = sub['fwhm'].to_numpy(dtype=float) * 1000.0
+    e = sub['fit_error'].to_numpy(dtype=float) * 1000.0
+    with np.errstate(invalid='ignore', divide='ignore'):
+        ok = np.isfinite(f) & np.isfinite(e) & (f > 0)
+        filt = ok & ((e / f) < 10.0)
+    return (torch.tensor(f[filt], dtype=torch.float32),
+            torch.tensor(e[filt], dtype=torch.float32))
+
+
+_POWER_TARGET_CACHE = {}
+
+
+def _pooled_power_target(power):
+    """Real FWHM / sigma targets pooled over ALL experiments of one laser power.
+
+    Used by bandwidth_rule='power' (one bandwidth shared by every experiment of
+    the same power, computed from the pooled real targets). Cached per process.
+    """
+    if power in _POWER_TARGET_CACHE:
+        return _POWER_TARGET_CACHE[power]
+    fs, ss = [], []
+    for e in EXPERIMENTS:
+        if e['power'] == power:
+            tf, ts = _load_real_target(e)
+            fs.append(tf); ss.append(ts)
+    pf = torch.cat(fs) if fs else torch.tensor([1.0], dtype=torch.float32)
+    ps = torch.cat(ss) if ss else torch.tensor([1.0], dtype=torch.float32)
+    _POWER_TARGET_CACHE[power] = (pf, ps)
+    return pf, ps
+
+
+def _bandwidths(rule, target_f, target_s, sim_f, sim_s, h_f_scale, h_s_scale,
+                h_s_min, power):
+    """KDE bandwidths (H_F, H_S) in MHz, according to `bandwidth_rule`.
+
+    The kernel is over the SIM cloud, but exp5/exp6 computed its width from the
+    REAL target (Scott). experiment_7 searches the rule itself:
+
+      'target' : H = scale * std(real target) * N_target^(-1/6)          (exp5/exp6)
+      'sim'    : H = scale * std(sim cloud)  * N_sim^(-1/6)             (sim-adaptive, per step)
+      'power'  : H = scale * std(pooled real targets of this power) * N^(-1/6)  (global/per-power)
+
+    Widths are floored (FWHM at 1e-6 MHz, sigma at `h_s_min`).
+    """
+    rule = str(rule or 'target').lower()
+    if rule == 'sim' and sim_f is not None and len(sim_f) > 1:
+        base_f, base_s = sim_f, sim_s
+    elif rule == 'power':
+        base_f, base_s = _pooled_power_target(power)
+    else:                                    # 'target' (default) and any unknown rule
+        base_f, base_s = target_f, target_s
+    n = max(int(len(base_f)), 1)
+    scott = n ** (-1.0 / 6.0)
+    H_F = max(h_f_scale * float(base_f.std()) * scott, 1e-6)
+    H_S = max(h_s_scale * float(base_s.std()) * scott, h_s_min)
+    return H_F, H_S
+
+
+# ============================================================
+# 5. EXPERIMENT_8 — alternative distributional LOSS families
+# ============================================================
+# FAMILY_SCALE: per-family normalization constants, calibrated ONCE so that at the shared
+# frozen start (0.5x truth, default config) each family's |d(loss)/dgamma| matches the KDE
+# control's (~= its |s_gamma|). This makes the campaign compare the loss FORM, not its scale,
+# under the frozen schedule. Values set by tools/calibration (see README); NOT tuned per trial.
+FAMILY_SCALE = {
+    'kde': 1.0,          # control: the 2-D KDE NLL (scale reference)
+    'w1_2d': 0.733844,
+    'energy_2d': 0.42235,
+    'mmd_2d': 13.631359,
+    'w1_fwhm': 0.761782,
+    'cvm_fwhm': 0.028428,
+}
+
+
+def _sorted_target(t):
+    return torch.sort(t)[0]
+
+
+def _quantile_match(sim_vals, tgt_sorted):
+    """Match each sim value to the target quantile at its rank position.
+
+    Returns (sim_sorted, matched_target, sort_idx), all length B; differentiable in
+    sim_vals through the sort permutation and the linear interpolation.
+    """
+    B = sim_vals.shape[0]
+    M = tgt_sorted.shape[0]
+    sv, idx = torch.sort(sim_vals)
+    if M == 1:
+        return sv, tgt_sorted.expand(B), idx
+    pos = ((torch.arange(B, dtype=torch.float32) + 0.5) / B) * (M - 1)
+    lo = torch.floor(pos).long().clamp(0, M - 1)
+    hi = torch.clamp(lo + 1, max=M - 1)
+    frac = pos - lo.float()
+    matched = tgt_sorted[lo] * (1.0 - frac) + tgt_sorted[hi] * frac
+    return sv, matched, idx
+
+
+def _scatter_back(vals_sorted, idx, B):
+    out = torch.empty(B, dtype=vals_sorted.dtype)
+    out[idx] = vals_sorted
+    return out
+
+
+def _quantile_loss(sim_vals, sim_dvals, tgt_sorted, power=1):
+    """Per-run quantile loss between sim_vals and the target quantiles.
+
+    power=1 -> Wasserstein-1 (|d|); power=2 -> Cramer-von Mises-style (d^2).
+    Returns (l, g) per ORIGINAL run index (length B), g = d(loss)/dgamma per run.
+    """
+    B = sim_vals.shape[0]
+    sv, matched, idx = _quantile_match(sim_vals, tgt_sorted)
+    d = sv - matched
+    if power == 1:
+        l_s = d.abs()
+        g_s = torch.sign(d) * sim_dvals[idx]
+    else:
+        l_s = d ** 2
+        g_s = 2.0 * d * sim_dvals[idx]
+    return _scatter_back(l_s, idx, B), _scatter_back(g_s, idx, B)
+
+
+def _energy_terms(sim_vals, sim_dvals, tgt_sorted):
+    """Per-run energy-distance terms (1-D), differentiable in gamma.
+
+    E = 2*mean_{i,j}|X_i-Y_j| - mean_{i,i'}|X_i-X_i'| - const(Y). The Y-Y term is
+    gamma-independent, so it contributes nothing to the gradient and is dropped.
+    """
+    X = sim_vals[:, None]
+    Y = tgt_sorted[None, :]
+    A = (X - Y).abs().mean(dim=1)                    # [B]  mean_j |X_i - Y_j|
+    dA = torch.sign(X - Y).mean(dim=1)               # [B]  * dv_i
+    XX = X - X.T
+    S = torch.sign(XX)
+    Bt = XX.abs().mean(dim=1)                        # [B]
+    dBt = sim_dvals * S.mean(dim=1) - (S * sim_dvals[None, :]).mean(dim=1)
+    return 2.0 * A - Bt, 2.0 * dA * sim_dvals - dBt
+
+
+def _median_heuristic(vals, maxn=400):
+    """Median pairwise distance (MMD median heuristic), subsampled for cost."""
+    v = torch.sort(vals)[0]
+    if v.shape[0] > maxn:
+        idx = torch.linspace(0, v.shape[0] - 1, maxn).long()
+        v = v[idx]
+    d = (v[:, None] - v[None, :]).abs()
+    n = d.shape[0]
+    iu = torch.triu_indices(n, n, offset=1)
+    med = d[iu[0], iu[1]].median()
+    return float(med) if torch.isfinite(med) and med > 0 else float(v.std().clamp_min(1e-6))
+
+
+def _mmd_terms(f, s, df, ds, tgt_f, tgt_s):
+    """Per-run MMD^2 terms with an RBF kernel over the 2-D (FWHM, sigma) cloud.
+
+    Bandwidth-free: the RBF width is the MEDIAN HEURISTIC computed on the pooled
+    (sim + target) cloud, per step -- independent of the KDE bandwidths. This keeps
+    the kernel from saturating (the frozen flat KDE widths would give a near-zero
+    gradient). loss = mean_ii'K(sim,sim) - 2 mean_ij K(sim,tgt) + const(tgt,tgt);
+    the target term is gamma-independent and dropped from the per-run contributions.
+    """
+    hf = _median_heuristic(torch.cat([f, tgt_f]))
+    hs = _median_heuristic(torch.cat([s, tgt_s]))
+    DF = f[:, None] - f[None, :]
+    DS = s[:, None] - s[None, :]
+    Kxx = torch.exp(-0.5 * (DF / hf) ** 2 - 0.5 * (DS / hs) ** 2)
+    dF = df[:, None] - df[None, :]
+    dS = ds[:, None] - ds[None, :]
+    dKxx = -Kxx * ((DF / hf ** 2) * dF + (DS / hs ** 2) * dS)
+    Cf = f[:, None] - tgt_f[None, :]
+    Cs = s[:, None] - tgt_s[None, :]
+    Kxy = torch.exp(-0.5 * (Cf / hf) ** 2 - 0.5 * (Cs / hs) ** 2)
+    dKxy = -Kxy * ((Cf / hf ** 2) * df[:, None] + (Cs / hs ** 2) * ds[:, None])
+    return Kxx.mean(dim=1) - 2.0 * Kxy.mean(dim=1), dKxx.mean(dim=1) - 2.0 * dKxy.mean(dim=1)
+
+
+def _alt_scores(family, ft, si_t, nt, dg_t, ds_t, target_f, target_s, H_F, H_S, sw, cfg):
+    """Per-run (reward r, d(loss)/dgamma g, scalar loss) for the alternative loss families.
+
+    Channels combine as loss = l_FWHM + sw * l_sigma (the exp6 sigma-channel damping,
+    generalized). r = -loss (REINFORCE reward: lower loss = better); g = d(loss)/dgamma.
+    Both are multiplied by FAMILY_SCALE[family] so the loss SCALE matches the KDE control.
+    """
+    tgt_f = _sorted_target(target_f)
+    tgt_s = _sorted_target(target_s)
+    family = str(family)
+    if family == 'w1_2d':
+        lf, gf = _quantile_loss(ft, dg_t, tgt_f, power=1)
+        ls, gs = _quantile_loss(si_t, ds_t, tgt_s, power=1)
+        l, g = lf + sw * ls, gf + sw * gs
+    elif family == 'w1_fwhm':
+        l, g = _quantile_loss(ft, dg_t, tgt_f, power=1)
+    elif family == 'cvm_fwhm':
+        l, g = _quantile_loss(ft, dg_t, tgt_f, power=2)
+    elif family == 'energy_2d':
+        lf, gf = _energy_terms(ft, dg_t, tgt_f)
+        ls, gs = _energy_terms(si_t, ds_t, tgt_s)
+        l, g = lf + sw * ls, gf + sw * gs
+    elif family == 'mmd_2d':
+        l, g = _mmd_terms(ft, si_t, dg_t, ds_t, target_f, target_s)
+    else:
+        raise ValueError(f'unknown loss_family {family!r}')
+    scale = float(FAMILY_SCALE.get(family, 1.0))
+    return (-l * scale), (g * scale), float(l.mean()) * scale
+
+
+def _run_experiment(exp, cfg, pool):
+    """One experiment: joint μ + γ optimization (frozen machinery, config-driven)."""
+    mu_true, sigma_prop = exp['mu_true'], exp['sigma_prop']
+    lam, gamma_true = exp['lam'], exp['gamma_true']
+    mu_init, gamma_init = 0.5 * mu_true, 0.5 * gamma_true
+    n_runs = cfg['n_runs']; n_iter = cfg['n_iter']
+    lr_mu = cfg['lr_mu']; lr_gamma = cfg['lr_gamma']
+    sigma_ref = cfg['sigma_ref']; clip = cfg['clip']
+    gamma_anneal = cfg['gamma_anneal']; h_s_min = cfg['h_s_min']
+    mu_anneal = cfg['mu_anneal']
+    h_f_scale = float(cfg.get('h_f_scale', 1.0))
+    h_s_scale = float(cfg.get('h_s_scale', 1.0))
+    gamma_rel_cap = float(cfg.get('gamma_rel_cap', 0.0))
+    bandwidth_rule = cfg.get('bandwidth_rule', 'target')
+    loss_family = str(cfg.get('loss_family', 'kde'))
+    sw = float(cfg.get('sigma_weight', 1.0))
+
+    # ---- target distribution: real measured FWHM or synthetic at TRUE values ----
+    if USE_REAL_DATA:
+        target_f, target_s = _load_real_target(exp)
+    else:
+        rng_t = np.random.default_rng(SYNTH_SEED)
+        tasks_t = []
+        for _ in range(exp['n_target']):
+            u, b, n = draw_fixed_noise(mu_true, sigma_prop, lam, rng_t)
+            tasks_t.append((gamma_true, u.numpy(), b.numpy()))
+        res_t = _parallel_map(pool, tasks_t)
+        target_f = torch.tensor([r[0] for r in res_t], dtype=torch.float32)
+        target_s = torch.tensor([r[1] for r in res_t], dtype=torch.float32)
+
+    mu_val = float(mu_init)
+    gamma_val = float(gamma_init)
+    history = []
+    diverged = False; diverged_at = None
+    t_start = time.time()
+
+    for step in range(n_iter):
+        rng2 = np.random.default_rng(SEED + step)
+        tasks, ns = [], []
+        for _ in range(n_runs):
+            u, b, n = draw_fixed_noise(mu_val, sigma_prop, lam, rng2)
+            tasks.append((gamma_val, u.numpy(), b.numpy()))
+            ns.append(n)
+        res = _parallel_map(pool, tasks)
+        fwhms = [r[0] for r in res]; sigmas = [r[1] for r in res]
+        dfs = [r[2] for r in res]; dsigmas = [r[3] for r in res]
+
+        ft = torch.tensor(fwhms, dtype=torch.float32)
+        si_t = torch.tensor(sigmas, dtype=torch.float32)
+        nt = torch.tensor(ns, dtype=torch.float32)
+        dg_t = torch.tensor(dfs, dtype=torch.float32)
+        ds_t = torch.tensor(dsigmas, dtype=torch.float32)
+
+        # ---- KDE bandwidths (experiment_7: rule x coefficient; 'sim' is per-step) ----
+        H_F, H_S = _bandwidths(bandwidth_rule, target_f, target_s, ft, si_t,
+                               h_f_scale, h_s_scale, h_s_min, exp['power'])
+
+        # ---- loss: exp8 dispatches on loss_family; 'kde' is the frozen exp5/6/7 control ----
+        if loss_family == 'kde':
+            s_mu, s_gamma, nll_val, w, W = _kde_scores(
+                ft, si_t, nt, dg_t, ds_t, target_f, target_s, H_F, H_S, mu_val, sigma_prop, cfg)
+            # ---- μ: REINFORCE, Anuar's reward (exp5) + score denominator ----
+            if MU_REWARD == 'loglik_mean':
+                r = torch.log(W.clamp_min(1e-30)).mean(dim=0)      # per real scan
+            elif MU_REWARD == 'loglik_sum':
+                r = torch.log(W.clamp_min(1e-30)).sum(dim=0)       # exact 21g form
+            else:                                                  # 'responsibility'
+                r = w.mean(dim=0)
+            # ---- γ: KDE channel (z-form) ----
+            grad_gamma = float(max(min(-s_gamma.mean(), clip), -clip))
+        else:
+            # ---- experiment_8: alternative distributional loss ----
+            # per-run reward r (= -loss) and pathwise g (= d(loss)/dgamma), already scaled
+            r, g, nll_val = _alt_scores(loss_family, ft, si_t, nt, dg_t, ds_t,
+                                        target_f, target_s, H_F, H_S, sw, cfg)
+            grad_gamma = float(max(min(float(g.mean()), clip), -clip))
+
+        # ---- μ: REINFORCE with the per-run reward r (identical form for all families) ----
+        score_denom = (sigma_prop ** 2) if MU_SCORE == 'sigma_prop' else (sigma_ref ** 2)
+        score = (nt - mu_val) / score_denom
+        grad_mu = float(max(min(-(r - r.mean()) @ score, clip), -clip))
+
+        # ---- mean-matching anchor (kernel-free; disabled unless LAMBDA_MEAN > 0) ----
+        mean_sim = float(ft.mean()); mean_tgt = float(target_f.mean())
+        mean_loss = abs(mean_sim - mean_tgt)
+        if LAMBDA_MEAN > 0:
+            d_mean_dgamma = float(dg_t.mean())
+            grad_gamma_mean = -math.copysign(1.0, mean_sim - mean_tgt) * d_mean_dgamma
+            grad_gamma = float(max(min(grad_gamma + LAMBDA_MEAN * grad_gamma_mean, clip), -clip))
+
+        # ---- updates: NO clamps (experiment_5); mu anneal AND gamma anneal both frozen; ----
+        # ---- experiment_6 adds an optional RELATIVE gamma trust region. ----
+        lr_mu_decay = lr_mu * (1.0 - mu_anneal * step / n_iter)
+        mu_val -= lr_mu_decay * grad_mu
+        dgamma = lr_gamma * (1.0 - gamma_anneal * step / n_iter) * grad_gamma
+        if gamma_rel_cap > 0.0:
+            # limit the per-step gamma move to a fraction of the current gamma
+            lim = gamma_rel_cap * abs(gamma_val)
+            dgamma = max(-lim, min(lim, dgamma))
+        gamma_val -= dgamma
+
+        history.append(dict(step=step, mu=mu_val, gamma=gamma_val, nll=float(nll_val),
+                            grad_mu=grad_mu, grad_gamma=grad_gamma, mean_loss=mean_loss,
+                            mean_n=float(nt.mean())))
+        # divergence guard: stop (do NOT clamp) if a parameter leaves the sane band
+        if (not (DIVERGENCE_GUARD['mu'][0] <= mu_val <= DIVERGENCE_GUARD['mu'][1])) or \
+           (not (DIVERGENCE_GUARD['gamma'][0] <= gamma_val <= DIVERGENCE_GUARD['gamma'][1])):
+            diverged = True; diverged_at = step
+            break
+
+    return dict(exp=exp['name'], power=exp['power'],
+                mu_true=mu_true, gamma_true=gamma_true,
+                mu_init=mu_init, gamma_init=gamma_init,
+                mu_final=history[-1]['mu'], gamma_final=history[-1]['gamma'],
+                nll_final=history[-1]['nll'], mean_loss_final=history[-1]['mean_loss'],
+                history=history, H_F=H_F, H_S=H_S, t_elapsed=time.time() - t_start,
+                diverged=diverged, diverged_at=diverged_at)
+
+def run_trial(config, experiments=None, verbose=True):
+    """Run one trial on the benchmark. Returns dict with per-experiment results.
+
+    config keys (all optional, defaults from DEFAULT_CONFIG):
+        n_runs, n_iter, lr_mu, lr_gamma, sigma_ref, clip, gamma_anneal, mu_anneal, h_s_min
+    Deterministic per (config, benchmark): SEED + SYNTH_SEED fixed.
+    """
+    cfg = dict(DEFAULT_CONFIG)
+    cfg.update({k: v for k, v in config.items() if v is not None})
+    cfg['n_runs'] = int(cfg['n_runs'])
+    cfg['n_iter'] = int(cfg['n_iter'])
+    exps = experiments if experiments is not None else benchmark()
+    if not feasible(cfg):
+        raise ValueError(
+            f"infeasible config: n_runs*n_iter={cfg['n_runs']*cfg['n_iter']} "
+            f"> runtime_cap={runtime_cap(len(exps))} (~{BUDGET_HOURS}h trial)")
+
+    results = []
+    t0 = time.time()
+    with _PPE(max_workers=N_WORKERS, mp_context=_mp.get_context('fork'),
+              initializer=_init_worker) as pool:
+        for exp in exps:
+            if verbose:
+                print(f"Running {exp['name']:>12} ...", end=' ', flush=True)
+            r = _run_experiment(exp, cfg, pool)
+            r['t_elapsed'] = time.time() - t0
+            results.append(r)
+            if verbose:
+                print(f"μ {r['mu_true']:.2f} -> {r['mu_final']:.2f} | "
+                      f"γ {r['gamma_true']:.1f} -> {r['gamma_final']:.2f} | "
+                      f"NLL {r['nll_final']:.2f}", flush=True)
+    total = time.time() - t0
+    if verbose:
+        print(f"\nTotal: {total/60:.1f} min")
+    return dict(config=cfg, benchmark=[e['name'] for e in exps],
+                results=results, t_elapsed=total)
+
+def compute_objective(run):
+    """Objective = combined relative MSE of (μ, γ) over the benchmark + sampling SE.
+
+    Per experiment: rel-sq error for μ and γ (each normalized by its true value).
+    objective = mean over all 2*n_exps errors (lower is better).
+    uncertainty = SE of those per-experiment errors (sampling uncertainty across
+    experiments — Anuar 2026-08-29 11:15; NO Fisher in the objective).
+    Returns (objective, uncertainty, breakdown) — breakdown carries the full
+    per-channel MSE/RMSE/rel-RMSE/bias table for reporting.
+    """
+    results = run['results'] if isinstance(run, dict) else run
+    rows = []
+    for r in results:
+        T = int(str(r['exp']).split('Trans')[-1])
+        # CAP each per-cell error so a single blow-up / divergence cannot dominate the mean
+        rel_mu = min(((r['mu_final'] - r['mu_true']) / r['mu_true']) ** 2, CAP)
+        rel_g = min(((r['gamma_final'] - r['gamma_true']) / r['gamma_true']) ** 2, CAP)
+        # grade toward high transmission (series-21 goal), with a floor so low-T still counts
+        w = W_FLOOR + (1.0 - W_FLOOR) * (T / 100.0)
+        rows.append(dict(exp=r['exp'], T=T, w=w, rel_sq_mu=rel_mu, rel_sq_gamma=rel_g,
+                         diverged=bool(r.get('diverged', False)), diverged_at=r.get('diverged_at'),
+                         mu_true=r['mu_true'], mu_final=r['mu_final'],
+                         gamma_true=r['gamma_true'], gamma_final=r['gamma_final'],
+                         mu_err=r['mu_final'] - r['mu_true'],
+                         gamma_err=r['gamma_final'] - r['gamma_true']))
+    errs = np.array([row['rel_sq_mu'] for row in rows] + [row['rel_sq_gamma'] for row in rows])
+    wts = np.array([row['w'] for row in rows] + [row['w'] for row in rows])
+    objective = float((wts * errs).sum() / wts.sum())          # T-weighted mean (capped)
+    uncertainty = float(errs.std(ddof=1) / np.sqrt(len(errs))) if len(errs) > 1 else 0.0
+
+    mu_e = np.array([row['mu_err'] for row in rows])
+    g_e = np.array([row['gamma_err'] for row in rows])
+    breakdown = dict(
+        n_exps=len(results),
+        mu=dict(bias=float(mu_e.mean()), mse=float((mu_e ** 2).mean()),
+                rmse=float(np.sqrt((mu_e ** 2).mean())),
+                rel_rmse=float(np.sqrt(((mu_e / np.array([r['mu_true'] for r in results])) ** 2).mean()))),
+        gamma=dict(bias=float(g_e.mean()), mse=float((g_e ** 2).mean()),
+                   rmse=float(np.sqrt((g_e ** 2).mean())),
+                   rel_rmse=float(np.sqrt(((g_e / np.array([r['gamma_true'] for r in results])) ** 2).mean()))),
+        rows=rows, n_diverged=int(sum(row['diverged'] for row in rows)),
+        objective_weighted=objective, cap=CAP, w_floor=W_FLOOR,
+    )
+    return objective, uncertainty, breakdown
+
+def format_report(breakdown):
+    """Per-experiment report table printed in the trial notebook cell."""
+    lines = [f"{'exp':<15}{'μ_true':>8}{'μ_fit':>8}{'Δμ%':>8} | "
+             f"{'γ_true':>8}{'γ_fit':>8}{'Δγ%':>8}"]
+    for r in breakdown['rows']:
+        tag = ' !D' if r.get('diverged') else ('    ' if 'diverged' in r else '')
+        lines.append(
+            f"{(r['exp']+tag):<15}{r['mu_true']:>8.2f}{r['mu_final']:>8.2f}"
+            f"{r['mu_err'] / r['mu_true'] * 100:>+8.1f} | "
+            f"{r['gamma_true']:>8.2f}{r['gamma_final']:>8.2f}"
+            f"{r['gamma_err'] / r['gamma_true'] * 100:>+8.1f}")
+    m, g = breakdown['mu'], breakdown['gamma']
+    lines.append("")
+    if 'objective_weighted' in breakdown:
+        lines.append(f"weighted objective (T-graded, cap={breakdown['cap']}) = "
+                     f"{breakdown['objective_weighted']:.4f} | diverged cells: "
+                     f"{breakdown.get('n_diverged', 0)}")
+    lines.append(f"μ: RMSE {m['rmse']:.3f} (rel {m['rel_rmse']*100:.1f}%, "
+                 f"bias {m['bias']:+.3f}) | "
+                 f"γ: RMSE {g['rmse']:.3f} (rel {g['rel_rmse']*100:.1f}%, "
+                 f"bias {g['bias']:+.3f})")
+    return "\n".join(lines)
+
+# ---------------------------------------------------------------------------
+# Visualisation: (mu, gamma) phase-space optimisation paths per experiment.
+# 2 columns (laser: 1nW | 3nW) x 7 rows (transmission T05..T100), start/end
+# markers, truth dashed. NO Fisher ellipse: the AG-HYPOPT objective carries no
+# Fisher information, so the campaign plots the paths only. Rendered inline
+# (plt.show) so each trial notebook stays self-contained.
+# ---------------------------------------------------------------------------
+LAST_RUN = None   # set by objective(); the most recent trial's full run dict
+
+# Canonical axis order for the phase-space grid.
+_POWERS = ('1nW', '3nW')
+
+
+def trial_seed(trial_id):
+    """Integer seed derived from a TRIAL ID, so each trial draws a fresh batch.
+
+    'trial_03' -> 3. Non-numeric ids fall back to a stable string hash. Used as the
+    AGHyperopt proposal seed: without it every trial (same default seed) proposes the
+    SAME candidate batch — the repeating-sample bug.
+    """
+    s = str(trial_id)
+    digits = ''
+    for ch in reversed(s):
+        if not ch.isdigit():
+            break
+        digits = ch + digits
+    if digits:
+        return int(digits)
+    h = 0
+    for ch in s:
+        h = (h * 131 + ord(ch)) & 0x7FFFFFFF
+    return h or 1
+
+
+def _path_axes(results, powers, trans):
+    """Grid axes (powers x trans) actually present in `results`, in canonical order."""
+    powers = list(powers) if powers is not None else \
+        [p for p in _POWERS if any(r.get('power') == p for r in results)]
+    if trans is not None:
+        trans = list(trans)
+    else:
+        seen = list(dict.fromkeys(r['exp'].split('Trans')[-1] for r in results))
+        trans = sorted(seen, key=lambda s: (0, int(s)) if s.isdigit() else (1, s))
+    return powers, trans
+
+
+def plot_paths(results, powers=None, trans=None, figsize=None, title=None, show=True):
+    """(mu, gamma) phase-space paths per experiment: cols = laser, rows = transmission.
+
+    Autosized: unless given, the grid uses exactly the powers/transmissions present in
+    `results` (canonical order), so a subset benchmark fills every panel.
+
+    results: per-experiment dicts from run_trial (needs 'exp', 'power',
+        'mu_true', 'gamma_true', 'mu_final', 'gamma_final', 'nll_final', 'history').
+    No Fisher ellipse (the campaign objective is Fisher-free). Returns the figure;
+    renders inline with plt.show() when show=True.
+    """
+    import matplotlib.pyplot as plt
+
+    if not results:
+        return None
+    powers, trans = _path_axes(results, powers, trans)
+    if figsize is None:
+        figsize = (6.0 * len(powers), 3.9 * len(trans) + 1.2)
+
+    by_key = {(r.get('power'), r['exp'].split('Trans')[-1]): r for r in results}
+
+    fig, axes = plt.subplots(len(trans), len(powers), figsize=figsize, squeeze=False)
+    for ci, power in enumerate(powers):
+        for ri, t in enumerate(trans):
+            ax = axes[ri][ci]
+            r = by_key.get((power, t))
+            if r is None:
+                ax.axis('off')
+                continue
+            hs = r['history']
+            mus = [h['mu'] for h in hs]
+            gams = [h['gamma'] for h in hs]
+            i_mu, i_gam = r.get('mu_init'), r.get('gamma_init')
+            ax.plot(mus, gams, 'b.-', lw=1.2, ms=3, zorder=3)
+            ax.plot(mus[::10], gams[::10], 'k.', ms=3, zorder=3)
+            if i_mu is not None and i_gam is not None:
+                ax.plot(i_mu, i_gam, 'o', mfc='none', mec='k', mew=1.4, ms=9, zorder=4)
+            ax.plot(mus[0], gams[0], 'go', ms=8, zorder=5)
+            ax.plot(mus[-1], gams[-1], 'r*', ms=14, mec='k', mew=0.5, zorder=5)
+            ax.axvline(r['mu_true'], color='g', ls='--', lw=1, alpha=0.6)
+            ax.axhline(r['gamma_true'], color='g', ls='--', lw=1, alpha=0.6)
+            ax.set_title(f"{r['exp']} | Δμ={r['mu_final']-r['mu_true']:+.1f} "
+                         f"Δγ={r['gamma_final']-r['gamma_true']:+.2f} "
+                         f"NLL={r['nll_final']:.1f}", fontsize=8)
+            ax.set_xlabel('μ'); ax.set_ylabel('γ (MHz)')
+            ax.grid(alpha=0.3)
+            xs = mus + [r['mu_true']]; ys = gams + [r['gamma_true']]
+            if i_mu is not None: xs = xs + [i_mu]
+            if i_gam is not None: ys = ys + [i_gam]
+            x0, x1 = min(xs), max(xs); sp = (x1 - x0) or 1.0
+            y0, y1 = min(ys), max(ys); spy = (y1 - y0) or 1.0
+            ax.set_xlim(x0 - 0.08 * sp, x1 + 0.08 * sp)
+            ax.set_ylim(y0 - 0.08 * spy, y1 + 0.08 * spy)
+            if ri == 0 and ci == 0:
+                ax.plot([], [], 'o', mfc='none', mec='k', mew=1.4, ms=9,
+                        label='init (0.5·true)')
+                ax.plot([], [], 'go', ms=8, label='start (step 0)')
+                ax.plot([], [], 'r*', ms=12, mec='k', label='end')
+                ax.plot([], [], 'b-', label='path')
+                ax.legend(fontsize=7, loc='best')
+    if title is None:
+        title = ('AG-HYPOPT — (μ, γ) phase-space paths '
+                 '(columns: laser | rows: transmission)')
+    fig.suptitle(title, fontsize=13, y=0.996)
+    plt.tight_layout()
+    if show:
+        plt.show()
+    return fig
+
+
+def _trial_rows(trials):
+    """Normalize a trials source to [(config_dict, objective_float), ...] (completed only)."""
+    if isinstance(trials, (str, os.PathLike)):
+        trials = json.load(open(trials))
+    if isinstance(trials, dict):
+        trials = trials.get('trials', [])
+    rows = []
+    for t in trials:
+        cfg = t.get('config') or t.get('params') or {}
+        obj = t.get('objective', t.get('loss'))
+        if cfg and obj is not None:
+            rows.append((dict(cfg), float(obj)))
+    return rows
+
+
+def plot_parallel(trials, current=None, params=None, figsize=None, title=None, show=True):
+    """Parallel-coordinates view of the campaign: one polyline per trial across the tuned
+    hyperparameters and the objective; lines colored by objective (lower = better).
+
+    trials: trials.json path, the loaded dict, or a list of {config, objective}.
+    current: optional {'config':..., 'objective':...} for the just-run trial — drawn thick/
+        crimson and included in the objective color scale.
+    Autosized: axes = the config keys in first-seen order, then 'objective'. Renders inline
+    when show=True; returns the figure.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+
+    rows = _trial_rows(trials)
+    cur_i = None
+    if current is not None:
+        if isinstance(current, dict):
+            ccfg = current.get('config') or current.get('params')
+            cobj = current.get('objective', current.get('loss'))
+        else:
+            ccfg, cobj = current
+        if ccfg is not None and cobj is not None:
+            cur_i = len(rows)
+            rows = rows + [(dict(ccfg), float(cobj))]
+    if not rows:
+        return None
+
+    if params is None:
+        order = []
+        for cfg, _ in rows:
+            for k in cfg:
+                if k not in order:
+                    order.append(k)
+        params = order
+    names = list(params) + ['objective']
+
+    # per-param display scaling: numeric -> min-max; categorical (choice) -> category index
+    scales = {}
+    for p in params:
+        vals = [cfg[p] for cfg, _ in rows if p in cfg]
+        try:
+            nums = [float(v) for v in vals]
+        except (TypeError, ValueError):
+            nums = None
+        if nums:
+            scales[p] = ('num', min(nums), max(nums))
+        else:
+            cats = []
+            for v in vals:
+                s = str(v)
+                if s not in cats:
+                    cats.append(s)
+            scales[p] = ('cat', cats)
+    objs = [o for _, o in rows]
+    olo, ohi = min(objs), max(objs)
+
+    def _val(p, v):
+        """Map a raw param value into [0, 1] for display (handles categoricals)."""
+        sc = scales[p]
+        if sc[0] == 'num':
+            a, b = sc[1], sc[2]
+            return 0.5 if b <= a else (float(v) - a) / (b - a)
+        cats = sc[1]
+        return 0.5 if len(cats) <= 1 else cats.index(str(v)) / (len(cats) - 1)
+
+    def _obj(vn):
+        return 0.5 if ohi <= olo else (vn - olo) / (ohi - olo)
+
+    xs = np.arange(len(names))
+    fig, ax = plt.subplots(figsize=figsize or (max(6.5, 1.7 * len(names)), 5.2))
+    cmap = plt.cm.viridis
+    norm = Normalize(olo, ohi)
+    for i, (cfg, obj) in enumerate(rows):
+        ys = [_val(p, cfg[p]) for p in params] + [_obj(obj)]
+        if i == cur_i:
+            ax.plot(xs, ys, color='crimson', lw=2.6, marker='o', ms=4, zorder=5, label='this trial')
+        else:
+            ax.plot(xs, ys, color=cmap(norm(obj)), lw=1.4, alpha=0.85, zorder=2)
+    for xi, name in enumerate(names):
+        ax.axvline(xi, color='k', lw=0.8, alpha=0.45, zorder=1)
+        if name in scales:
+            sc = scales[name]
+            if sc[0] == 'num':
+                top, bot = f'{sc[2]:.3g}', f'{sc[1]:.3g}'
+            else:
+                cats = sc[1]
+                top, bot = (cats[-1], cats[0]) if cats else ('', '')
+        else:
+            top, bot = f'{ohi:.3g}', f'{olo:.3g}'
+        ax.text(xi, 1.02, top, ha='center', va='bottom', fontsize=7)
+        ax.text(xi, -0.02, bot, ha='center', va='top', fontsize=7)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(names, rotation=20, ha='right')
+    ax.set_ylim(-0.08, 1.08)
+    ax.set_yticks([])
+    ax.set_xlim(-0.5, len(names) - 0.5)
+    ax.set_title(title or 'Campaign — parallel coordinates (tunables → objective)', fontsize=11)
+    fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax,
+                 label='objective (lower = better)')
+    if cur_i is not None:
+        ax.legend(fontsize=8, loc='best')
+    plt.tight_layout()
+    if show:
+        plt.show()
+    return fig
+
+
+def objective(config, experiments=None, verbose=True, show_paths=True):
+    """Packed trial objective: run the frozen vanilla benchmark on `config`.
+
+    config: dict of tunables — all keys optional, missing ones fall back to the
+        DEFAULT_CONFIG defaults. Campaign tunables (space.json): loss_family,
+        sigma_weight. (n_runs/n_iter are fixed by the protocol; schedule, bandwidth
+        and gamma_rel_cap are frozen, not searched.)
+    Returns (loss, uncertainty, report):
+        loss         combined relative MSE of (mu, gamma) over the benchmark
+        uncertainty  standard error across the per-experiment errors
+        report       printable per-experiment table (RMSE/rel-RMSE/bias summary)
+    show_paths=True renders the (μ,γ) phase-space path figure inline (2 cols x 7
+    rows, no Fisher) and stashes the full run dict in the module global LAST_RUN.
+    Deterministic per (config, benchmark): SEED=42 + SYNTH_SEED fixed.
+    """
+    run = run_trial(config, experiments=experiments, verbose=verbose)
+    loss, uncertainty, breakdown = compute_objective(run)
+    global LAST_RUN
+    LAST_RUN = run
+    if show_paths:
+        plot_paths(run['results'])
+    return loss, uncertainty, format_report(breakdown)
+
+
+if __name__ == '__main__':
+    # quick self-test: template API contract + tiny run + objective + cold propose
+    opt = AGHyperopt()
+    opt.fit('space.json', 'trials.json')
+    cands = opt.propose_trials(4)
+    assert len(cands) == 4 and all('params' in c for c in cands), 'propose_trials contract broken'
+
+    tiny = [EXPERIMENTS[0]]
+    cfg = dict(DEFAULT_CONFIG, n_runs=4, n_iter=3)
+    run = run_trial(cfg, experiments=tiny, verbose=True)
+    obj, unc, bd = compute_objective(run)
+    print(f"\nSMOKE objective={obj:.6f} +/- {unc:.6f} | "
+          f"mu RMSE {bd['mu']['rmse']:.3f} | gamma RMSE {bd['gamma']['rmse']:.3f}")
+    print(format_report(bd))
+    print("\nag_hypopt.py self-test OK")
