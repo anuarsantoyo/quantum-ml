@@ -1,5 +1,19 @@
 {
-  "trials": [],
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 5.349150430330462,
+        "h_s_scale": 7.6521429754810875
+      },
+      "objective": 0.0836543057905404,
+      "uncertainty": 0.021073751070237557,
+      "summary": "Trial 1 (target rule, h_f 5.349, h_s 7.652) scores objective 0.0837 \u00b1 0.0211 with gamma finite on all 8 cells and no divergence, clearing the success bar but sitting just above exp6's 0.0803.",
+      "key_insight": "Pushing the winning target rule from exp6's h_f 4.0 up to 5.35 (and h_s 3.675 -> 7.65) does not improve the objective (0.0803 -> 0.0837), the first sign of a turnover above exp6's optimum.",
+      "notebook": "trial_01.ipynb"
+    }
+  ],
   "protocol": {
     "model": "series-21 (17g) model on REAL data; mu reward = Anuar's per-run likelihood (MU_REWARD=loglik_mean), mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
     "question": "experiment_7 - bandwidth RULE family campaign: the learning-rate schedule (exp5 winner) and the score design (exp6 winner: sigma_weight=0.865, gamma_rel_cap=0.107) are FROZEN; the campaign tunes the KDE bandwidth rule (target | sim | power) and its coefficients h_f_scale / h_s_scale extended to [1, 12].",
@@ -17,8 +31,14 @@
     },
     "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
     "divergence_guard": {
-      "mu": [0.2, 1500.0],
-      "gamma": [0.02, 500.0],
+      "mu": [
+        0.2,
+        1500.0
+      ],
+      "gamma": [
+        0.02,
+        500.0
+      ],
       "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band (guards the photon-count blow-up)"
     },
     "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
