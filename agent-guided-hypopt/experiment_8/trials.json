@@ -227,6 +227,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.2030 gives 0.0840, its worst draw and the first above the KDE control, showing the basin scatter is larger than first estimated and the mean edge is only ~0.002.",
       "key_insight": "The cvm_fwhm advantage is real on the mean (~0.078 over nine draws) but small and comparable to seed noise, so held-out validation is decisive.",
       "notebook": "trial_19.ipynb"
+    },
+    {
+      "trial_id": "trial_20",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20781023901379525
+      },
+      "objective": 0.07781365943688394,
+      "uncertainty": 0.020500307555040096,
+      "summary": "cvm_fwhm at sigma_weight 0.2078 gives 0.0778, another basin replication bringing the family mean to ~0.0781 over ten draws, nine of which are under the KDE control.",
+      "key_insight": "The cvm_fwhm mean (~0.0781) sits ~0.002 under the control, a small but mostly consistent margin; the held-out set will decide its significance.",
+      "notebook": "trial_20.ipynb"
     }
   ],
   "protocol": {
