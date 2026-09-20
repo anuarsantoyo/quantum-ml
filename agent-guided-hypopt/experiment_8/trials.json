@@ -191,6 +191,18 @@
       "summary": "mmd_2d at sigma_weight 0.2029 gives 0.1755, essentially its high-sw value (0.1833), so MMD is sw-insensitive and by far the worst; this closes the family x sw matrix with cvm_fwhm the only family under the control.",
       "key_insight": "MMD failure is a pure loss-form property (0.1755 low-sw vs 0.1833 high-sw), unaffected by sigma_weight - unlike cvm_fwhm, whose low-sw improvement is what carries the campaign win.",
       "notebook": "trial_16.ipynb"
+    },
+    {
+      "trial_id": "trial_17",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.2047987172474844
+      },
+      "objective": 0.07814305563245741,
+      "uncertainty": 0.020633198460638897,
+      "summary": "cvm_fwhm at sigma_weight 0.2048 gives 0.0781, a basin replication that brings the family mean to ~0.0772 (n=7) - consistently ~0.003 under the KDE control.",
+      "key_insight": "The cvm_fwhm basin is a stable ~0.0772 +/- 0.002 plateau, so the winner margin over the control is small but reproducible across seven independent draws.",
+      "notebook": "trial_17.ipynb"
     }
   ],
   "protocol": {
