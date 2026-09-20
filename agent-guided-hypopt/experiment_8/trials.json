@@ -107,6 +107,18 @@
       "summary": "energy_2d at the winning sigma_weight (0.2291) gives objective 0.1021, no better than its high-sw value (0.0996) and clearly behind cvm_fwhm (0.0764), with the worst low-count gamma of the campaign.",
       "key_insight": "The low-sw gain is specific to the cvm_fwhm loss form; the energy distance does not benefit from it, so the family ranking is not a sigma_weight artifact.",
       "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "loss_family": "w1_2d",
+        "sigma_weight": 0.20915674145175503
+      },
+      "objective": 0.08490314092155826,
+      "uncertainty": 0.030468779684203275,
+      "summary": "w1_2d at sigma_weight 0.2092 gives objective 0.0849, an improvement on its high-sw value (0.0895) but still behind the KDE control (0.0803) and well behind cvm_fwhm (0.0764).",
+      "key_insight": "The low-sw benefit is not exclusive to cvm_fwhm (w1_2d gains ~0.005 too), but cvm_fwhm gains roughly three times as much (0.013), so its lead reflects the loss form rather than sw alone.",
+      "notebook": "trial_10.ipynb"
     }
   ],
   "protocol": {
