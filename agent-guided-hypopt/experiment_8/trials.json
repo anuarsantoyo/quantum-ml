@@ -347,6 +347,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1924 gives 0.0799, under the control, keeping the family mean at ~0.0774 over nineteen draws (seventeen under the control).",
       "key_insight": "With one trial left the conclusion is stable: cvm_fwhm is the only family whose mean beats the KDE control, by ~0.003.",
       "notebook": "trial_29.ipynb"
+    },
+    {
+      "trial_id": "trial_30",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19883171823062135
+      },
+      "objective": 0.07941339565515412,
+      "uncertainty": 0.020545229940548953,
+      "summary": "The final trial, cvm_fwhm at sigma_weight 0.1988 -> 0.0794, closes the campaign with the Cramer-von Mises FWHM loss as the only family whose mean (~0.0775 over twenty draws) beats the KDE control.",
+      "key_insight": "Across the whole campaign only cvm_fwhm beat the control, by a small (~0.003) but mostly consistent margin concentrated in the gamma channel.",
+      "notebook": "trial_30.ipynb"
     }
   ],
   "protocol": {
