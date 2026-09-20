@@ -215,6 +215,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.3757 gives 0.0790, still under the KDE control, showing the family advantage is broad in sw (eight points spanning sw 0.18-0.38, all at or under the control).",
       "key_insight": "cvm_fwhm is robustly competitive across a wide sw range, so its win is a broad loss-form advantage rather than a lucky narrow sw setting.",
       "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20304511874259795
+      },
+      "objective": 0.08399395427814658,
+      "uncertainty": 0.02074475069292965,
+      "summary": "cvm_fwhm at sigma_weight 0.2030 gives 0.0840, its worst draw and the first above the KDE control, showing the basin scatter is larger than first estimated and the mean edge is only ~0.002.",
+      "key_insight": "The cvm_fwhm advantage is real on the mean (~0.078 over nine draws) but small and comparable to seed noise, so held-out validation is decisive.",
+      "notebook": "trial_19.ipynb"
     }
   ],
   "protocol": {
