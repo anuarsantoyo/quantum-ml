@@ -71,6 +71,18 @@
       "summary": "cvm_fwhm (sigma_weight 0.2074) improves the campaign best to objective 0.0764, reproducing the family win over the KDE control (0.0803) with the best gamma of the campaign.",
       "key_insight": "The cvm_fwhm advantage is reproducible across two seeds (0.0777 then 0.0764) and its benefit lives in the gamma channel, while mu stays at the same rel ~33 percent level as every other family.",
       "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "loss_family": "kde",
+        "sigma_weight": 0.2278693029558615
+      },
+      "objective": 0.08297973944137123,
+      "uncertainty": 0.020282492815154558,
+      "summary": "The KDE control at sigma_weight 0.2279 gives objective 0.0830, no better than its own reference (0.0803) and clearly behind cvm_fwhm (0.0764), so the low-sw region does not by itself produce the gain.",
+      "key_insight": "The cvm_fwhm advantage is a genuine loss-FORM effect, not a sigma_weight-region artifact: KDE moved to the same sw stays at control level.",
+      "notebook": "trial_07.ipynb"
     }
   ],
   "protocol": {
