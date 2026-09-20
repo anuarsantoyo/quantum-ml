@@ -167,6 +167,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1950 gives 0.0798, near-identical sw to trial_11 (0.0760), showing the basin seed scatter is ~0.004; the family sits at ~0.077 on average, just under the KDE control.",
       "key_insight": "Within the flat cvm_fwhm basin the sw dependence is smaller than the seed scatter, so cvm_fwhm beats the control by a small (~0.003) but consistent margin.",
       "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "loss_family": "kde",
+        "sigma_weight": 0.18945952639848865
+      },
+      "objective": 0.0866483064777724,
+      "uncertainty": 0.021242938971200942,
+      "summary": "The KDE control at sigma_weight 0.1895 gives objective 0.0866, no better than its own reference and well behind cvm_fwhm at the same sw, confirming the campaign winner is the Cramer-von Mises FWHM loss.",
+      "key_insight": "At matched sw KDE is flat/immune to the low-sw region while cvm_fwhm improves, so the ~0.004-0.010 cvm_fwhm advantage is the loss form, not the sigma_weight.",
+      "notebook": "trial_15.ipynb"
     }
   ],
   "protocol": {
