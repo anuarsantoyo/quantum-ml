@@ -23,6 +23,18 @@
       "summary": "energy_2d (sigma_weight 0.4228) reaches objective 0.0996, worse than trial_01 w1_2d (0.0895) and the KDE control (0.0803), no divergences, with a systematic low-count gamma undershoot.",
       "key_insight": "The energy distance is stable but undershoots gamma in the low-count cells, making it the weakest loss form tested so far.",
       "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "loss_family": "mmd_2d",
+        "sigma_weight": 0.4331269402364738
+      },
+      "objective": 0.18327426275050443,
+      "uncertainty": 0.061318235263437014,
+      "summary": "mmd_2d (sigma_weight 0.4331) reaches objective 0.1833, far worse than w1_2d (0.0895), energy_2d (0.0996) and the KDE control (0.0803), with mu low almost everywhere and no divergences.",
+      "key_insight": "With the median-heuristic MMD kernel the mu reward is systematically too weak, leaving mu far below truth at every transmission; MMD is the weakest loss form tested.",
+      "notebook": "trial_03.ipynb"
     }
   ],
   "protocol": {
