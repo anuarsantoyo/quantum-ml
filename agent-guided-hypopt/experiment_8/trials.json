@@ -131,6 +131,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1956 sets a new campaign best of 0.0760, bracketing the family optimum near sw ~0.20, with the campaign best gamma recovery.",
       "key_insight": "The cvm_fwhm optimum is a flat basin around sw ~0.20 (0.0760-0.0764); its advantage over the KDE control is driven by better gamma, especially in the low-count cells.",
       "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "loss_family": "w1_fwhm",
+        "sigma_weight": 0.20786179267449936
+      },
+      "objective": 0.09233755826529819,
+      "uncertainty": 0.03141745340761577,
+      "summary": "w1_fwhm at sigma_weight 0.2079 gives objective 0.0923, no better than its high-sw value (0.0908), completing the low-sw map with cvm_fwhm as the sole family under the KDE control.",
+      "key_insight": "The FWHM-only W1 loss gains nothing from the low-sw region (0.0923 vs 0.0908), whereas its two-channel twin w1_2d does (0.0849) - the sigma link only pays off at low sw.",
+      "notebook": "trial_12.ipynb"
     }
   ],
   "protocol": {
