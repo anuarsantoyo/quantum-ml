@@ -119,6 +119,18 @@
       "summary": "w1_2d at sigma_weight 0.2092 gives objective 0.0849, an improvement on its high-sw value (0.0895) but still behind the KDE control (0.0803) and well behind cvm_fwhm (0.0764).",
       "key_insight": "The low-sw benefit is not exclusive to cvm_fwhm (w1_2d gains ~0.005 too), but cvm_fwhm gains roughly three times as much (0.013), so its lead reflects the loss form rather than sw alone.",
       "notebook": "trial_10.ipynb"
+    },
+    {
+      "trial_id": "trial_11",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19562117287981917
+      },
+      "objective": 0.07602562716872124,
+      "uncertainty": 0.020026907824343437,
+      "summary": "cvm_fwhm at sigma_weight 0.1956 sets a new campaign best of 0.0760, bracketing the family optimum near sw ~0.20, with the campaign best gamma recovery.",
+      "key_insight": "The cvm_fwhm optimum is a flat basin around sw ~0.20 (0.0760-0.0764); its advantage over the KDE control is driven by better gamma, especially in the low-count cells.",
+      "notebook": "trial_11.ipynb"
     }
   ],
   "protocol": {
