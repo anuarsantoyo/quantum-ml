@@ -1198,31 +1198,61 @@ def plot_parallel(trials, current=None, params=None, figsize=None, title=None, s
         params = order
     names = list(params) + ['objective']
 
-    lo, hi = {}, {}
+    # per-param display scaling: numeric -> min-max; categorical (choice) -> category index
+    scales = {}
     for p in params:
         vals = [cfg[p] for cfg, _ in rows if p in cfg]
-        lo[p], hi[p] = (min(vals), max(vals)) if vals else (0.0, 1.0)
+        try:
+            nums = [float(v) for v in vals]
+        except (TypeError, ValueError):
+            nums = None
+        if nums:
+            scales[p] = ('num', min(nums), max(nums))
+        else:
+            cats = []
+            for v in vals:
+                s = str(v)
+                if s not in cats:
+                    cats.append(s)
+            scales[p] = ('cat', cats)
     objs = [o for _, o in rows]
     olo, ohi = min(objs), max(objs)
 
-    def _n(v, a, b):
-        return 0.5 if b <= a else (v - a) / (b - a)
+    def _val(p, v):
+        """Map a raw param value into [0, 1] for display (handles categoricals)."""
+        sc = scales[p]
+        if sc[0] == 'num':
+            a, b = sc[1], sc[2]
+            return 0.5 if b <= a else (float(v) - a) / (b - a)
+        cats = sc[1]
+        return 0.5 if len(cats) <= 1 else cats.index(str(v)) / (len(cats) - 1)
+
+    def _obj(vn):
+        return 0.5 if ohi <= olo else (vn - olo) / (ohi - olo)
 
     xs = np.arange(len(names))
     fig, ax = plt.subplots(figsize=figsize or (max(6.5, 1.7 * len(names)), 5.2))
     cmap = plt.cm.viridis
     norm = Normalize(olo, ohi)
     for i, (cfg, obj) in enumerate(rows):
-        ys = [_n(cfg[p], lo[p], hi[p]) for p in params] + [_n(obj, olo, ohi)]
+        ys = [_val(p, cfg[p]) for p in params] + [_obj(obj)]
         if i == cur_i:
             ax.plot(xs, ys, color='crimson', lw=2.6, marker='o', ms=4, zorder=5, label='this trial')
         else:
             ax.plot(xs, ys, color=cmap(norm(obj)), lw=1.4, alpha=0.85, zorder=2)
     for xi, name in enumerate(names):
         ax.axvline(xi, color='k', lw=0.8, alpha=0.45, zorder=1)
-        a, b = (lo[name], hi[name]) if name in lo else (olo, ohi)
-        ax.text(xi, 1.02, f'{b:.3g}', ha='center', va='bottom', fontsize=7)
-        ax.text(xi, -0.02, f'{a:.3g}', ha='center', va='top', fontsize=7)
+        if name in scales:
+            sc = scales[name]
+            if sc[0] == 'num':
+                top, bot = f'{sc[2]:.3g}', f'{sc[1]:.3g}'
+            else:
+                cats = sc[1]
+                top, bot = (cats[-1], cats[0]) if cats else ('', '')
+        else:
+            top, bot = f'{ohi:.3g}', f'{olo:.3g}'
+        ax.text(xi, 1.02, top, ha='center', va='bottom', fontsize=7)
+        ax.text(xi, -0.02, bot, ha='center', va='top', fontsize=7)
     ax.set_xticks(xs)
     ax.set_xticklabels(names, rotation=20, ha='right')
     ax.set_ylim(-0.08, 1.08)
