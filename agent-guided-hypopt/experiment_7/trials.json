@@ -90,6 +90,19 @@
       "summary": "Trial 7 (target rule, h_f 1.130, h_s 8.612) scores objective 0.1165 \u00b1 0.0827, worse than the target plateau, failing via a mu overshoot up to +172.9 % on the low-count cells.",
       "key_insight": "The target-rule optimum is now bracketed on both sides (worse at h_f 1.13 and at h_f 9.82, flat-best around h_f 3.5-5.5), so exp6's frozen h_f=4.0 is essentially the target-rule optimum.",
       "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 3.7793360132235936,
+        "h_s_scale": 7.278991718815376
+      },
+      "objective": 0.08823592526168735,
+      "uncertainty": 0.02512591894625832,
+      "summary": "Trial 8 (target rule, h_f 3.779, h_s 7.279) scores objective 0.0882 \u00b1 0.0251, another plateau sample consistent with the flat 0.081-0.089 band around the target-rule optimum.",
+      "key_insight": "The target plateau now has five samples in 0.081-0.089 with no internal trend, confirming the objective in h_f ~3-5.5 is noise-flat and that exp6's 0.0803 is the best value the target rule reaches.",
+      "notebook": "trial_08.ipynb"
     }
   ],
   "protocol": {
