@@ -287,6 +287,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1997 gives 0.0778, keeping the family mean at ~0.0780 over fourteen draws.",
       "key_insight": "The winner basin mean is stable at ~0.078, a small, consistent ~0.002 edge over the KDE control.",
       "notebook": "trial_24.ipynb"
+    },
+    {
+      "trial_id": "trial_25",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19718164877403788
+      },
+      "objective": 0.07246349460742524,
+      "uncertainty": 0.02009683297753008,
+      "summary": "cvm_fwhm at sigma_weight 0.1972 sets a new campaign best of 0.0725, ~0.008 under the KDE control, further confirming the sw ~0.19-0.20 basin.",
+      "key_insight": "The cvm_fwhm basin floor is ~0.072-0.073 near sw 0.19-0.20, with a stable mean ~0.0776 over fifteen draws - a small but consistent winner over the control.",
+      "notebook": "trial_25.ipynb"
     }
   ],
   "protocol": {
