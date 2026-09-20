@@ -1,5 +1,18 @@
 {
-  "trials": [],
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "loss_family": "w1_2d",
+        "sigma_weight": 0.4091991363691613
+      },
+      "objective": 0.08947525460679707,
+      "uncertainty": 0.03251280273254009,
+      "summary": "w1_2d (sigma_weight 0.4092) reaches objective 0.0895, about 0.009 worse than the KDE control 0.0803, with no divergences and error concentrated in the low-count mu channel.",
+      "key_insight": "The bandwidth-free W1 loss is fully stable (no mu runaway, gamma finite) but recovers low-count mu worse than the KDE control, so it has not yet earned its keep.",
+      "notebook": "trial_01.ipynb"
+    }
+  ],
   "protocol": {
     "model": "series-21 (17g) model on REAL data; the mu reward and the gamma pathwise channel are both derived from the selected distributional LOSS (loss_family); mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
     "question": "experiment_8 - loss-FUNCTION campaign: the schedule (exp5 winner), the bandwidth (exp7 winner) and the gamma trust region (exp6 winner) are FROZEN; the campaign tunes the distributional loss (loss_family) and the sigma-channel weight (sigma_weight).",
