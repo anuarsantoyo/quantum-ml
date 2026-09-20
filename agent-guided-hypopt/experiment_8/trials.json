@@ -95,6 +95,18 @@
       "summary": "cvm_fwhm at sigma_weight 0.1816 gives objective 0.0791, still under the KDE control but worse than the same family at sw 0.2074 (0.0764), so the sw axis has a shallow minimum near 0.20-0.21.",
       "key_insight": "cvm_fwhm sigma_weight response is non-monotone with a shallow minimum around sw ~0.20-0.21, so trial_06 setting is near the family optimum.",
       "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "loss_family": "energy_2d",
+        "sigma_weight": 0.22913547212389987
+      },
+      "objective": 0.1020585831113262,
+      "uncertainty": 0.03370755726038321,
+      "summary": "energy_2d at the winning sigma_weight (0.2291) gives objective 0.1021, no better than its high-sw value (0.0996) and clearly behind cvm_fwhm (0.0764), with the worst low-count gamma of the campaign.",
+      "key_insight": "The low-sw gain is specific to the cvm_fwhm loss form; the energy distance does not benefit from it, so the family ranking is not a sigma_weight artifact.",
+      "notebook": "trial_09.ipynb"
     }
   ],
   "protocol": {
