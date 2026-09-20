@@ -47,6 +47,18 @@
       "summary": "w1_fwhm (sigma_weight 0.5113) reaches objective 0.0908, statistically identical to the two-channel w1_2d (0.0895) and still worse than the KDE control (0.0803), with no divergences.",
       "key_insight": "Dropping the sigma channel from the W1 loss changes the result essentially not at all (0.0908 vs 0.0895), so the W1 shortfall is a property of the FWHM loss itself, not of the sigma link.",
       "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.23451020166982395
+      },
+      "objective": 0.07774377788622108,
+      "uncertainty": 0.020242819546006728,
+      "summary": "cvm_fwhm (sigma_weight 0.2345) reaches objective 0.0777, a new campaign best that edges past the KDE control (0.0803), driven by the best gamma recovery of any trial.",
+      "key_insight": "A FWHM-only Cramer-von Mises loss currently beats the KDE control, with the gain coming from the gamma channel rather than mu, which stays low at high T.",
+      "notebook": "trial_05.ipynb"
     }
   ],
   "protocol": {
