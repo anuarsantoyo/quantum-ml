@@ -77,6 +77,19 @@
       "summary": "Trial 6 (target rule, h_f 3.678, h_s 5.319), the highest-EI proposal, scores objective 0.0890 \u00b1 0.0237, within sampling noise of the nearby best (trial_05 0.0818).",
       "key_insight": "The target rule's objective is essentially flat/noise-limited across h_f ~3.5-5.4 (0.080-0.089, SE ~0.024), so further coefficient tuning of the target rule in that region does not reliably beat exp6's 0.0803.",
       "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "bandwidth_rule": "target",
+        "h_f_scale": 1.1297342809675643,
+        "h_s_scale": 8.61235332970023
+      },
+      "objective": 0.11653510875194859,
+      "uncertainty": 0.08274004295285617,
+      "summary": "Trial 7 (target rule, h_f 1.130, h_s 8.612) scores objective 0.1165 \u00b1 0.0827, worse than the target plateau, failing via a mu overshoot up to +172.9 % on the low-count cells.",
+      "key_insight": "The target-rule optimum is now bracketed on both sides (worse at h_f 1.13 and at h_f 9.82, flat-best around h_f 3.5-5.5), so exp6's frozen h_f=4.0 is essentially the target-rule optimum.",
+      "notebook": "trial_07.ipynb"
     }
   ],
   "protocol": {
