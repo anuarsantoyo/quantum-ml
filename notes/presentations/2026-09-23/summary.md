@@ -17,6 +17,20 @@ scattered but are actually one story:
 The through-line: **the point estimate is limited by a model/data mismatch (not by tuning), and the
 uncertainty is the part we have not yet made honest.**
 
+**The causal spine (one paragraph).** `experiment_4` on real data showed μ is **knob-insensitive** →
+*stop tuning, go structural* → **series 20** (one change per notebook) found and fixed **FM#10** but ended
+in two no-improvements → the suspicion moved to the **estimator** (21b/21d: lmfit refuted) and then to the
+**μ reward** (21e–21h) → **21i** removed the clip and μ finally descended (550 % → 40.6 %), but exposed a
+**γ divergence** → guard + schedule question → **exp5** (plateau 0.108–0.113, untunable divergence) →
+“the residual is not the schedule” → **two branches**: (a) *understand the distributions* → 22a (reward
+refuted) → 22b (sim ≈ real at mid/high T) → 22c (spread = estimator; σ_fit wrong for **both**) → 22d (the
+σ channel is μ’s only live gradient) → 22e (the (μ,γ) map); and (b) *attack the σ channel in the score* →
+**exp6** (μ floor halved, divergences gone) → its own correlation table pointed at the **bandwidth** →
+**exp7** (dead end) → **exp8** (the loss *form*: quantile losses win ~10 %, but they are **not
+likelihoods**) → “then which model can carry a Fisher?” → KDE only → project survey → best KDE model =
+**exp6 `trial_07`** → Anuar’s scaling question exposes the **`Σ/N` bug** + the **bandwidth confounder**
+→ **series 23 (`23a`)**.
+
 ---
 
 ## 0. Where we stood on 11.09.2026 (the last presentation)
@@ -43,6 +57,10 @@ Deck: `notes/presentations/2026-09-11/presentation-2026-09-11.md` (38 figures).
 **Two declared goals for the phase after 11.09:** (1) get all 14 experiments to land at their true
 (μ, γ); (2) **compute uncertainties** (Fisher/CRB). The second is the one we are picking up now.
 
+> **→ The chain starts here.** The AG-HYPOPT tool existed (the `e3_pukky` template) but had only been
+> point-estimated on *synthetic* data. So the obvious next step was to point the same machinery at the
+> **real** data — `experiment_4`. Everything after that is a reaction to what that run showed.
+
 ---
 
 ## 1. 11.09 — AG-HYPOPT: template validated (synthetic) + first real-data campaign
@@ -60,6 +78,11 @@ Deck: `notes/presentations/2026-09-11/presentation-2026-09-11.md` (38 figures).
   **knob-limited**: it needs a **structural** fix, not tuning.
 - Also: `notes/ag-hypopt-novelty-assessment.md` (arXiv prior-art map — AG-HYPOPT is “a nice tool, thin
   and incremental novelty”; the interesting part is the LLM-as-selector).
+
+> **→ What that gave us.** `experiment_4` showed **μ is knob-insensitive** — stuck at a uniform 0.5× in
+> all 20 trials, so *no* schedule/hyperparameter moved it. That is what led to the conclusion “real-data
+> HPO is knob-limited: stop tuning and go **structural**” — i.e. the series 20 / 21 line of work, one
+> architectural change per notebook.
 
 ## 2. 12–13.09 — quiet days (jobs cron + a side project)
 
@@ -87,6 +110,10 @@ Deck: `notes/presentations/2026-09-11/presentation-2026-09-11.md` (38 figures).
   (it does not reproduce the real observables; its gradient is not a usable surrogate). Conclusion there:
   the μ failure is the **simulator model gap**, not the fitter.
 
+> **→ What that gave us.** 20g ended with two consecutive “no improvement” → **stop changing the
+> architecture**. With the architecture frozen and the fitter soon refuted (21d), the only place left to
+> suspect was the **μ reward/gradient** → that is what produced the 21e–21i run the following day.
+
 ## 4. 16.09 — the μ-channel diagnosis: **the clip was the bug**
 
 The day’s arc, one notebook per hypothesis (all real data, 14 exps, 100×30):
@@ -108,6 +135,11 @@ at low T.
 Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWARD=loglik_mean`,
 `MU_SCORE=σ_prop`, `CLIP=inf`, divergence **guard**, T-weighted **capped** objective, 8-exp benchmark).
 
+> **→ What that gave us.** With the clip gone μ finally descended in the right direction (40.6 %) — but a
+> **1/14 γ divergence at 1nW T05** appeared (the clip had also been protecting γ). Two consequences: the
+> **divergence guard** was written into the protocol, and the next question became “can a better
+> *schedule* build on 21i?” → **experiment_5, launched that same night.**
+
 ## 5. 17.09 — exp5 campaign (schedule) + the first Fisher analysis
 
 - **`experiment_5` — 40/40 trials, 6 h.** **Best `trial_21` = 0.1074**; honest level ≈ **0.108–0.113**.
@@ -118,6 +150,12 @@ Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWAR
 - **`fisher_analysis.ipynb`** at the best trial_21 config, full 14 exps → **CRB verdict:
   μ honest-but-uninformative (14/14 inside 2σ, but huge σ), γ tight-and-wrong (6/14)**; the degeneracy
   peaks at low T. This is the first time the uncertainty was measured at a campaign optimum.
+
+> **→ What that gave us.** exp5 hit a **plateau** (0.108–0.113) plus a **sporadic, untunable 1nW T05 γ
+> divergence** → the residual is *not* the schedule. That produced two independent follow-ups: (i)
+> **understand what the simulator actually generates** (→ series 22 the next day), and (ii) **attack the
+> σ_fit channel at the score level** (→ experiment_6). And the `fisher_analysis` result (μ
+> honest-but-uninformative 14/14, γ tight-and-wrong 6/14) is what eventually motivated today’s series 23.
 
 ## 6. 18.09 — series 22 opens: what does the simulator actually generate?
 
@@ -130,6 +168,11 @@ Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWAR
   its FWHM centre is low and pinned at the 6 MHz bound at low T.
 - Established the **interactive-Plotly conventions** (renderer `vscode`, dropdown = experiment via
   `method='animate'`, ▶/❚❚ + slider, frames update a prefix of the traces) — used by all of series 22.
+
+> **→ What that gave us.** 22c was the pivot: it showed the FWHM **spread** is an **estimator** effect
+> (our unbinned MLE is too precise, lmfit is about right) while **σ_fit is wrong for both** estimators.
+> That is what led to (i) “then let us remove the σ channel and see” → **22d**, and (ii) “stop arguing
+> about it, map (μ,γ)→distribution directly” → **22e**.
 
 ## 7. 19.09 — 22d/22e + the bandwidth–Fisher discussion + exp6
 
@@ -144,6 +187,11 @@ Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWAR
   against the answer.
 - **`experiment_6` designed & launched** (score design; schedule frozen).
 
+> **→ What that gave us.** The discussion’s conclusion — “bandwidth is the biggest lever, but tune the
+> **rule** not the value, and never against the answer” — is what shaped **experiment_6** the next day.
+> It also flagged that the **same H** has to serve the optimizer *and* the uncertainty; that suspicion is
+> what later turned into the bandwidth confounder in series 23.
+
 ## 8. 20.09 — exp6 / exp7 / exp8: three campaigns, one conclusion
 
 - **exp6 (score design) — CONCLUSION (`a50b2e1`)**: **best `trial_07` = 0.0803** (`sigma_weight 0.865`,
@@ -152,10 +200,14 @@ Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWAR
   (`corr(obj, h_f) = −0.948`, 17/30 pinned at the `h_f = 4.0` bound → Scott is too small on real data);
   (iii) the **γ trust region** removed the divergence (its *value* is irrelevant). Optimum is a **wide
   plateau**; the objective is **chaotically sensitive** (~±0.01 for <1e-3 knob changes).
+  > **→ Next:** exp6’s correlation table said `h_f` is dominant and **pinned at its 4.0 bound** → “the
+  > answer is flatter than the box allows” is what gave us **exp7** (extend the box + change the rule).
 - **exp7 (bandwidth RULE family) — CONCLUSION (`d23ff32`)**: **no win.** Best campaign trial 0.0818 vs the
   frozen exp6 default 0.0803 (Δ inside the chaos band). The **rule** is first-order (`target` ≈ 0.082 ≫
   `power` 0.154 > `sim` 0.125, confirmed held-out) but the **coefficient is flat** (`corr(obj, h_f) = −0.21`,
   was −0.948) → **exp6’s h_f = 4.0 bound was NOT binding. Bandwidth is a dead end here.**
+  > **→ Next:** schedule (exp5) and bandwidth (exp7) both exhausted → the only knob left was the
+  > **loss form itself** → **exp8**.
 - **exp8 (loss FUNCTION family) — CONCLUSION (`95ea64a`)**: **a win.** **Best `trial_25` = 0.0725**
   (`cvm_fwhm`, `sigma_weight 0.197`) — the only family under the KDE control (0.0803), reproducible
   (20 draws: mean 0.0779, 18/20 ≤ control) and it **holds out-of-sample** (held-out 0.0736 vs control
@@ -167,6 +219,11 @@ Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWAR
   exp8’s settings.
 - ⚠️ **Caveat that matters for series 23:** `cvm_fwhm`/`w1_2d` are **discrepancies, not likelihoods** →
   **no Fisher/CRB is defined for them.** The KDE is the only Fisher-compatible model.
+
+> **→ What that gave us.** The realisation that the winning loss **has no likelihood** is what forced the
+> question “*which* model can we even compute a Fisher on?” → restrict to **KDE** → the whole-project
+> survey → and, with Anuar’s scaling question (below), **series 23**. So exp8’s win and the uncertainty
+> thread are directly linked: we had to give up the best point-estimate loss to do UQ at all.
 
 ## 9. 21.09 — (outside qm-ml) daily job scan only.
 
@@ -185,6 +242,12 @@ Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWAR
   (`… heatmaplayer, contourlayer, …, scatterlayer`), so a `go.Contour` is **always below** scatter points.
   To draw contours **over** the data you must render them as **scatter polygons** (marching-squares loops
   with `fill='toself'`). Also: no widgets in exported HTML — plotly-native legend groups / frames only.
+
+> **→ What that gave us.** Building the map this way is what let Anuar *look* at it — and looking at it
+> produced his question “**why does the Lorentzian fit look best, when Gregor’s estimator is the same
+> process as the data?**” Answering that is exactly **22g**, and 22g is what surfaced the two confounds
+> (the pinned noise condition in 22e, and the three different meanings of σ_fit) that led into the
+> uncertainty work.
 - **22g** (`22g-mc-at-truth-3-estimators.ipynb` + HTML + `data/processed/22g_clouds.npz`): Monte-Carlo at
   **each experiment’s own true** `(μ, γ, σ_prop, λ)` for all three estimators (ours-Lorentzian,
   ours-pseudo-Voigt, Gregor-lmfit) on the **same** photons. **Answered Anuar’s “why does Lorentzian look
@@ -218,6 +281,14 @@ Also this day: the **exp5 protocol** was frozen (4-dim schedule space, `MU_REWAR
   Smoke preview (1nW T60): σ_μ 89.4 → 1.82 → 0.37 for A/B/C, with ‖Δμ‖/σ 0.34 → 16.9 → 83 — i.e. the
   correction **breaks coverage**, and the Scott baseline shows the winner’s σ is bandwidth-dominated.
   _Status at the time of writing: full 14-experiment run in progress._
+
+> **→ What that gave us (and where we are).** The 22f/22g detour is not a side quest: it exposed that the
+> **uncertainty axis (σ_fit) is the weak link**, which is the same conclusion FM#8 had reached from the
+> other side. That, plus Anuar’s question “**shouldn’t more data points increase the Fisher information?**”,
+> is what produced the discovery of the `Σ/N` normalisation bug and — directly from that question — the
+> **three-variant design of 23a (per-scan / `σ·N^(−1/2)` / Scott-baseline)**. So the sequence of the last
+> ten days closes into a loop: **the distributions (22) told us the σ channel is broken, and the Fisher
+> study (23) is where we now measure that break honestly.**
 
 ---
 
