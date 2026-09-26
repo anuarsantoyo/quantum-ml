@@ -89,7 +89,11 @@ rounding). Only coarse trends are meaningful; a single ≤0.005 gap is not a res
 `FM#6` Lorentzian line-shape mismatch / 1nW low-T γ deficit · `FM#8` un-damped/ill-scaled σ_fit channel
 collapsing μ (sim σ 1.04–4.25× too narrow, growing with T) · `FM#9` μ init-lock / step starvation ·
 `FM#10` low-count Fisher degeneracy (fixed by DERIV_CLIP in 20d) · `FM#11` (new) **observed-Fisher
-fragility / outlier domination** (23d) · `FM#12` (new) **CRB bias-blindness** (23a–c). Tag each notebook.
+fragility / outlier domination** (23d) · `FM#12` (new) **CRB bias-blindness** (23a–c) · `FM#13` (new, 24c)
+**init-calibrated-LR under-travel** — `lr_mu_eff` is set once at the init (where `|∇μ|` is inflated) and
+`|∇μ_k|` then decays 2–5×, so the realised μ travel is only **0.16–0.67 × μ_init** and the per-step clip is
+**mostly idle** (median raw/cap ≈ 0.24 across the 14) — every cell under-shoots, and *enlarging the budget
+or re-shaping it cannot fix it; only the LR/travel rate can*. Tag each notebook.
 
 ---
 
@@ -193,8 +197,11 @@ fragility / outlier domination** (23d) · `FM#12` (new) **CRB bias-blindness** (
 | a | 24a | baseline: exp6 `trial_07` exactly (reference) | 0.0811 | 0.0675 | 0.1228 | 33.2% | 26.1% | 0/14 | DONE (baseline reproduced exactly, 19 min) |
 
 | b | 24b | A2: truth-free μ-travel budget (Δμ clipped to μ_init/n_iter) | 0.0730 | 0.0435 | 0.1633 | 28.0% | 33.6% | 0/14 | DONE — μ ↑ in all 14 cells; γ collateral ↓ at low T |
+| c | 24c | A3: cosine travel schedule at FIXED total travel (μ_init) | 0.0787 | 0.0505 | 0.1650 | 30.6% | 32.7% | 0/14 | DONE (PARTLY) — shape is 2nd-order (+0.006); **new FM#13**: clip mostly idle, init-LR under-travels (net 0.42×μ_init) |
 
 **Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
+24c (cosine, same total travel) is **worse** (0.0787) → schedule *shape* is second-order; the lever is the
+μ **travel rate** (FM#13), not the budget. A4/A5 must therefore move the LR, not just the cap.
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 
