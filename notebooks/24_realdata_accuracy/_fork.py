@@ -58,7 +58,7 @@ def main():
             if c["cell_type"] != "code":
                 continue
             s = cell_text(c)
-            pat = re.compile(rf"^(\s*){re.escape(key)}\s*=\s*[^,\n]*,\s*$", re.M)
+            pat = re.compile(rf"^(\s*){re.escape(key)}\s*=\s*[^,\n]*,", re.M)
             s2, n = pat.subn(lambda m: f"{m.group(1)}{key}={val},", s)
             if n:
                 set_cell_text(c, s2); hit += n

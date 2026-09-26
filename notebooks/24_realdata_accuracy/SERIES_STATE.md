@@ -192,7 +192,9 @@ fragility / outlier domination** (23d) · `FM#12` (new) **CRB bias-blindness** (
 |---|----------|-----------|--------------|-------------|-------------|-----------|-----------|-----|--------|
 | a | 24a | baseline: exp6 `trial_07` exactly (reference) | 0.0811 | 0.0675 | 0.1228 | 33.2% | 26.1% | 0/14 | DONE (baseline reproduced exactly, 19 min) |
 
-**Current best = 24a (the baseline).** Everything below must beat 0.0811 (all14) / 0.0675 (T≥40).
+| b | 24b | A2: truth-free μ-travel budget (Δμ clipped to μ_init/n_iter) | 0.0730 | 0.0435 | 0.1633 | 28.0% | 33.6% | 0/14 | DONE — μ ↑ in all 14 cells; γ collateral ↓ at low T |
+
+**Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 
