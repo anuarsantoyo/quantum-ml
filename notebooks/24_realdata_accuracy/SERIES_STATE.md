@@ -204,6 +204,7 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | c | 24c | A3: cosine travel schedule at FIXED total travel (μ_init) | 0.0787 | 0.0505 | 0.1650 | 30.6% | 32.7% | 0/14 | DONE (PARTLY) — shape is 2nd-order (+0.006); **new FM#13**: clip mostly idle, init-LR under-travels (net 0.42×μ_init) |
 | d | 24d | A4: per-cell μ LR × clip(σ_prop²/median, 1, 2) | 0.0744 | 0.0448 | 0.1650 | 29.6% | 32.6% | 0/14 | DONE (PARTLY) — floor cells **bit-identical** to 24c; scaled cells +0.03–0.05; **new FM#14**: net travel saturates ~0.43×μ_init (clip bursts + gradient sign flips) |
 | e | 24e | A5: residual-aware μ freeze (|∇μ| < 0.15·|∇μ|_init) | 0.0771 | 0.0452 | 0.1747 | 29.6% | 34.0% | 0/14 | DONE (PARTLY, negative) — freezes 3–22/30 steps; neutral on all14 (+0.0027) but **hurts low T** (0.1650→0.1747) ⇒ late steps carry REAL travel, not flip-waste |
+| f | 24f | A6 control: n_iter 30→60 at FIXED total travel | 0.0781 | 0.0435 | 0.1839 | 29.4% | 35.4% | 0/14 | DONE (PARTLY) — aggregate unchanged (+0.0010 ⇒ travel-time, not step-count, is the lever); per-cell spread ±0.08–0.15 = the measured chaos width; **control branch — 24g re-forks 24e** |
 
 **Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
 24c (cosine, same total travel) is **worse** (0.0787) → schedule *shape* is second-order; the lever is the
@@ -212,6 +213,8 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 net travel **saturates** (FM#14: clip bursts + gradient sign flips) → damping/denoising, not re-scaling.
 24e (freeze) is neutral on all14 (+0.0027) but **hurts low T** ⇒ the late steps carry real travel (not
 flip-waste) ⇒ a hard stop is wrong; **damping (A7)** is the right form of the same idea.
+24f (n_iter 60, control branch) leaves the aggregate unchanged (+0.0010) ⇒ **travel time, not step count, sets
+the landing**; per-cell spread ±0.08–0.15 = the measured chaos width. 24g therefore re-forks **24e** (30 steps).
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 
