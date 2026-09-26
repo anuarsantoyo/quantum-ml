@@ -203,12 +203,15 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | b | 24b | A2: truth-free μ-travel budget (Δμ clipped to μ_init/n_iter) | 0.0730 | 0.0435 | 0.1633 | 28.0% | 33.6% | 0/14 | DONE — μ ↑ in all 14 cells; γ collateral ↓ at low T |
 | c | 24c | A3: cosine travel schedule at FIXED total travel (μ_init) | 0.0787 | 0.0505 | 0.1650 | 30.6% | 32.7% | 0/14 | DONE (PARTLY) — shape is 2nd-order (+0.006); **new FM#13**: clip mostly idle, init-LR under-travels (net 0.42×μ_init) |
 | d | 24d | A4: per-cell μ LR × clip(σ_prop²/median, 1, 2) | 0.0744 | 0.0448 | 0.1650 | 29.6% | 32.6% | 0/14 | DONE (PARTLY) — floor cells **bit-identical** to 24c; scaled cells +0.03–0.05; **new FM#14**: net travel saturates ~0.43×μ_init (clip bursts + gradient sign flips) |
+| e | 24e | A5: residual-aware μ freeze (|∇μ| < 0.15·|∇μ|_init) | 0.0771 | 0.0452 | 0.1747 | 29.6% | 34.0% | 0/14 | DONE (PARTLY, negative) — freezes 3–22/30 steps; neutral on all14 (+0.0027) but **hurts low T** (0.1650→0.1747) ⇒ late steps carry REAL travel, not flip-waste |
 
 **Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
 24c (cosine, same total travel) is **worse** (0.0787) → schedule *shape* is second-order; the lever is the
 μ **travel rate** (FM#13), not the budget. A4/A5 must therefore move the LR, not just the cap.
 24d (σ_prop²-scaled LR) recovers most of that (0.0744, T≥40 0.0448) with floor cells bit-identical, but the
 net travel **saturates** (FM#14: clip bursts + gradient sign flips) → damping/denoising, not re-scaling.
+24e (freeze) is neutral on all14 (+0.0027) but **hurts low T** ⇒ the late steps carry real travel (not
+flip-waste) ⇒ a hard stop is wrong; **damping (A7)** is the right form of the same idea.
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 
