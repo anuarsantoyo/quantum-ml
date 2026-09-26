@@ -94,6 +94,10 @@ fragility / outlier domination** (23d) · `FM#12` (new) **CRB bias-blindness** (
 `|∇μ_k|` then decays 2–5×, so the realised μ travel is only **0.16–0.67 × μ_init** and the per-step clip is
 **mostly idle** (median raw/cap ≈ 0.24 across the 14) — every cell under-shoots, and *enlarging the budget
 or re-shaping it cannot fix it; only the LR/travel rate can*. Tag each notebook.
+`FM#14` (new, 24d) **sign-flip travel saturation** — raising the μ LR does **not** raise the realised net
+travel proportionally: the noisy REINFORCE gradient flips sign up to 7×/run, so a bigger LR amplifies both
+directions and the **net travel saturates at ≈0.43 × μ_init** (while the high-σ_prop cells also bind the clip
+in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denoised**, not just re-scaled.
 
 ---
 
@@ -198,10 +202,13 @@ or re-shaping it cannot fix it; only the LR/travel rate can*. Tag each notebook.
 
 | b | 24b | A2: truth-free μ-travel budget (Δμ clipped to μ_init/n_iter) | 0.0730 | 0.0435 | 0.1633 | 28.0% | 33.6% | 0/14 | DONE — μ ↑ in all 14 cells; γ collateral ↓ at low T |
 | c | 24c | A3: cosine travel schedule at FIXED total travel (μ_init) | 0.0787 | 0.0505 | 0.1650 | 30.6% | 32.7% | 0/14 | DONE (PARTLY) — shape is 2nd-order (+0.006); **new FM#13**: clip mostly idle, init-LR under-travels (net 0.42×μ_init) |
+| d | 24d | A4: per-cell μ LR × clip(σ_prop²/median, 1, 2) | 0.0744 | 0.0448 | 0.1650 | 29.6% | 32.6% | 0/14 | DONE (PARTLY) — floor cells **bit-identical** to 24c; scaled cells +0.03–0.05; **new FM#14**: net travel saturates ~0.43×μ_init (clip bursts + gradient sign flips) |
 
 **Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
 24c (cosine, same total travel) is **worse** (0.0787) → schedule *shape* is second-order; the lever is the
 μ **travel rate** (FM#13), not the budget. A4/A5 must therefore move the LR, not just the cap.
+24d (σ_prop²-scaled LR) recovers most of that (0.0744, T≥40 0.0448) with floor cells bit-identical, but the
+net travel **saturates** (FM#14: clip bursts + gradient sign flips) → damping/denoising, not re-scaling.
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 
