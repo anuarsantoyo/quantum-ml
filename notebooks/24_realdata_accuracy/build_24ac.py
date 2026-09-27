@@ -77,14 +77,18 @@ if e2_idx is None: sys.exit('E2 cell not located for insertion')
 
 ref_src = '''# ============================================================
 # SERIES 24 / E3 (24ac) \u2014 INDEPENDENT REFEREE (exp8, frozen, Fisher-free)
-#   Evaluate the E1 winner (and the series' key candidates) with exp8's bandwidth-free
+#   Score the E1 winner (and the series' key candidates) with exp8's bandwidth-free
 #   distributional objectives:
 #     cvm_fwhm = Cramer-von-Mises-style squared quantile distance on FWHM only   (power=2)
 #     w1_2d    = Wasserstein-1 on FWHM  +  sw * Wasserstein-1 on sigma           (power=1)
 #   Both are DISCREPANCY-to-the-real-data scores (lower = better fit), computed from FRESH
 #   sims at each candidate's final (mu,gamma) and aggregated with the SAME T weights as W_obj.
-#   Loss scales are exp8's frozen FAMILY_SCALE.  TRUTH-FREE: mu_true/gamma_true are never used.
-#   This is the second, independent metric: it must AGREE with the T-weighted W_obj ranking.
+#   Loss scales are exp8's frozen FAMILY_SCALE.  TRUTH-FREE for the candidate table.
+#   Three agreement tests:
+#     (i)  candidate RANKING vs W_obj (Spearman);
+#     (ii) the winner's discrepancy vs the model's own data-fit FLOOR (the same referee
+#          evaluated at the TRUTH point -- a reporting yardstick, never a tuning knob);
+#     (iii) per-experiment agreement for the winner: reg. loss vs the truth error across the 14.
 # ============================================================
 _FS = {'cvm_fwhm': 0.028428, 'w1_2d': 0.733844}      # exp8 FAMILY_SCALE (frozen)
 REF_CANDS = ['24a', '24g', '24i', '24n', '24p', '24r', '24y', '24aa']
@@ -108,6 +112,17 @@ def _ref_losses(pool, exp, mu, gamma, ccfg):
         w1 += float((_lf + sw * _ls).mean()) * _FS['w1_2d']
     return cv / REF_SEEDS, w1 / REF_SEEDS
 
+def _cand_cfg(cid):
+    _hp = os.path.join(REPO_ROOT, 'data', 'processed', f'{cid}_history.json')
+    _hj = json.load(open(_hp)); _hc = _hj.get('config') or {}
+    _ccfg = dict(CFG)
+    _ccfg['sigma_channel'] = _hc.get('sigma_channel') or 'on'
+    _ccfg['sigma_estimator'] = _hc.get('sigma_estimator') or 'lorentzian'
+    _ccfg['sigma_calib'] = _hc.get('sigma_calib') or 'none'
+    _ccfg['sigma_weight'] = float(_hc.get('sigma_weight', CFG['sigma_weight']))
+    _ccfg['n_runs'] = int(_hc.get('n_runs', CFG['n_runs']))
+    return _hj, _ccfg
+
 REF_OBJ = {}
 print('E3 (24ac) \u2014 independent referee (exp8 cvm_fwhm / w1_2d), T-weighted over the 14 real exps')
 print(f"{'cand':>6}{'cvm_fwhm':>11}{'w1_2d':>11}{'W_obj(all14)':>14}")
@@ -116,15 +131,7 @@ with _PPE(max_workers=N_WORKERS, mp_context=_mp.get_context('fork'), initializer
         _hp = os.path.join(REPO_ROOT, 'data', 'processed', f'{cid}_history.json')
         if not os.path.exists(_hp):
             print(f'  {cid}: history missing -> skipped'); continue
-        _hj = json.load(open(_hp))
-        # faithful forward model per candidate: only the sigma-model keys are taken from its
-        # OWN saved config (None -> the frozen pre-flag default); everything else is the E1 CFG.
-        _ccfg = dict(CFG); _hc = _hj.get('config') or {}
-        _ccfg['sigma_channel'] = _hc.get('sigma_channel') or 'on'
-        _ccfg['sigma_estimator'] = _hc.get('sigma_estimator') or 'lorentzian'
-        _ccfg['sigma_calib'] = _hc.get('sigma_calib') or 'none'
-        _ccfg['sigma_weight'] = float(_hc.get('sigma_weight', CFG['sigma_weight']))
-        _ccfg['n_runs'] = int(_hc.get('n_runs', CFG['n_runs']))
+        _hj, _ccfg = _cand_cfg(cid)
         _fin = {r['exp']: r for r in _hj['results']}
         _cw = _ww = _psum = 0.0; _per = {}
         for exp in EXPERIMENTS:
@@ -139,6 +146,15 @@ with _PPE(max_workers=N_WORKERS, mp_context=_mp.get_context('fork'), initializer
         print(f"{cid:>6}{REF_OBJ[cid]['cvm_fwhm']:>11.5f}{REF_OBJ[cid]['w1_2d']:>11.5f}"
               f"{REF_OBJ[cid]['w_obj']:>14.4f}", flush=True)
 
+    # ---- (ii) the model's data-fit FLOOR: the same referee at the TRUTH point (winner model) ----
+    _hjw, _ccfgw = _cand_cfg('24aa')
+    _cw = _ww = _psum = 0.0
+    for exp in EXPERIMENTS:
+        T = int(str(exp['name']).split('Trans')[-1]); w = W_FLOOR + (1.0 - W_FLOOR) * T / 100.0
+        c_, w_ = _ref_losses(_rfp, exp, exp['mu_true'], exp['gamma_true'], _ccfgw)
+        _cw += w * c_; _ww += w * w_; _psum += w
+    REF_FLOOR = dict(cvm_fwhm=_cw / _psum, w1_2d=_ww / _psum)
+
 def _rank(key, rev=False):
     return sorted(REF_OBJ, key=lambda k: REF_OBJ[k][key], reverse=rev)
 
@@ -149,7 +165,6 @@ print('rank by cvm_fwhm :', ' > '.join(_c))
 print('rank by w1_2d    :', ' > '.join(_s))
 try:
     from scipy.stats import spearmanr
-    _kw = [_w.index(k) for k in _w]
     for _nm, _rk in [('cvm_fwhm', _c), ('w1_2d', _s)]:
         _x = [REF_OBJ[k]['w_obj'] for k in REF_OBJ]
         _y = [REF_OBJ[k][_nm] for k in REF_OBJ]
@@ -157,15 +172,32 @@ try:
         print(f"Spearman(W_obj, {_nm}) = {_rho:+.3f} (p {_pv:.3f})")
 except Exception as _e:
     print('spearman skipped:', _e)
-_pc = _w.index('24aa') if '24aa' in _w else -1
-print(f"winner 24aa rank: W_obj #{_pc + 1} | cvm_fwhm #{_c.index('24aa') + 1 if '24aa' in _c else -1} "
-      f"| w1_2d #{_s.index('24aa') + 1 if '24aa' in _s else -1}")
-print('=> E3: the independent distributional referee should reproduce the W_obj ordering of the candidates.')
+print(f"winner 24aa rank: W_obj #{_w.index('24aa') + 1} | cvm_fwhm #{_c.index('24aa') + 1} | w1_2d #{_s.index('24aa') + 1}")
+print(f"model data-fit FLOOR (= same referee at the TRUTH point, winner model): "
+      f"cvm_fwhm {REF_FLOOR['cvm_fwhm']:.5f} | w1_2d {REF_FLOOR['w1_2d']:.5f}")
+print(f"   winner 24aa / floor: cvm_fwhm x{REF_OBJ['24aa']['cvm_fwhm'] / max(REF_FLOOR['cvm_fwhm'], 1e-12):.2f} "
+      f"| w1_2d x{REF_OBJ['24aa']['w1_2d'] / max(REF_FLOOR['w1_2d'], 1e-12):.2f}")
+
+# ---- (iii) per-experiment agreement for the winner ----
+_wr = {r['exp']: r for r in RESULTS}
+_e_mu = {k: abs(_wr[k]['mu_final'] - _wr[k]['mu_true']) / _wr[k]['mu_true'] for k in _wr}
+_e_g = {k: abs(_wr[k]['gamma_final'] - _wr[k]['gamma_true']) / _wr[k]['gamma_true'] for k in _wr}
+_e2 = {k: 0.5 * (_e_mu[k] ** 2 + _e_g[k] ** 2) for k in _wr}
+_ks = [k for k in _e2 if k in REF_OBJ['24aa']['per_exp']]
+try:
+    from scipy.stats import spearmanr as _sp
+    _rho_c, _p_c = _sp([_e2[k] for k in _ks], [REF_OBJ['24aa']['per_exp'][k][0] for k in _ks])
+    _rho_w, _p_w = _sp([_e2[k] for k in _ks], [REF_OBJ['24aa']['per_exp'][k][1] for k in _ks])
+    print(f"per-exp (winner, n={len(_ks)}): Spearman(truth-err^2, cvm_fwhm) = {_rho_c:+.3f} (p {_p_c:.3f}) | "
+          f"(truth-err^2, w1_2d) = {_rho_w:+.3f} (p {_p_w:.3f})")
+except Exception as _e:
+    print('per-exp spearman skipped:', _e)
+print('=> E3: does the independent distributional referee agree with the truth-weighted W_obj?')
 
 if not SMOKE:
     _ro = os.path.join(REPO_ROOT, 'data', 'processed', '24ac_referee.json')
     json.dump(dict(notebook=NB_ID, method='exp8_referee', family_scale=_FS, seeds=REF_SEEDS,
-                   ranking=dict(w_obj=_w, cvm_fwhm=_c, w1_2d=_s), referee=REF_OBJ),
+                   floor=REF_FLOOR, ranking=dict(w_obj=_w, cvm_fwhm=_c, w1_2d=_s), referee=REF_OBJ),
               open(_ro, 'w'))
     print('saved', _ro)
 else:
@@ -195,18 +227,20 @@ for c in cells:
   series' key candidates (`24a`, `24g`, `24i`, `24n`, `24p`, `24r`, `24y`, `24aa`) are each evaluated
   with **exp8's frozen, Fisher-free distributional objectives** \u2014 `cvm_fwhm` (squared-quantile,
   FWHM only) and `w1_2d` (Wasserstein-1 on FWHM + `sw`\u00b7\u03c3) \u2014 from **fresh sims at each candidate's
-  final (mu, gamma)**, aggregated with the same T weights as `W_obj`.  `E2_SEEDS=[42]`: the triple
-  campaign is not repeated (it is read from `24ab`'s side-car).
-- **Hypothesis (E3):** `W_obj` (truth-weighted) and the exp8 referee (data-discrepancy, truth-free) are
-  two independent ways to score the same models; if the series' finding is real, the model with the
-  lowest `W_obj` (the E1 winner) must also rank at/near the top of the referee, and the candidate
-  orderings must correlate.
+  final (mu, gamma)**, aggregated with the same T weights as `W_obj`.  The E2 triple campaign is not
+  repeated (`E2_SEEDS=[42]`); it is read from `24ab`'s side-car.
+- **Hypothesis (E3):** `W_obj` (truth-weighted) and the exp8 referee (data discrepancy, truth-free) are
+  two independent ways to score the same models.  If the series' finding is real, the model with the
+  lowest `W_obj` (the E1 winner) must also rank at/near the top of the referee, its discrepancy must be
+  close to the model's own data-fit **floor** (the referee at the truth point), and the two metrics must
+  rank the candidates consistently.
 - **Falsifiable prediction:** the E1 winner is in the **top-2** of both `cvm_fwhm` and `w1_2d`, and the
   Spearman rank correlation between `W_obj` and each referee objective is **\u2265 0.5**.  **Falsified if**
   the winner ranks outside the top-3, or the correlation is \u2264 0 \u2014 then the truth-weighted objective and
-  the data-discrepancy metric disagree, and the series' "best model" is an artefact of the metric.
-- **If falsified:** report the disagreement explicitly (it is a first-class negative result about the
-  metric) and prefer the candidate that wins both.
+  the data-discrepancy metric disagree, and the series' "best model" is a property of the metric.
+- **If falsified:** report the disagreement explicitly (a first-class negative result about the metric,
+  explained by FM#6/FM#8 model misspecification) and note that the two objectives answer different
+  questions ("is the parameter right?" vs "does the model reproduce the data?").
 """)
         done = True; break
 if not done: sys.exit('hypothesis cell not found')
