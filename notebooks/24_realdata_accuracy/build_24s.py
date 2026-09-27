@@ -20,8 +20,8 @@ subprocess.run([sys.executable, os.path.join(HERE, '_fork.py'), '24s', SRC,
                 'C1: DO_BOOTSTRAP=True -- resample the retained real scans with replacement B times and '
                 're-run the FROZEN optimiser on each resample, reporting honest per-cell mu/gamma intervals '
                 'and comparing them with the dataset CRB (M_FINAL reduced 500->150 for the comparison). '
-                'Subset: 8 exps (1nW/3nW x T05/20/60/100), B=10 (budget reduction, recorded).',
-                check=True)
+                'Subset: 8 exps (1nW/3nW x T05/20/60/100), B=10 (budget reduction, recorded).'],
+               check=True)
 
 nb = json.load(open(p))
 cells = nb['cells']

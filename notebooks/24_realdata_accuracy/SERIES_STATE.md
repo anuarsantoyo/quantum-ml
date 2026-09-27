@@ -218,6 +218,7 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 
 | q | 24q | B7: per-scan FWHM heterogeneity on the A2 travel (B6 off) | 0.0809 | 0.0536 | 0.1645 | 30.0% | 33.6% | 0/14 | DONE — FALSIFIED; 20e's heterogeneity does NOT transfer to the travel optimiser |
 | r | 24r | B8: 1-D FWHM-only KDE + count channel re-added as a prior (σ channel off) | **0.0672** | **0.0326** | 0.1735 | **25.5%** | 35.1% | 0/14 | DONE (**PARTLY**) — new series best on all14/T≥40/μ: σ *is* the μ culprit (22d resolved: the count prior `N(μ_init,μ_init²)` tames the runaway, net travel 0.32→0.54×μ_init), but the **2-D σ-bearing γ chain is load-bearing for low-T γ** (γ 33.4→35.1%; 1nW T05 0.75→0.61) ⇒ "σ or 2-D?" = **both** |
+| s | 24s | C1: empirical data bootstrap (8 exps × B=10, M_FINAL 150) | 0.0672 | 0.0326 | 0.1735 | 25.5% | 35.1% | 0/14 | DONE (**FALSIFIED**, informative) — bootstrap sd is **0.24× the dataset CRB** (4× *narrower*, not wider) and 95% μ coverage **0/8**: the μ landing is nearly data-independent (set by the A2 travel rule) ⇒ the residual is **BIAS** (FM#8) and the CRB is *bias-blind*, not too narrow (**FM#12 re-scoped**) |
 
 **Current best = 24r** (B8: 1-D FWHM-only KDE + count prior) — **all14 0.0672, T≥40 0.0326, μ 25.5 %**
 (vs **24p** B6 hybrid all14 0.0684 / μ 27.7 % — the all14 gap −0.0012 is inside the ±0.01 chaos band;

@@ -18,8 +18,8 @@ subprocess.run([sys.executable, os.path.join(HERE, '_fork.py'), '24t', '24s',
                 'C2: DO_FISHER=True -- compute the heteroskedasticity-robust (sandwich) covariance '
                 'S = H^-1 K H^-1 at each optimum, with K the empirical centred score covariance and H '
                 'the observed information (central-difference Hessian of the frozen mean NLL); report '
-                'CRB vs sandwich widths and coverage over the 14 cells. Bootstrap OFF (C1 read from 24s).',
-                check=True)
+                'CRB vs sandwich widths and coverage over the 14 cells. Bootstrap OFF (C1 read from 24s).'],
+               check=True)
 
 nb = json.load(open(p))
 cells = nb['cells']
