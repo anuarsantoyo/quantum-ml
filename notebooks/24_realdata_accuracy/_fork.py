@@ -44,8 +44,12 @@ def main():
         if c["cell_type"] == "code" and "NB_ID" in cell_text(c) and "=" in cell_text(c):
             s = cell_text(c)
             s = re.sub(r"NB_ID\s*=\s*'[^']*'", f"NB_ID = '{a.new_id}'", s)
-            s = re.sub(r"ONE_CHANGE\s*=\s*'[^']*'",
-                       "ONE_CHANGE = '" + a.one_change.replace("'", "\\'") + "'", s)
+            _lines = s.splitlines(keepends=True)
+            for _i, _ln in enumerate(_lines):
+                if _ln.lstrip().startswith('ONE_CHANGE'):
+                    _lines[_i] = "ONE_CHANGE = '" + a.one_change.replace("'", "\\'") + "'\n"
+                    break
+            s = ''.join(_lines)
             set_cell_text(c, s)
             break
 

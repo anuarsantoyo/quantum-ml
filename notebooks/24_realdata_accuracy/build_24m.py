@@ -52,6 +52,7 @@ for c in cells:
             "        _c = dict(cfg); _c['sigma_weight'] = _sw; return _c\n"
             + old0.replace("sigma_prop, cfg)[4]", "sigma_prop, _cfg_sw(0))[4]"))
         s = s.replace(old0, new0)
+        set_txt(c, s)
         done = True
         break
 if not done: sys.exit('run_experiment: _r0 line not found')
