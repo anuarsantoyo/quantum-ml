@@ -221,10 +221,18 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | s | 24s | C1: empirical data bootstrap (8 exps × B=10, M_FINAL 150) | 0.0672 | 0.0326 | 0.1735 | 25.5% | 35.1% | 0/14 | DONE (**FALSIFIED**, informative) — bootstrap sd is **0.24× the dataset CRB** (4× *narrower*, not wider) and 95% μ coverage **0/8**: the μ landing is nearly data-independent (set by the A2 travel rule) ⇒ the residual is **BIAS** (FM#8) and the CRB is *bias-blind*, not too narrow (**FM#12 re-scoped**) |
 | t | 24t | C2: sandwich `J⁻¹KJ⁻¹` (K = score cov, H = FD-Hessian observed info), DO_FISHER on (M_FINAL 150) | 0.0672 | 0.0326 | 0.1735 | 25.5% | 35.1% | 0/14 | DONE (**HIT**) — 2σ μ coverage **5/14 (CRB) → 10/14 (sandwich)**, 1σ 2→7/14: the CRB misses are model-misspecification (K≠H); but H is near-singular at low N (sand/CRB up to **2655×**, 1nW T10) ⇒ **FM#11 confirmed + quantified** — the sandwich is honest but *uninformative at low count* |
 | u | 24u | C3: profile-likelihood interval for μ (grid ±5 dataset-CRB σ, 13 pts × 2 seeds) | 0.0672 | 0.0326 | 0.1735 | 25.5% | 35.1% | 0/14 | DONE (**FALSIFIED**) — profile σ is **0.64× the CRB** (sharper, not ≥1.5× wider) and covers **3/14**; the Δ=1 crossing resolves in only 6/14 cells and is noise ⇒ agrees with C1: the CRB is too *wide* AND mis-centred; only a **bias-corrected** interval can work (⇒ C4) |
+| v | 24v | C4: bias-corrected CRB via the sim-at-truth bias (22b/22g) | 0.0672 | 0.0326 | 0.1735 | 25.5% | 35.1% | 0/14 | DONE (**HIT**) — the sim-at-truth bias is large and negative (**median −9.4 μ**, −1.9 … −42.8); subtracting it cuts the μ error **13.74 → 2.04** (6.7×) and restores 2σ CRB coverage **5/14 → 12/14** ⇒ **the residual is a measurable, correctable BIAS** (FM#8 resolved on the loss side); the honest interval is the bias-corrected one |
 
 **Current best = 24r** (B8: 1-D FWHM-only KDE + count prior) — **all14 0.0672, T≥40 0.0326, μ 25.5 %**
 (vs **24p** B6 hybrid all14 0.0684 / μ 27.7 % — the all14 gap −0.0012 is inside the ±0.01 chaos band;
 24r wins μ and T≥40 clearly, 24p keeps the better γ / low-T split); best γ = **24g** 32.5 %; best low-T = **24i** 0.1057 (parked).
+
+**Phase-C verdict (24s–24v, uncertainty):** the residual is **bias, not variance**.  C1: bootstrap σ = **0.24×**
+the dataset CRB (4× *narrower*) with **0/8** μ coverage.  C2: the sandwich covers **10/14** at 2σ (vs CRB 5/14)
+but its observed information is near-singular at low N (**FM#11**, sand/CRB up to 2655×).  C3: the profile σ is
+**0.64×** the CRB and covers **3/14** (raw Δ=1 crossings unstable).  C4: the sim-at-truth bias is **−9.4**
+(median), and correcting it cuts the μ error **13.7 → 2.0** and restores coverage **5/14 → 12/14** ⇒ the honest
+interval must be **bias-corrected** (FM#8 is a measurable, correctable estimator bias).
 
 **Best-of-each (end of 24j):** `all14` **24b 0.0730** · `T≥40` **24b 0.0435** (24f ties, its control branch) ·
 `T≤20` **24i 0.1057** (sub-metric only; its global 0.1870 is bad) then **24g 0.1614** · γ best **24g 32.5 %**,
@@ -288,3 +296,36 @@ config) unless a Phase-B design needs `24b`'s plain A2 schedule.
 **Read:** low-T μ **overshoots** (1nW T20 ×1.60), high-T μ **undershoots** (3nW T100 ×0.56) — the one global
 `lr_mu` anneal cannot serve both regimes → Phase A. γ climbs monotonically with T toward truth; the 1nW low-T
 deficit (FM#6) is the γ residual.
+
+---
+
+## 8b. Runner handoff — 2026-09-27 ~12:40 (batch 3, `24r`–`24v`)
+
+**Ran and committed on `develop`:** 24r, 24s, 24t, 24u, 24v — each forked from the previous, one change each,
+with its verdict cell and §7 log row.  Branch structure: `24s←24r`, `24t←24s`, `24u←24t`, `24v←24u`.
+The point-estimate config is unchanged across the C-phase (24r's B8 config): all14 0.0672, T≥40 0.0326, μ 25.5 %.
+
+- **24r (B8, PARTLY):** 1-D FWHM-only KDE (σ channel off) + a Gaussian count prior `N(μ_init, μ_init²)` gives
+  the best μ / T≥40 of the series ⇒ **σ is the μ culprit** (22d resolved, the count prior tames the runaway),
+  but the **2-D σ-bearing γ chain is load-bearing for low-T γ** (γ 33.4→35.1 %).  New series best all14/T≥40/μ.
+- **24s (C1, FALSIFIED-but-decisive):** data bootstrap σ = **0.24×** the dataset CRB (4× narrower), μ coverage **0/8**.
+- **24t (C2, HIT):** sandwich `H⁻¹KH⁻¹` covers **10/14** at 2σ (CRB 5/14), 7/14 at 1σ (CRB 2/14); observed
+  information near-singular at low N (**FM#11**, sand/CRB up to 2655×).
+- **24u (C3, FALSIFIED):** profile σ = **0.64×** CRB, coverage **3/14**; the raw Δ(−2logL)=1 crossing resolves
+  in only 6/14 cells and is noise ⇒ the quadratic-fit curvature is the only stable readout.
+- **24v (C4, HIT):** sim-at-truth bias median **−9.4** → bias-corrected μ error **13.7 → 2.0** and 2σ CRB
+  coverage **5/14 → 12/14**.
+
+**Verdict:** the residual is a **measurable, correctable bias** (FM#8), *not* variance; the CRB's width is
+adequate but its **centering** is wrong.  The honest interval = **bias-corrected** (optionally bias-corrected
+*sandwich*).
+
+**Resume point:** roadmap §5 **Phase C, next = `C5` = `24w`** (coverage referee: one table comparing CRB /
+sandwich / bootstrap / profile / bias-corrected across the 14 → the honest-interval verdict), fork from **`24v`**.
+C5 must read `data/processed/24s_bootstrap.json`, `24u_profile.json`, `24v_bias.json`.  Then **Phase D**
+(`24x`–`24z`: matched forward model / differentiable surrogate — now strongly motivated, the bias is the whole
+μ residual) and **Phase E** (`24aa`–`24ad`).
+
+**Parked for E1:** 24i's low-T coupling (T≤20 0.1057) and 24g's γ (32.5 %); both cost the high-T cells.
+**Budget note:** 24s (data bootstrap, 8 exps × B=10, 137 min) and 24v (14 sim-at-truth optimiser runs, ~60 min)
+were the two expensive arms; both carry their budget reductions in the verdicts + companion JSONs.
