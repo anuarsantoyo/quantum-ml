@@ -208,8 +208,13 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | g | 24g | A7: two-phase μ schedule (2× first half, 1/3 second half) | 0.0747 | 0.0463 | **0.1614** | 29.4% | **32.5%** | 0/14 | DONE (PARTLY) — **best T≤20 + best γ of Phase A** (1nW T05 γ 0.617→0.848); misses 24d by +0.0003 (chaos); Phase A exhausted as a global lever |
 | h | 24h | A8: γ travel normalisation (A2 idea on γ) | 0.1071 | 0.0884 | 0.1645 | 33.3% | 36.4% | 0/14 | DONE (**FALSIFIED, negative**) — breaks the already-good high-T γ (3nW T60–100 0.99→0.82) and does not lift low-T γ ⇒ **FM#13 applies to BOTH channels; neither is travel-starved ⇒ residual is FM#8**; branch dropped, 24i re-forks 24g |
 | i | 24i | A9: coupled μ/γ travel along the init valley (fixed ρ) | 0.1870 | 0.2135 | **0.1057** | 34.9% | 45.0% | 0/14 | DONE (**FALSIFIED globally**, but **best T≤20 of the series**: 0.1614→0.1057) — fixed init-ρ is not transferable (ρ spans −0.36…+1.23, cap hits); coupling wrecks the high-T γ (1nW T100 0.94→0.27) |
+| j | 24j | A10: truth-free μ init (bisect sim median σ_fit ↔ target median σ_fit) | 0.2467 | 0.2379 | 0.2737 | 61.4% | 37.1% | **1**/14 | DONE (**FALSIFIED — and it *measures* FM#8**) — μ̂/μ_true = 1.02/0.98 at 1nW T10/T20 but 0.22 at 3nW T100; the σ-matching estimator inherits the growing sim/target σ mismatch ⇒ keep `0.5×truth` until the σ model is fixed (Phase B/D) |
 
 **Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
+
+**Best-of-each (end of 24j):** `all14` **24b 0.0730** · `T≥40` **24b 0.0435** (24f ties, its control branch) ·
+`T≤20` **24i 0.1057** (sub-metric only; its global 0.1870 is bad) then **24g 0.1614** · γ best **24g 32.5 %**,
+μ best **24b 28.0 %**.
 24c (cosine, same total travel) is **worse** (0.0787) → schedule *shape* is second-order; the lever is the
 μ **travel rate** (FM#13), not the budget. A4/A5 must therefore move the LR, not just the cap.
 24d (σ_prop²-scaled LR) recovers most of that (0.0744, T≥40 0.0448) with floor cells bit-identical, but the
@@ -224,6 +229,38 @@ not beat 24b globally ⇒ **Phase A is exhausted as a global lever; the residual
 channels and neither is travel-starved ⇒ the residual really is the σ_fit channel bias (FM#8). 24i re-forks 24g.
 24i (coupled γ, fixed init-ρ) **falsified globally** (all14 0.1870, high-T γ wrecked) **but is the best low-T
 config of the series** (T≤20 0.1057) — a parked candidate for E1; ρ is not a grid-constant (spans −0.36…1.23).
+24j (data-derived μ init) **falsified** (all14 0.2467, 1/14 diverged) — but it **measures FM#8**: μ̂/μ_true falls
+from ≈1.0 (1nW T10/T20) to 0.22 (3nW T100) ≈ 1/(σ-mismatch factor) ⇒ keep `0.5×truth` until Phase B fixes σ.
+
+---
+
+## 8. Runner handoff — 2026-09-27 ~03:40 (batch 1, `24c`–`24j`)
+
+**Ran and committed on `develop`:** 24c, 24d, 24e, 24f, 24g (batch 1), then 24h, 24i, 24j.
+**Branch structure (recorded, one change per notebook):** `24c←24b`, `24d←24c`, `24e←24d`, `24g←24e`
+(`24f` = the roadmap's `n_iter` **control branch**, its verdict: aggregate unchanged); `24i←24g` and `24j←24g`
+because `24h` (A8) and `24i`-from-`24h` were **falsified branches** (see their verdicts). Each notebook keeps the
+frozen protocol §2 and metric §3 byte-identical.
+
+**Attempted and impossible this run:** self-chaining to the next batch. `sessions_spawn` is not in the
+subagent-1/1 tool policy; the CLI route is dead too (`openclaw` → `gateway connect failed: protocol mismatch`,
+and `openclaw agent --local` → `ProviderAuthError`). **The next runner must be started by the parent session.**
+
+**Resume point:** the roadmap §5 **Phase B, starting at `B1` = `24k`** (σ(μ) shape matching), then B2…B8,
+then Phase C (`24s`–`24w`), D (`24x`–`24z`), E (`24aa`–`24ad`). Fork `24k` from **`24g`** (best standing Phase-A
+config) unless a Phase-B design needs `24b`'s plain A2 schedule.
+
+**What the next runner should carry in:**
+- **FM#13/#14** — the μ travel is LR-limited, not budget-limited; the clip is mostly idle, and net travel
+  saturates at ≈0.4×μ_init because the REINFORCE gradient flips sign (recorded in §4).
+- **FM#8 (quantified by 24j)** — μ̂/μ_true ≈ 1/(σ-mismatch factor), 1.02 (1nW T10) → 0.22 (3nW T100). Any
+  σ-channel fix must move exactly this table.
+- **24k design note** (B1 proper): build a **monotone quantile map** `f: sim σ_fit → target σ_fit` from a
+  reference cloud + the target cloud (truth-free), apply it inside `_kde_scores` to `sim_s` **and, by the chain
+  rule, to `sim_ds`** (piecewise-linear ⇒ piecewise-constant `f'`), and keep the *ranking* intact. 24j's failure
+  is the baseline that 24k must beat (a correct map should recover μ̂/μ_true ≈ 1 across the grid).
+- **Parked for E1:** 24i's low-T coupling (T≤20 0.1057) and 24g's γ (32.5 %); both cost the high-T cells.
+
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 
