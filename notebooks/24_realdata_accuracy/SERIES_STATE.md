@@ -226,10 +226,9 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | x | 24x | D1: estimator-matched pseudo-Voigt forward model (pv FWHM + sigma, 2-D KDE) | 0.1953 | 0.1597 | 0.3044 | 27.1% | 61.4% | 0/14 | DONE (**FALSIFIED**) — matching the estimator at the FWHM channel does NOT fix mu (27.1% vs 24r 25.5%; the table moves *down*) and wrecks gamma (61.4% vs 35.1%) ⇒ the mu residual is a line-shape/model gap (FM#6), not an estimator mismatch; 92.7 min (pv fit) |
 | y | 24y | D2: differentiable surrogate sigma = kappa(FWHM,n,gamma)*sigma_CRLB (22g-calibrated, R2 0.66) | 0.0740 | 0.0476 | **0.1551** | 28.6% | **33.0%** | 0/14 | DONE (**FALSIFIED** on mu) — the calibrated sigma repairs gamma (33.0%, near the 24g best 32.5%; 3nW T60-100 gamma ~1.00) and the low-T split (0.1551 vs 0.1735) but mu worsens (28.6% vs 24r 25.5%) ⇒ the sigma SCALE does not set the mu mode; mu wants the sigma-free FWHM kernel (24r), gamma wants the real sigma channel (D2) |
 | z | 24z | D3: per-(T,power) sigma-bias table c(exp)=real/sim on top of the D2 surrogate | 0.0764 | 0.0488 | 0.1609 | 28.7% | 33.9% | 0/14 | DONE (**FALSIFIED**) — the exact per-cell sigma table (c3 0.58–1.56, median 1.00) leaves mu unchanged (28.7% vs 24y 28.6%) ⇒ the mu landing is insensitive to the sigma **scale** at every level (D1/D2/D3 all fail) ⇒ the residual high-T mu error is the line-shape/photon model (FM#6), not the sigma channel |
+| aa | 24aa | E1: mu = 1-D FWHM kernel + count prior (24r), gamma = 2-D calibrated-sigma KDE (D2/D3) + 24v bias-corrected report | **0.0651** | 0.0341 | **0.1601** | 25.7% | **33.3%** | 0/14 | DONE (**HIT, qualified — NEW SERIES BEST all14**) — the role-split collects 24r's mu (25.7% ~ 25.5%) with the calibrated sigma's gamma (33.3% vs 35.1%) and the best global low-T (0.1601); all14 0.0672→0.0651 (−0.0021, inside the chaos band ⇒ E2 must confirm); the bias-corrected mu table restores 12/14 2-sigma coverage |
 
-**Current best = 24r** (B8: 1-D FWHM-only KDE + count prior) — **all14 0.0672, T≥40 0.0326, μ 25.5 %**
-(vs **24p** B6 hybrid all14 0.0684 / μ 27.7 % — the all14 gap −0.0012 is inside the ±0.01 chaos band;
-24r wins μ and T≥40 clearly, 24p keeps the better γ / low-T split); best γ = **24g** 32.5 %; best low-T = **24i** 0.1057 (parked).
+**Current best = 24aa (E1 combination)** (μ = 1-D FWHM-only KDE + count prior [24r]; γ = 2-D calibrated-σ KDE [D2/D3]) — **all14 0.0651, T≥40 0.0341, T≤20 0.1601, μ 25.7 %, γ 33.3 %** (vs the previous best **24r** all14 0.0672 / T≥40 **0.0326** / T≤20 0.1735 / μ **25.5 %** / γ 35.1 %; the all14 margin −0.0021 is *inside the ±0.01 chaos band* ⇒ E2 must confirm). **24r** still holds the best T≥40 and the μ tie; **24g** keeps the best γ (32.5 %); **24i** the best T≤20 sub-metric (0.1057, parked). **24p** (B6 hybrid) remains the strongest non-σ-free all14 runner-up (0.0684 / μ 27.7 %).
 
 **Phase-C verdict (24s–24v, uncertainty):** the residual is **bias, not variance**.  C1: bootstrap σ = **0.24×**
 the dataset CRB (4× *narrower*) with **0/8** μ coverage.  C2: the sandwich covers **10/14** at 2σ (vs CRB 5/14)
@@ -333,3 +332,46 @@ C5 must read `data/processed/24s_bootstrap.json`, `24u_profile.json`, `24v_bias.
 **Parked for E1:** 24i's low-T coupling (T≤20 0.1057) and 24g's γ (32.5 %); both cost the high-T cells.
 **Budget note:** 24s (data bootstrap, 8 exps × B=10, 137 min) and 24v (14 sim-at-truth optimiser runs, ~60 min)
 were the two expensive arms; both carry their budget reductions in the verdicts + companion JSONs.
+
+---
+
+## 8c. Runner handoff — 2026-09-27 ~16:00 (batch 4, `24w`–`24aa`)
+
+**Ran and committed on `develop`:** 24w, 24x, 24y, 24z, 24aa — each forked from the previous, one change each,
+with its verdict cell and §7 log row.  Branch structure: `24w←24v`, `24x←24w`, `24y←24x`, `24z←24y`, `24aa←24z`
+(linear).
+
+- **24w (C5 coverage referee, HIT):** the honest interval is the **bias-corrected** one.  Referee table (μ coverage
+  of μ_true, 14 exps): raw CRB **5/14**, raw sandwich **10/14**, profile **3/14**, bootstrap **0/8**, bias-corrected
+  CRB **12/14**, bias-corrected sandwich **13/14** (2σ).  Every *raw* interval is dishonest; every corrected one is
+  honest.  Bias-corrected CRB is the efficient choice (12/14 at 1.00× width); the corrected sandwich is 2.51× wider.
+- **24x (D1 estimator-matched pv forward model, FALSIFIED):** pv for FWHM **and** σ, 2-D KDE re-derived, count prior
+  kept ⇒ μ **27.1 %** (not fixed) and γ **61.4 %** (wrecked).  Matching the estimator at the FWHM level is the wrong
+  lever (FM#6, line shape), not an estimator mismatch.  **92.7 min** (pv fit ≈ 4.5× the Lorentzian).
+- **24y (D2 differentiable σ surrogate, FALSIFIED on μ):** σ = κ(FWHM,n,γ)·σ_CRLB with κ fitted to the 22g real/CRB
+  ratio (R² 0.66) ⇒ μ **28.6 %** (worse) but γ **33.0 %** (near the 24g best 32.5 %) and the best low-T of the D-phase
+  (**0.1551**).  The σ **scale** does not set the μ mode; the calibrated σ **is** the γ arm.
+- **24z (D3 exact per-(T,power) σ table, FALSIFIED):** the exact per-cell residual c3(exp) (0.58–1.56, median 1.00)
+  leaves μ unchanged (**28.7 %** vs 24y 28.6 %) ⇒ D1/D2/D3 all fail to move μ ⇒ **the residual high-T μ error is the
+  line-shape/photon model (FM#6), not the σ channel**.
+- **24aa (E1 combination, HIT-qualified — NEW SERIES BEST all14):** μ = 1-D FWHM kernel + count prior (24r) **and**
+  γ = calibrated-σ 2-D KDE (D2/D3) ⇒ `W_obj(all14)` **0.0651** (24r 0.0672), T≤20 **0.1601** (best global), γ **33.3 %**,
+  μ **25.7 %** (tie), T≥40 0.0341 (24r still best).  The 24v bias-corrected report composes (μ-channel → 0.0021,
+  12/14 2σ coverage).
+
+**Verdict:** Phase C (uncertainty) and Phase D (forward model) are closed; the μ residual is a **line-shape/model
+gap (FM#6)**, and the best model is the **E1 role-split** (σ-free μ + count prior; calibrated-σ γ).  The all14
+margin over 24r (−0.0021) is inside the chaos band ⇒ **E2 must confirm it**.
+
+**Resume point:** roadmap §5 **Phase E, next = `E2` = `24ab`** — repeat the E1 winner 3× at different `SEED` to
+separate signal from the chaos band, then `E3` (`24ac`, exp8 `cvm_fwhm`/`w1_2d` referee) and `E4` (`24ad`,
+held-out tune/report).  Fork `24ab` from **`24aa`**.
+
+**What the next runner should carry in:**
+- **The winner to repeat:** 24aa — `sigma_channel='on'` + `sigma_estimator='lorentzian'` + `sigma_surrogate=True`
+  + `sigma_calib='table_22g'` + `mu_gamma_split=True` + `cnt_prior_w=0.25`, `mu_sched_shape='two_phase'`.
+- **D-phase closure:** no σ-channel forward-model fix moves μ (D1/D2/D3); do **not** re-open the σ→μ lever.
+- **Honest interval:** bias-corrected CRB (12/14) / bias-corrected sandwich (13/14) via the 22b/22g sim-at-truth bias.
+- **Budget note:** 24x (92.7 min, pv fit) is the only heavy arm of this batch; 24w/24y/24z/24aa are ~0.2/20/20/20 min.
+  (An accidental *second* papermill run on `24x.ipynb` was launched and then killed; only the protocol-budget
+  `n_runs=100` run's output is committed.)
