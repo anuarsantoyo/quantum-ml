@@ -216,7 +216,9 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | o | 24o | B5: estimator-matched sigma_fit (pseudo-Voigt sigma channel, 22g calibration) | 0.0796 | **0.0353** | 0.2155 | 28.6% | 38.4% | 0/14 | DONE (**PARTLY**) — best T>=40 yet (0.0463->0.0353) and best B-phase mu (28.6%): the raw sim/target sigma ratio moves 0.32-0.87 -> 0.60-1.38 (22g reproduced in-optimiser) => FM#8 is an ESTIMATOR problem; but low-T gamma collapses (1nW T05 0.85->0.39) because the gamma chain eats a now-coherent sigma term => the gamma score should not consume sigma (=> B6) |
 | p | 24p | B6: hybrid two-role loss (exp8 cvm_fwhm for the mu reward + KDE for gamma) | **0.0684** | 0.0354 | 0.1695 | **27.7%** | 33.4% | 0/14 | DONE (**HIT** — **NEW SERIES BEST**) — the bandwidth-free, sigma-free cvm_fwhm mu reward gives the best all14 (0.0730->0.0684) and best mu (27.7%); gamma pays only +0.9pp (the KDE keeps sigma, but no longer for mu) and the run is back to 19.6 min |
 
-**Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
+| q | 24q | B7: per-scan FWHM heterogeneity on the A2 travel (B6 off) | 0.0809 | 0.0536 | 0.1645 | 30.0% | 33.6% | 0/14 | DONE — FALSIFIED; 20e's heterogeneity does NOT transfer to the travel optimiser |
+
+**Current best = 24p** (B6 hybrid: cvm_fwhm μ reward + KDE γ) — **all14 0.0684, μ 27.7 %**; best T≥40 = **24o** 0.0353; best low-T = **24i** 0.1057 (parked).
 
 **Best-of-each (end of 24j):** `all14` **24b 0.0730** · `T≥40` **24b 0.0435** (24f ties, its control branch) ·
 `T≤20` **24i 0.1057** (sub-metric only; its global 0.1870 is bad) then **24g 0.1614** · γ best **24g 32.5 %**,

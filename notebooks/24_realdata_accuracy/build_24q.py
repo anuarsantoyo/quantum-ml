@@ -50,14 +50,35 @@ for c in cells:
             "    _ft0, _si0, _nt0, _dg0, _ds0 = _sims(pool, mu_val, sigma_prop, lam, gamma_val, n_runs, SEED")
         lines = s.split('\n')
         out = []
+        pend = None          # None | ('init'|'loop', balance)
         for ln in lines:
             out.append(ln)
+            if pend is not None:
+                kind, bal = pend
+                bal += ln.count('(') - ln.count(')')
+                pend = (kind, bal) if bal > 0 else None
+                if pend is None:
+                    if kind == 'init':
+                        out.append("    if _jit > 0.0:                                                       # B7")
+                        out.append("        _ft0 = _ft0 + _jit * torch.tensor(np.random.default_rng(SEED + 991).standard_normal(n_runs), dtype=torch.float32)")
+                    else:
+                        out.append("        if _jit > 0.0:                                                   # B7")
+                        out.append("            ft = ft + _jit * torch.tensor(np.random.default_rng(SEED + 991 + step).standard_normal(n_runs), dtype=torch.float32)")
+                continue
             if ln.startswith('    _ft0, _si0, _nt0, _dg0, _ds0 = _sims('):
-                out.append("    if _jit > 0.0:                                                       # B7")
-                out.append("        _ft0 = _ft0 + _jit * torch.tensor(np.random.default_rng(SEED + 991).standard_normal(n_runs), dtype=torch.float32)")
+                bal = ln.count('(') - ln.count(')')
+                if bal > 0:
+                    pend = ('init', bal)
+                else:
+                    out.append("    if _jit > 0.0:                                                       # B7")
+                    out.append("        _ft0 = _ft0 + _jit * torch.tensor(np.random.default_rng(SEED + 991).standard_normal(n_runs), dtype=torch.float32)")
             elif ln.startswith('        ft, si_t, nt, dg_t, ds_t = _sims('):
-                out.append("        if _jit > 0.0:                                                   # B7")
-                out.append("            ft = ft + _jit * torch.tensor(np.random.default_rng(SEED + 991 + step).standard_normal(n_runs), dtype=torch.float32)")
+                bal = ln.count('(') - ln.count(')')
+                if bal > 0:
+                    pend = ('loop', bal)
+                else:
+                    out.append("        if _jit > 0.0:                                                   # B7")
+                    out.append("            ft = ft + _jit * torch.tensor(np.random.default_rng(SEED + 991 + step).standard_normal(n_runs), dtype=torch.float32)")
         s = '\n'.join(out)
         set_txt(c, s); done = True
         break
