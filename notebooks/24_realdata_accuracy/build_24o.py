@@ -91,14 +91,16 @@ if not done: sys.exit('_sims not found')
 done = 0
 for c in cells:
     s = txt(c)
-    a = "    _ft0, _si0, _nt0, _dg0, _ds0 = _sims(pool, mu_val, sigma_prop, lam, gamma_val, n_runs, SEED)\n"
-    if a in s:
-        s = s.replace(a, a.rstrip('\n') + ", sigma_est=cfg.get('sigma_estimator', 'lorentzian')\n")
-        done += 1
-    b = "        ft, si_t, nt, dg_t, ds_t = _sims(pool, mu_val, sigma_prop, lam, gamma_val, n_runs, SEED + step)\n"
-    if b in s:
-        s = s.replace(b, b.rstrip('\n') + ", sigma_est=cfg.get('sigma_estimator', 'lorentzian')\n")
-        done += 1
+    a_old = "    _ft0, _si0, _nt0, _dg0, _ds0 = _sims(pool, mu_val, sigma_prop, lam, gamma_val, n_runs, SEED)\n"
+    a_new = ("    _ft0, _si0, _nt0, _dg0, _ds0 = _sims(pool, mu_val, sigma_prop, lam, gamma_val, n_runs, SEED,\n"
+             "                                    sigma_est=cfg.get('sigma_estimator', 'lorentzian'))\n")
+    b_old = "        ft, si_t, nt, dg_t, ds_t = _sims(pool, mu_val, sigma_prop, lam, gamma_val, n_runs, SEED + step)\n"
+    b_new = ("        ft, si_t, nt, dg_t, ds_t = _sims(pool, mu_val, sigma_prop, lam, gamma_val, n_runs, SEED + step,\n"
+             "                                            sigma_est=cfg.get('sigma_estimator', 'lorentzian'))\n")
+    if a_old in s:
+        s = s.replace(a_old, a_new); done += 1
+    if b_old in s:
+        s = s.replace(b_old, b_new); done += 1
     if done:
         set_txt(c, s); break
 if not done: sys.exit('run_experiment: _sims calls not found')
