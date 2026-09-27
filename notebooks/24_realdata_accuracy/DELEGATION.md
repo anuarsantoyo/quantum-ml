@@ -29,13 +29,19 @@ message the user; the parent owns reporting. Each child runs a **batch** of cons
 > Return ONE compact summary at the end: per notebook `id | one change | W_obj all14 / T>=40 | verdict one-liner`,
 > then the best config so far.
 
-## Batches
+## Batches (as actually run)
 
-1. **B1 — 24c, 24d, 24e, 24f, 24g** (Phase A3–A7). Fork chain starts from **24b**.
-2. **B2 — 24h, 24i, 24j, 24k** (A8 γ-travel, A9 coupled travel, A10 truth-free μ-init, B1 σ-shape matching).
-3. **B3 — 24l, 24m, 24n, 24o, 24p** (B2 scale-only control, B3 σ-weight anneal, B4 robust kernel, B5 estimator-matched σ, B6 hybrid loss).
-4. **B4 — 24q, 24r, 24s, 24t, 24u** (B7 heterogeneity, B8 FWHM-1D+count prior, C1 bootstrap, C2 sandwich, C3 profile interval).
-5. **B5 — 24v, 24w, 24x, 24y, 24z** (C4 bias-corrected CRB, C5 coverage referee, D1 matched estimator, D2 differentiable forward model, D3 σ-bias table).
-6. **B6 — 24aa, 24ab, 24ac, 24ad** (E1 combination, E2 repeat winner ×3, E3 independent referee, E4 held-out protocol) + series summary.
+- **Batch 1 (DONE, 8 nb, 3 h): 24c–24j** phase A3–A10. Result: Phase A exhausted; best = 24b (all14 0.0730,
+  T≥40 0.0435); 24g best low-T/γ; **FM#8 quantified** (μ̂/μ_true 1.02 @1nW T10 → 0.22 @3nW T100).
+- **Batch 2 (RUNNING): 24k–24r** = Phase B (B1 σ-shape matching, B2 scale-only control, B3 σ-weight anneal,
+  B4 robust kernel, B5 estimator-matched σ, B6 hybrid loss, B7 heterogeneity, B8 FWHM-1D + count prior).
+  Fork 24k from **24g**.
+- **Batch 3: 24s–24z** = Phase C (C1 bootstrap, C2 sandwich, C3 profile interval, C4 bias-corrected CRB,
+  C5 coverage referee) + Phase D (D1 matched estimator, D2 differentiable forward model, D3 σ-bias table).
+- **Batch 4: 24aa–24ad** = Phase E (E1 combination, E2 repeat winner ×3, E3 independent referee,
+  E4 held-out protocol) + series summary.
+
+> **IMPORTANT (batches ≥2):** a subagent **cannot** spawn another subagent (1/1 policy) — the *parent*
+> session starts every batch. Do not attempt `sessions_spawn` or the `openclaw` CLI from a runner.
 
 > The parent may reorder/insert batches based on the running verdicts; the roadmap §5 is the source of truth.
