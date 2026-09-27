@@ -59,12 +59,18 @@ for _k, _v in E4.items():
 for _k, _v in sorted(E4.items(), key=lambda kv: kv[1]['core']):
     print(f"{_k:>22}{_v['core']:>10.4f}{_v['hold']:>11.4f}{_v['all14']:>9.4f}"
           f"{_v['hold'] - _v['core']:>+9.4f}")
-_bc = min(E4, key=lambda k: E4[k]['core'])
-_bh = min(E4, key=lambda k: E4[k]['hold'])
+_tot = lambda v: v if np.isfinite(v) else float('inf')
+_bc = min(E4, key=lambda k: _tot(E4[k]['core']))
+_bh = min(E4, key=lambda k: _tot(E4[k]['hold']))
 print(f"\\nbest by CORE  (selection split)   : {_bc}  (core {E4[_bc]['core']:.4f})")
 print(f"best by HELD-OUT (report split)   : {_bh}  (held-out {E4[_bh]['hold']:.4f})")
 print(f"selection agreement: {'YES' if _bc == _bh else 'NO'}"
       f"   | winner {_bc} held-out {E4[_bc]['hold']:.4f} vs its core {E4[_bc]['core']:.4f}")
+_holdrank = sorted(E4, key=lambda k: _tot(E4[k]['hold']))
+if '24aa' in E4:
+    print(f"series winner 24aa: core {E4['24aa']['core']:.4f} | held-out {E4['24aa']['hold']:.4f} | "
+          f"gap {E4['24aa']['hold'] - E4['24aa']['core']:+.4f} | held-out rank "
+          f"#{_holdrank.index('24aa') + 1}/{len(E4)}")
 
 # ---- per-T breakdown of the winning model (this notebook's own run) ----
 print()
