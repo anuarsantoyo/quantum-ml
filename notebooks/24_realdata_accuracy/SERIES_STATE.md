@@ -217,8 +217,11 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | p | 24p | B6: hybrid two-role loss (exp8 cvm_fwhm for the mu reward + KDE for gamma) | **0.0684** | 0.0354 | 0.1695 | **27.7%** | 33.4% | 0/14 | DONE (**HIT** — **NEW SERIES BEST**) — the bandwidth-free, sigma-free cvm_fwhm mu reward gives the best all14 (0.0730->0.0684) and best mu (27.7%); gamma pays only +0.9pp (the KDE keeps sigma, but no longer for mu) and the run is back to 19.6 min |
 
 | q | 24q | B7: per-scan FWHM heterogeneity on the A2 travel (B6 off) | 0.0809 | 0.0536 | 0.1645 | 30.0% | 33.6% | 0/14 | DONE — FALSIFIED; 20e's heterogeneity does NOT transfer to the travel optimiser |
+| r | 24r | B8: 1-D FWHM-only KDE + count channel re-added as a prior (σ channel off) | **0.0672** | **0.0326** | 0.1735 | **25.5%** | 35.1% | 0/14 | DONE (**PARTLY**) — new series best on all14/T≥40/μ: σ *is* the μ culprit (22d resolved: the count prior `N(μ_init,μ_init²)` tames the runaway, net travel 0.32→0.54×μ_init), but the **2-D σ-bearing γ chain is load-bearing for low-T γ** (γ 33.4→35.1%; 1nW T05 0.75→0.61) ⇒ "σ or 2-D?" = **both** |
 
-**Current best = 24p** (B6 hybrid: cvm_fwhm μ reward + KDE γ) — **all14 0.0684, μ 27.7 %**; best T≥40 = **24o** 0.0353; best low-T = **24i** 0.1057 (parked).
+**Current best = 24r** (B8: 1-D FWHM-only KDE + count prior) — **all14 0.0672, T≥40 0.0326, μ 25.5 %**
+(vs **24p** B6 hybrid all14 0.0684 / μ 27.7 % — the all14 gap −0.0012 is inside the ±0.01 chaos band;
+24r wins μ and T≥40 clearly, 24p keeps the better γ / low-T split); best γ = **24g** 32.5 %; best low-T = **24i** 0.1057 (parked).
 
 **Best-of-each (end of 24j):** `all14` **24b 0.0730** · `T≥40` **24b 0.0435** (24f ties, its control branch) ·
 `T≤20` **24i 0.1057** (sub-metric only; its global 0.1870 is bad) then **24g 0.1614** · γ best **24g 32.5 %**,
