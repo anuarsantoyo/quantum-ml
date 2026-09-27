@@ -206,6 +206,7 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | e | 24e | A5: residual-aware μ freeze (|∇μ| < 0.15·|∇μ|_init) | 0.0771 | 0.0452 | 0.1747 | 29.6% | 34.0% | 0/14 | DONE (PARTLY, negative) — freezes 3–22/30 steps; neutral on all14 (+0.0027) but **hurts low T** (0.1650→0.1747) ⇒ late steps carry REAL travel, not flip-waste |
 | f | 24f | A6 control: n_iter 30→60 at FIXED total travel | 0.0781 | 0.0435 | 0.1839 | 29.4% | 35.4% | 0/14 | DONE (PARTLY) — aggregate unchanged (+0.0010 ⇒ travel-time, not step-count, is the lever); per-cell spread ±0.08–0.15 = the measured chaos width; **control branch — 24g re-forks 24e** |
 | g | 24g | A7: two-phase μ schedule (2× first half, 1/3 second half) | 0.0747 | 0.0463 | **0.1614** | 29.4% | **32.5%** | 0/14 | DONE (PARTLY) — **best T≤20 + best γ of Phase A** (1nW T05 γ 0.617→0.848); misses 24d by +0.0003 (chaos); Phase A exhausted as a global lever |
+| h | 24h | A8: γ travel normalisation (A2 idea on γ) | 0.1071 | 0.0884 | 0.1645 | 33.3% | 36.4% | 0/14 | DONE (**FALSIFIED, negative**) — breaks the already-good high-T γ (3nW T60–100 0.99→0.82) and does not lift low-T γ ⇒ **FM#13 applies to BOTH channels; neither is travel-starved ⇒ residual is FM#8**; branch dropped, 24i re-forks 24g |
 
 **Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
 24c (cosine, same total travel) is **worse** (0.0787) → schedule *shape* is second-order; the lever is the
@@ -218,6 +219,8 @@ flip-waste) ⇒ a hard stop is wrong; **damping (A7)** is the right form of the 
 the landing**; per-cell spread ±0.08–0.15 = the measured chaos width. 24g therefore re-forks **24e** (30 steps).
 24g (two-phase) is the **best low-T + best-γ** Phase-A config (T≤20 0.1614, γ 32.5 %, all14 0.0747) but does
 not beat 24b globally ⇒ **Phase A is exhausted as a global lever; the residual is the σ_fit channel → Phase B.**
+24h (γ travel normalisation) **falsified** (all14 0.1071): it breaks the good high-T γ ⇒ FM#13 applies to both
+channels and neither is travel-starved ⇒ the residual really is the σ_fit channel bias (FM#8). 24i re-forks 24g.
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 
