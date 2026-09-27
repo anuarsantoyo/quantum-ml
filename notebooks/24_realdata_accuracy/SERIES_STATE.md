@@ -207,6 +207,7 @@ in bursts, raw step up to ×249 the cap). The trajectory must be **damped/denois
 | f | 24f | A6 control: n_iter 30→60 at FIXED total travel | 0.0781 | 0.0435 | 0.1839 | 29.4% | 35.4% | 0/14 | DONE (PARTLY) — aggregate unchanged (+0.0010 ⇒ travel-time, not step-count, is the lever); per-cell spread ±0.08–0.15 = the measured chaos width; **control branch — 24g re-forks 24e** |
 | g | 24g | A7: two-phase μ schedule (2× first half, 1/3 second half) | 0.0747 | 0.0463 | **0.1614** | 29.4% | **32.5%** | 0/14 | DONE (PARTLY) — **best T≤20 + best γ of Phase A** (1nW T05 γ 0.617→0.848); misses 24d by +0.0003 (chaos); Phase A exhausted as a global lever |
 | h | 24h | A8: γ travel normalisation (A2 idea on γ) | 0.1071 | 0.0884 | 0.1645 | 33.3% | 36.4% | 0/14 | DONE (**FALSIFIED, negative**) — breaks the already-good high-T γ (3nW T60–100 0.99→0.82) and does not lift low-T γ ⇒ **FM#13 applies to BOTH channels; neither is travel-starved ⇒ residual is FM#8**; branch dropped, 24i re-forks 24g |
+| i | 24i | A9: coupled μ/γ travel along the init valley (fixed ρ) | 0.1870 | 0.2135 | **0.1057** | 34.9% | 45.0% | 0/14 | DONE (**FALSIFIED globally**, but **best T≤20 of the series**: 0.1614→0.1057) — fixed init-ρ is not transferable (ρ spans −0.36…+1.23, cap hits); coupling wrecks the high-T γ (1nW T100 0.94→0.27) |
 
 **Current best = 24b** (all14 0.0730, T≥40 0.0435) — but its γ regressed; 24a keeps the best γ (22.3%/26.1%).
 24c (cosine, same total travel) is **worse** (0.0787) → schedule *shape* is second-order; the lever is the
@@ -221,6 +222,8 @@ the landing**; per-cell spread ±0.08–0.15 = the measured chaos width. 24g the
 not beat 24b globally ⇒ **Phase A is exhausted as a global lever; the residual is the σ_fit channel → Phase B.**
 24h (γ travel normalisation) **falsified** (all14 0.1071): it breaks the good high-T γ ⇒ FM#13 applies to both
 channels and neither is travel-starved ⇒ the residual really is the σ_fit channel bias (FM#8). 24i re-forks 24g.
+24i (coupled γ, fixed init-ρ) **falsified globally** (all14 0.1870, high-T γ wrecked) **but is the best low-T
+config of the series** (T≤20 0.1057) — a parked candidate for E1; ρ is not a grid-constant (spans −0.36…1.23).
 
 **Baseline per-cell truth (μ/true, γ/true)** — the target every later notebook must improve:
 

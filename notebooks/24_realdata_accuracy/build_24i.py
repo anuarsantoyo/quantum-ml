@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build 24i from 24h — Phase A9: coupled mu/gamma travel along the (init) valley direction."""
+"""Build 24i from 24g — Phase A9: coupled mu/gamma travel along the (init) valley direction.
+
+Fork note: A8 (24h) was a negative branch (gamma travel normalisation broke the good high-T gamma),
+so the main chain re-forks 24g; A9 *replaces* the gamma step rule, nothing of A8 is carried.
+"""
 import json, os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -7,9 +11,9 @@ p = os.path.join(HERE, '24i.ipynb')
 if os.path.exists(p):
     sys.exit('24i.ipynb exists')
 
-subprocess.run([sys.executable, os.path.join(HERE, '_fork.py'), '24i', '24h',
+subprocess.run([sys.executable, os.path.join(HERE, '_fork.py'), '24i', '24g',
                 'coupled mu/gamma travel along the valley (Phase A9)',
-                'A9: slaved gamma - fix dgamma/dmu to the valley direction rho taken once from the local '
+                'A9: slave gamma to mu - fix dgamma/dmu to the valley direction rho taken once from the local '
                 'Hessian of the reward at the init, so the path follows the (mu,gamma) valley instead of '
                 'running the two channels independently (capped by the existing gamma trust region)'],
                check=True)
@@ -19,31 +23,35 @@ cells = nb['cells']
 def txt(c): return ''.join(c['source'])
 def set_txt(c, s): c['source'] = s.splitlines(keepends=True)
 
-# ---- 1. config ----
+# ---- 1. config: gamma LR -> coupling ----
 done = False
 for c in cells:
     s = txt(c)
     if "mu_sched_shape='two_phase'" in s:
+        s = s.replace(
+            "    lr_gamma=0.4716, gamma_anneal=0.4723,      # gamma channel frozen\n",
+            "    lr_gamma=None, gamma_anneal=0.0,            # A9: the annealed gamma LR is replaced by the coupling\n")
         s = s.replace(
             "    mu_freeze=True, mu_freeze_frac=0.15,         # A5: stop mu when |grad| < frac * |grad_init|\n",
             "    mu_freeze=True, mu_freeze_frac=0.15,         # A5: stop mu when |grad| < frac * |grad_init|\n"
             "    gamma_coupled=True, gamma_rho_cap=3.0,       # A9: dgamma = rho*dmu (valley direction)\n")
         set_txt(c, s); done = True
         break
-if not done: sys.exit('config: mu_freeze line not found')
+if not done: sys.exit('config: lr_gamma / mu_freeze line not found')
 
-# ---- 2. run_experiment: init valley ratio + coupled gamma step ----
+# ---- 2. run_experiment: valley ratio at the init + coupled step ----
 done = False
 for c in cells:
     s = txt(c)
-    if "    gamma_step = gamma_init / n_iter" in s:
+    if "    mu_step = mu_init / n_iter                                 # A2 reference cap (diagnostic)\n" in s:
         s = s.replace(
-            "    gamma_step = gamma_init / n_iter                                     # A8 travel/step\n",
-            "    gamma_step = gamma_init / n_iter                                     # A8 travel/step\n"
+            "    # ---------------------------------------------------------------------------------\n"
+            "    history, diverged, diverged_at = [], False, None\n",
+            "    # ---------------------------------------------------------------------------------\n"
             "    # --- A9 (24i): valley direction from the local Hessian of the reward at the init --------\n"
-            "    #  Central differences of the scalar KDE NLL in (mu, gamma); the valley is the\n"
-            "    #  eigenvector of the smallest |curvature|; rho = v_gamma/v_mu is FIXED for the run\n"
-            "    #  (truth-free: only the init cloud and the target cloud enter).\n"
+            "    #  Central differences of the scalar KDE NLL in (mu, gamma); the valley is the eigenvector\n"
+            "    #  of the smallest |curvature|; rho = v_gamma/v_mu is FIXED for the run.  Truth-free: only\n"
+            "    #  the init sim cloud and the target cloud enter.\n"
             "    _c = [0]\n"
             "    def _Rval(mu_, g_):\n"
             "        _c[0] += 1\n"
@@ -63,7 +71,8 @@ for c in cells:
             "    rho = float(_v[1] / _v[0]) if abs(_v[0]) > 1e-12 else 0.0\n"
             "    _rho_lim = cfg['gamma_rho_cap'] * gamma_init / mu_init\n"
             "    rho = float(np.clip(rho, -_rho_lim, _rho_lim))\n"
-            "    # -------------------------------------------------------------------------------------\n")
+            "    # -------------------------------------------------------------------------------------\n"
+            "    history, diverged, diverged_at = [], False, None\n")
         s = s.replace(
             "        # A5 (24e): truth-free convergence freeze -- once |grad_mu| < frac*|grad_mu_init|,\n"
             "        # STOP updating mu (the cell has reached its stationary point; further steps only wander).\n"
@@ -78,18 +87,17 @@ for c in cells:
             "        if not frozen:\n"
             "            mu_val -= _d_mu\n")
         s = s.replace(
-            "        # A8: calibrated gamma step, clipped to +-gamma_init/n_iter (total travel <= gamma_init)\n"
-            "        dgamma = float(np.clip(lr_gamma_eff * grad_gamma, -gamma_step, gamma_step))\n",
+            "        dgamma = lr_gamma * (1.0 - gamma_anneal * step / n_iter) * grad_gamma\n",
             "        # A9: gamma is SLAVED to the mu step along the fixed valley ratio rho\n"
             "        dgamma = rho * _d_mu if cfg.get('gamma_coupled', False) else \\\n"
-            "            float(np.clip(lr_gamma_eff * grad_gamma, -gamma_step, gamma_step))\n")
+            "            lr_gamma * (1.0 - gamma_anneal * step / n_iter) * grad_gamma\n")
         s = s.replace(
-            "                lr_gamma_eff=lr_gamma_eff, grad_gamma_init=grad_gamma_init, gamma_step=gamma_step,\n",
-            "                lr_gamma_eff=lr_gamma_eff, grad_gamma_init=grad_gamma_init, gamma_step=gamma_step,\n"
+            "                lr_mu_eff=lr_mu_eff, lr_mu_eff_e=lr_mu_eff_e, lr_scale_g=_g_lr,\n",
+            "                lr_mu_eff=lr_mu_eff, lr_mu_eff_e=lr_mu_eff_e, lr_scale_g=_g_lr,\n"
             "                valley_rho=rho,\n")
         set_txt(c, s); done = True
         break
-if not done: sys.exit('run_experiment: gamma_step line not found')
+if not done: sys.exit('run_experiment: A2 block not found')
 
 # ---- 3. hypothesis ----
 done = False
@@ -97,21 +105,23 @@ for c in cells:
     if c['cell_type'] == 'markdown' and txt(c).startswith('## Hypothesis / prediction'):
         set_txt(c, """## Hypothesis / prediction — 24i (Phase A9)
 
-- **Change vs previous notebook (`24h`):** γ is no longer driven by its own calibrated travel. The **ratio
+- **Change vs previous notebook (`24g`):** γ is no longer driven by its own fixed annealed LR. The **ratio
   `Δγ/Δμ` is fixed to the valley direction `ρ`**, taken **once** from the local Hessian of the scalar KDE NLL
   at the init (central differences in `(μ, γ)`; `ρ = v_γ/v_μ` for the eigenvector of smallest `|curvature|`,
-  clipped to `±3·γ_init/μ_init`). Each step `Δγ = ρ·Δμ`, with `Δμ` the usual A2/A3-clipped μ step, and the
-  existing γ trust region (`gamma_rel_cap`) still bounding `Δγ`. Truth-free: only the init sim cloud + the
-  target cloud enter. The μ schedule, σ_prop² LR, freeze rule, loss and bandwidths are frozen.
+  clipped to `±3·γ_init/μ_init`). Each step `Δγ = ρ·Δμ`, with `Δμ` the A2/A3-clipped μ step, and the existing
+  γ trust region (`gamma_rel_cap`) still bounding `Δγ`. Truth-free: only the init sim cloud + the target cloud
+  enter. The μ schedule (two-phase, σ_prop² LR, freeze), the loss and the bandwidths are frozen.
+  *(Fork note: `24h` = A8 γ-travel normalisation was a **negative branch** (it broke the good high-T γ), so the
+  main chain re-forks `24g`; A9 replaces the γ step rule, so nothing of A8's failed rule is carried.)*
 - **Hypothesis:** the two channels are **not independent** — the KDE reward has a narrow stiff direction and a
-  shallow valley. Driving μ alone (A2–A7) lets the μ path cross the valley, and the γ channel then rides the
-  wrong side; fixing `Δγ/Δμ` to the valley tangent should keep the path inside the valley so **both** channels
-  land closer to truth.
-- **Falsifiable prediction:** μ ratios stay at least as good as 24h and γ improves at low T; `W_obj(all14)`
-  below 24h's and ideally below **0.0730** (24b); 0 divergences. (A large `|ρ|` at the cap is itself a
-  diagnostic that the local valley is poorly conditioned.)
-- **If falsified** (no gain, or the coupled path is worse): the valley picture does not describe the real
-  optimisation → the residual is the **σ-channel bias (FM#8)** and the fix is in the forward model → Phase B.
+  shallow valley. Driving μ alone (A2–A7) lets the μ path cross the valley while γ rides the wrong side;
+  fixing `Δγ/Δμ` to the valley tangent should keep the path **inside** the valley so both channels land closer
+  to truth.
+- **Falsifiable prediction:** μ ratios at least as good as 24g and γ improves, so `W_obj(all14)` **below 24g's
+  0.0747** and ideally below **0.0730** (24b); 0 divergences. A `|ρ|` pinned at the cap is itself a diagnostic
+  that the local valley is ill-conditioned.
+- **If falsified** (no gain, or worse): the valley picture does not describe the real optimisation → the
+  residual is the **σ-channel bias (FM#8)** and the fix is in the forward model → Phase B (`24k`).
 """)
         done = True
         break
