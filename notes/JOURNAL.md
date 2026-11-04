@@ -957,3 +957,49 @@ So the next concrete steps are the following. First, generate a compact notebook
 ![alt text](journal_content/image-2.png)
 ![alt text](journal_content/image-3.png)
 ![alt text](journal_content/image-4.png)
+
+
+# 25.09.2026
+
+I successfully implemented the hyperparameter optimization algorithm as planned. Since I missed several daily journal entries, here is a summary of my work over the past month.
+
+I investigated multiple approaches—including Bayesian optimization—and ultimately selected Tree-structured Parzen Estimators (TPE) for reasons detailed in my recent presentation. In short, the hyperparameter optimization is complete and performing as expected. Below is a breakdown of what was accomplished.
+
+## The optimizer on synthetic data (17-series)
+
+The 17-series notebooks ran the full 14-experiment synthetic benchmark (targets generated at the true values, closed loop) and fixed the optimizer one issue at a time, re-checking the recovered (μ, γ) after each change.
+
+- **17a** was the playground: run the whole 14-experiment sweep with knobs so the paths and the MSE are visible. Added the exact `dσ/dγ` implicit term, the `LAMBDA_MEAN` mean-matching anchor (off by default), the `H_S_MIN` bandwidth floor and parallel workers. Full sweep in about 75 min.
+- **17b**: the baseline, `LAMBDA_MEAN = 0`. γ recovers well (RMSE about 1.2) but there is a clear μ loss at high transmission.
+- **17d**: `LAMBDA_MEAN = 0.1` made γ worse (RMSE 3.32), so the anchor stays off and is frozen at 0.
+- **17e**: found the μ-starvation. The μ score was divided by `σ_prop²` (up to 1680 at 3nW Trans100), so each step was about 0.1 photons and μ could never climb. Switched to `(n−μ)/σ_prop`, removed the LR-decay floor and raised `N_ITER` to 200. μ RMSE went from 23.4 to 1.75.
+- **17f**: replaced `σ_prop` with a fixed reference `σ_ref = 10` so every experiment takes the same photon-scale step, and annealed the γ learning rate `LR_γ·(1 − 0.5·t/N)` to settle the noisy low-count γ outliers.
+- **17g**: the remaining γ jumps came from the KDE γ-score scaling as `1/H²`, which saturated the clip and gave steps of about 5 MHz. Normalising by one power of bandwidth and a fixed `H_REF` removed the jumps. This is the config that became the AG-HYPOPT baseline.
+- **17h**: 17g plus the Fisher/CRB uncertainty treatment.
+
+**Net:** after these fixes the machinery recovers the true (μ, γ) almost exactly on synthetic data (μ RMSE about 3.7 %, γ about 4.3 %). On real data it is still far off, and since it works on data it generated itself, this tells us the residual error is not the model: it is a data/model mismatch.
+
+## AG-HYPOPT: agent-guided hyperparameter optimization
+
+**The idea.** The optimizer (TPE) proposes a batch of candidate configurations, the agent reads that batch plus the physics context and picks exactly one, the chosen config runs the benchmark, and the result goes back into the registry. The agent writes no code and creates no files: it only chooses a candidate and writes the trial summary. Everything lives in `agent-guided-hypopt/`, one self-contained folder per experiment (context, instructions, algorithm, space, template, trials, registry).
+
+**Uncertainty-aware TPE.** Trials are ranked by ℓ̃ = ℓ + λ·s (λ = 0.5), so a trial is "good" only if even its upper bound is low; the lowest quantile (q = 0.25) is the good set and the rest is bad. Per parameter, each side gets a variable-bandwidth KDE plus a uniform prior (w₀), with kernel widths growing with each trial's own uncertainty. Candidates are scored by the good/bad ratio EI(x) = g(x)/b(x) and drawn from the good density, plus a few fully random explore slots. Knobs: `n_initial = 5`, `quantile = 0.25`, `lcb_lambda = 0.5`, `bandwidth_beta = 0.5`, `prior_weight = 1.0`, `explore_slots = 2`. The four tunables in the search space are `sigma_ref`, `lr_mu`, `lr_gamma` and `gamma_anneal`.
+
+**What the campaign did:**
+
+- **experiment_1** (first cut): full 14-experiment synthetic benchmark, budget 100×100, 5 tunables. Two trials, 0.0049 and 0.0031, both worse than the 17g baseline 0.001578, which motivated a smaller benchmark.
+- **experiment_2**: a deliberately small vanilla instance, 8 synthetic experiments, about 20 min per trial, 4 tunables, 20-trial cap. First trial 0.0016.
+- **experiment_2_pukky**: same campaign, but the trials now run cell by cell with `nbrun.py` instead of papermill, so the agent can stop between a `▶` cell and the `✍️` cell.
+- **experiment_3_pukky**: the clean 20-trial campaign. Best trial_14, objective **0.0149 ± 0.0061** (μ 14.4 %, γ 9.5 %). It converges to a plateau around `sigma_ref ≈ 6.1`, `lr_mu ≈ 27`, `lr_gamma ≈ 0.42`, `gamma_anneal ≈ 0.42`; the remaining objective is the irreducible Trans05 γ noise plus a μ floor.
+- **experiment_template**: rebuilt from the validated experiment_3_pukky, with a `USE_REAL_DATA` switch to swap the synthetic targets for the real measured linewidths.
+- **experiment_4** (real data): same campaign, smoke budget `n_iter = 10`, 8 experiments. 20 trials, best trial_20, objective **0.1637 ± 0.0298**. μ lands at roughly half the reference on every experiment while γ is recovered at high transmission, so the real-data attractor is confirmed as a model/data mismatch (the Voigt spread gap) and not an optimizer problem.
+
+## Presentation of 11.09.2026
+
+`notes/presentations/2026-09-11/presentation-2026-09-11.md`, 38 figures. It runs: last status (the differentiable MC pipeline recovers the true parameters on synthetic data, with Fisher/CRB as the uncertainty statement), the next goal (get all 14 experiments to land at their true (μ, γ)), the 15-series on real data straight away, the 16-series synthetic-first check and why it has to come first, the 17-series fixes above, and then AG-HYPOPT: what uncertainty-aware TPE is, the model, the scoring, the knobs table, the sklearn-style API and the 5-step cycle. The deck was finalised today; the earlier `-draft.md` was replaced by the final file.
+
+## Is AG-HYPOPT novel? (`notes/ag-hypopt-novelty-assessment.md`)
+
+An arXiv survey done the same day, at Anuar's request. Decomposed, AG-HYPOPT is three layers: the optimizer (uncertainty-aware TPE, textbook Bergstra plus minor variants, not novel), the LLM's roles (selector over a classical proposal batch, domain-prior injector, scribe, which is the interesting part) and the scaffold (engineering, not science). The prior art covers most of the territory: LLM as proposer (AgentHPO, OPRO), LLM inside BO (LLAMBO, PFNs4BO, SemanticOpt), LLM as the decision/selector (LMABO, LGBO, OptiMindTune), agentic science (Coscientist, AI-Mandel) and physics-domain agentic HPO (NQS-Agent). The exact phrase "agent-guided hyperparameter optimization" returns zero arXiv hits, so the name is free but the territory is dense.
+
+**Verdict: a nice tool, thin and incremental novelty.** Two routes out: the domain-context ablation (does the LLM selector beat the statistical acquisition *because of* the physics context, tested against TPE-only, random search, GP-EI, an LLM proposer and an LLM selector without context), or make the physics itself the paper. The real-data campaign (experiment_4) is a feasibility demo, not the novelty experiment.

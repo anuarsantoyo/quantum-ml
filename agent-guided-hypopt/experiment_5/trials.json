@@ -1,0 +1,593 @@
+{
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "gamma_anneal": 0.29675854484918296,
+        "lr_gamma": 0.7990072682569841,
+        "lr_mu": 0.15508144049936426,
+        "mu_anneal": 0.4534978894806515
+      },
+      "objective": 0.11274904040229218,
+      "uncertainty": 0.08250123422479742,
+      "summary": "Trial 01 (lr_mu=0.1551, mu_anneal=0.4535, lr_gamma=0.7990, gamma_anneal=0.2968): objective 0.1127 +/- 0.0825, 0 diverged cells; gamma within ~1% at T100 but under-recovered at low T (-45/-29% at T05), while mu overshoots at mid transmission (+137-157%) and undershoots at high T (-23 to -38%)",
+      "key_insight": "The residual is a mu-location problem (large low/mid-T overshoot plus high-T undershoot, the latter weighted most), not a gamma-divergence one: gamma is accurate at high T and degrades only in the known low-count regime, with no diverged cell",
+      "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "gamma_anneal": 0.2474724311154343,
+        "lr_gamma": 0.674561364131813,
+        "lr_mu": 0.2833215030763119,
+        "mu_anneal": 0.15006226330533612
+      },
+      "objective": 0.1448977746441728,
+      "uncertainty": 0.09980504793880615,
+      "summary": "Trial 02 (lr_mu=0.2833, mu_anneal=0.1501, lr_gamma=0.6746, gamma_anneal=0.2475): objective 0.1449 +/- 0.0998 with 1 diverged cell (1nW T05, gamma -2.20); more sustained mu travel worsened every mu error (rel-RMSE 77% -> 136%, mid/low-T overshoot up to +275%) versus trial_01",
+      "key_insight": "Increasing sustained mu travel (higher lr_mu, lower mu_anneal) is the wrong direction on this benchmark: it aggravates the mid/low-T mu overshoot and additionally induced a low-T gamma divergence, so the smaller-travel mu schedule of trial_01 is preferred",
+      "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "gamma_anneal": 0.5944500606851053,
+        "lr_gamma": 0.9348906620042868,
+        "lr_mu": 0.10755962820009562,
+        "mu_anneal": 0.630090199785343
+      },
+      "objective": 0.1362224932368607,
+      "uncertainty": 0.09193318178522945,
+      "summary": "Trial 03 (lr_mu=0.1076, mu_anneal=0.6301, lr_gamma=0.9349, gamma_anneal=0.5944): objective 0.1362 +/- 0.0919, 1 diverged cell (1nW T05, gamma ~2.7e10); reduced mu travel gave the best mu so far (rel-RMSE 77% -> 55%, mid-T overshoot cut) but widened the high-T mu undershoot, leaving the objective above trial_01",
+      "key_insight": "Reduced mu travel trades the mid-transmission mu overshoot for a larger high-transmission mu undershoot: mu accuracy improves (best rel-RMSE so far, 55%) but the heavily-weighted high-T part worsens, so the net objective (0.1362) still sits above trial_01's 0.1127",
+      "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "gamma_anneal": 0.8451963480816079,
+        "lr_gamma": 0.6029150106146935,
+        "lr_mu": 0.1375775281943363,
+        "mu_anneal": 0.9297746953080669
+      },
+      "objective": 0.14175916150459075,
+      "uncertainty": 0.09714337736013005,
+      "summary": "Trial 04 (lr_mu=0.1376, mu_anneal=0.9298, lr_gamma=0.6029, gamma_anneal=0.8452): objective 0.1418 +/- 0.0971, 1 diverged cell (1nW T05, gamma -5.3e16); damping the gamma step did not remove the low-T gamma divergence (now in 3 of 4 trials) and slightly worsened high-T gamma, while the small-travel mu regime again gave good mu accuracy (rel-RMSE 60%)",
+      "key_insight": "The 1nW T05 gamma blow-up is not a gamma-learning-rate problem: it persisted with lr_gamma cut to 0.60 and gamma_anneal raised to 0.85, so the only trial that avoided it (trial_01) does so through its mu schedule, not its gamma schedule",
+      "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "gamma_anneal": 0.45302756899829805,
+        "lr_gamma": 0.46483369956687004,
+        "lr_mu": 0.10561015387670958,
+        "mu_anneal": 0.32494264457560607
+      },
+      "objective": 0.11351515926537975,
+      "uncertainty": 0.07480785451093162,
+      "summary": "Trial 05 (lr_mu=0.1056, mu_anneal=0.3249, lr_gamma=0.4648, gamma_anneal=0.4530): objective 0.1135 +/- 0.0748 with 0 diverged cells; effectively tied with trial_01 (0.1127) but with much better mu accuracy (rel-RMSE 77% -> 57%) and gamma finite on all 8 cells - the first run since trial_01 to avoid the 1nW T05 gamma blow-up",
+      "key_insight": "Moderately reducing mu travel (0.120 -> 0.088) together with a lower gamma step reaches trial_01's objective (0.1135) while eliminating the 1nW T05 gamma divergence and cutting mu rel-RMSE from 77% to 57%, making this the best-behaved configuration so far",
+      "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "gamma_anneal": 0.5329696776700628,
+        "lr_gamma": 0.4057719273084882,
+        "lr_mu": 0.10219551860759397,
+        "mu_anneal": 0.39254973584470565
+      },
+      "objective": 0.11875327481251179,
+      "uncertainty": 0.0821207078833414,
+      "summary": "Trial 06 (lr_mu=0.1022, mu_anneal=0.3925, lr_gamma=0.4058, gamma_anneal=0.5330): objective 0.1188 +/- 0.0821 with 0 diverged cells; the highest-EI proposal refined the good region (mu travel 0.082, gamma finite on all cells) but did not beat trial_01/trial_05, with mu rel-RMSE 57.6% and the high-T undershoot unchanged",
+      "key_insight": "The expected-improvement model picked a point right beside trial_05 and reproduced its clean behaviour, but a further travel reduction to 0.082 bought nothing - the local optimum for the objective at fixed gamma settings sits at trial_05's small-but-not-minimal mu travel (0.088)",
+      "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "gamma_anneal": 0.30186251133011566,
+        "lr_gamma": 0.8120366737603734,
+        "lr_mu": 0.11588718218605815,
+        "mu_anneal": 0.3324244871539392
+      },
+      "objective": 0.11396083499519438,
+      "uncertainty": 0.0819820908220425,
+      "summary": "Trial 07 (lr_mu=0.1159, mu_anneal=0.3324, lr_gamma=0.8120, gamma_anneal=0.3019): objective 0.1140 +/- 0.0820 with 0 diverged cells; combining the small-travel mu region with trial_01's gamma schedule gave gamma accuracy essentially tied with trial_01 for best of the campaign (rel-RMSE 21.6%) and a third straight divergence-free run, landing just behind trial_01/trial_05",
+      "key_insight": "Trial_01's gamma schedule (lr_gamma~0.81, gamma_anneal~0.30) reproduces the divergence-free low-T gamma behaviour even when paired with a small mu travel, so gamma stability is a property of the schedule combination rather than of mu travel alone - and the objective now sits in a tight 0.1127-0.1140 cluster",
+      "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "gamma_anneal": 0.5318125665888704,
+        "lr_gamma": 0.41569674448218774,
+        "lr_mu": 0.1616202216631109,
+        "mu_anneal": 0.34751938411695454
+      },
+      "objective": 0.10986498319265624,
+      "uncertainty": 0.0826369409263023,
+      "summary": "Trial 08 (lr_mu=0.1616, mu_anneal=0.3475, lr_gamma=0.4157, gamma_anneal=0.5318): objective 0.1099 +/- 0.0826 with 0 diverged cells - a new campaign best, beating trial_01 (0.1127); the larger mu travel (0.134) fixed the heavily-weighted 1nW high-T mu undershoot (T60 -2.7%, T100 -2.5%) at the cost of larger low/mid-T overshoots",
+      "key_insight": "The upper edge of the good mu-travel band (0.134) beats the lower edge (0.082-0.097): larger travel nearly eliminates the heavily-weighted 1nW high-T mu undershoot, and that gain outweighs the larger low/mid-T overshoots it brings",
+      "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "gamma_anneal": 0.5416139963353477,
+        "lr_gamma": 0.4805473089982995,
+        "lr_mu": 0.14863351086147128,
+        "mu_anneal": 0.3504215766434031
+      },
+      "objective": 0.11261155219550982,
+      "uncertainty": 0.08265110820829838,
+      "summary": "Trial 09 (lr_mu=0.1486, mu_anneal=0.3504, lr_gamma=0.4805, gamma_anneal=0.5416): objective 0.1126 +/- 0.0827 with 0 diverged cells; a fine refinement next to trial_08 reproduced the good 1nW high-T mu behaviour (T60 -0.3%) but only matched trial_01's level, so trial_08 (0.1099) stays the best",
+      "key_insight": "The good mu-travel band is flat to about +/-0.003 in objective (0.1099-0.1140 over travels 0.097-0.134), with trial_08's slightly larger travel the current best; tuning inside this band yields diminishing returns",
+      "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "gamma_anneal": 0.5214574375871789,
+        "lr_gamma": 0.44717373017471373,
+        "lr_mu": 0.1193843757751678,
+        "mu_anneal": 0.33762705247345415
+      },
+      "objective": 0.19748997326790735,
+      "uncertainty": 0.09510898600026421,
+      "summary": "Trial 10 (lr_mu=0.1194, mu_anneal=0.3376, lr_gamma=0.4472, gamma_anneal=0.5215): objective 0.1975 +/- 0.0951 with 1 diverged cell (3nW T60, gamma 2.85e15) - the worst run of the campaign; the highest-EI proposal diverged at a new, heavily-weighted high-transmission cell, so gamma instability is not confined to 1nW T05",
+      "key_insight": "The gamma blow-up is not tied to the low-T/1nW cell: it appeared at 3nW T60 here (with lr_gamma=0.447, lower than several finite runs), so the divergence is a sporadic instability of the small-travel regime that can hit a different, high-weight cell",
+      "notebook": "trial_10.ipynb"
+    },
+    {
+      "trial_id": "trial_11",
+      "config": {
+        "gamma_anneal": 0.8063498774253308,
+        "lr_gamma": 0.4576484925501303,
+        "lr_mu": 0.19154331705076005,
+        "mu_anneal": 0.3381105667015611
+      },
+      "objective": 0.11876002941502245,
+      "uncertainty": 0.08354167009982205,
+      "summary": "Trial 11 (lr_mu=0.1915, mu_anneal=0.3381, lr_gamma=0.4576, gamma_anneal=0.8063): objective 0.1188 +/- 0.0835 with 0 diverged cells; extending mu travel to 0.159 overshot the optimum - the mid/low-T mu overshoots ballooned (1nW T20 +172%, 3nW T05 +166%) and the objective fell back to trial_06's level, confirming trial_08's travel 0.134 as the best",
+      "key_insight": "The mu-travel optimum is now bracketed (0.123 -> 0.1126, 0.134 -> 0.1099, 0.159 -> 0.1188): the objective minimum lies near travel 0.134, beyond which extra travel costs more in mid/low-T overshoot than it gains at high T",
+      "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "gamma_anneal": 0.47969975028815254,
+        "lr_gamma": 0.4774386713655748,
+        "lr_mu": 0.15519021609909986,
+        "mu_anneal": 0.3494467304397492
+      },
+      "objective": 0.11152496070538674,
+      "uncertainty": 0.0823822452730551,
+      "summary": "Trial 12 (lr_mu=0.1552, mu_anneal=0.3494, lr_gamma=0.4774, gamma_anneal=0.4797): objective 0.1115 +/- 0.0824 with 0 diverged cells; essentially trial_08's mu knobs with different gamma knobs, it landed second-best (just above trial_08's 0.1099), so gamma-schedule changes at the mu optimum do not beat trial_08",
+      "key_insight": "At the mu optimum (travel ~0.13), changing the gamma schedule (lr_gamma 0.416 -> 0.477, gamma_anneal 0.532 -> 0.480) leaves the objective essentially unchanged (0.1099 -> 0.1115), and even the 1nW high-T mu result no longer reproduces exactly - the objective is flat to ~0.002 here and trial_08 stays best",
+      "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "gamma_anneal": 0.4498768055175392,
+        "lr_gamma": 0.4911584818438782,
+        "lr_mu": 0.16169528129896782,
+        "mu_anneal": 0.34456493938741944
+      },
+      "objective": 0.11320635471241772,
+      "uncertainty": 0.08245304467141917,
+      "summary": "Trial 13 (lr_mu=0.1617, mu_anneal=0.3446, lr_gamma=0.4912, gamma_anneal=0.4499): objective 0.1132 +/- 0.0825 with 0 diverged cells; a second exact sample at trial_08's mu optimum with a different gamma schedule again failed to beat it (0.1132 vs 0.1099), confirming the optimum region is flat to ~0.003",
+      "key_insight": "Repeated sampling at the mu optimum (travel 0.13) with varied gamma schedules yields 0.1099-0.1132 with no clean dependence on any knob, so the remaining ~0.003 spread is not tunable with these four parameters - trial_08's exact config remains the best found",
+      "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "gamma_anneal": 0.4778054702498448,
+        "lr_gamma": 0.49828134136895796,
+        "lr_mu": 0.17111745770682502,
+        "mu_anneal": 0.36267417761888476
+      },
+      "objective": 0.11268476619442071,
+      "uncertainty": 0.0826898598075554,
+      "summary": "Trial 14 (lr_mu=0.1711, mu_anneal=0.3627, lr_gamma=0.4983, gamma_anneal=0.4778): objective 0.1127 +/- 0.0827 with 0 diverged cells; sampling just past trial_08 (travel 0.140) matched trial_01 but did not beat trial_08 (0.1099), with an excellent 1nW T60 (+0.5%) but large mid-T overshoots",
+      "key_insight": "Travel 0.140 (between trial_08's 0.134 and trial_11's 0.159) lands at 0.1127, so the optimum is confirmed at ~0.134 and the region 0.128-0.140 is flat to ~0.003 - trial_08 remains the best found",
+      "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "gamma_anneal": 0.5062423011096853,
+        "lr_gamma": 0.45037580491905266,
+        "lr_mu": 0.15427602870079982,
+        "mu_anneal": 0.3545851963503213
+      },
+      "objective": 0.11029823654022611,
+      "uncertainty": 0.082474959951289,
+      "summary": "Trial 15 (lr_mu=0.1543, mu_anneal=0.3546, lr_gamma=0.4504, gamma_anneal=0.5062): objective 0.1103 +/- 0.0825 with 0 diverged cells; another optimum-region sample (travel 0.127) came within 0.0004 of trial_08 (0.1099), which remains the best",
+      "key_insight": "The optimum region (travel 0.12-0.14) keeps producing 0.1099-0.1132; trial_15's 0.1103 is the closest yet to trial_08 but still does not beat it, reinforcing that the best achievable value with this schedule family is ~0.110 and further tuning yields no real gain",
+      "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "gamma_anneal": 0.46672441937626824,
+        "lr_gamma": 0.4520499643693517,
+        "lr_mu": 0.15527021754560388,
+        "mu_anneal": 0.3506271637511188
+      },
+      "objective": 0.11123393192368657,
+      "uncertainty": 0.08235529131224101,
+      "summary": "Trial 16 (lr_mu=0.1553, mu_anneal=0.3506, lr_gamma=0.4520, gamma_anneal=0.4667): objective 0.1112 +/- 0.0824 with 0 diverged cells; yet another optimum-region sample (travel 0.128) landed third-best, so the plateau holds and trial_08 (0.1099) is unchanged as best",
+      "key_insight": "The optimum region keeps returning 0.1099-0.1132 regardless of the gamma-knob details; with seven sub-0.113 samples now, the campaign is plateaued and trial_08 remains the best",
+      "notebook": "trial_16.ipynb"
+    },
+    {
+      "trial_id": "trial_17",
+      "config": {
+        "gamma_anneal": 0.4465210403682711,
+        "lr_gamma": 0.4525128273581829,
+        "lr_mu": 0.10670895762231856,
+        "mu_anneal": 0.3507715189232054
+      },
+      "objective": 0.1329302552133841,
+      "uncertainty": 0.09149688374000288,
+      "summary": "Trial 17 (lr_mu=0.1067, mu_anneal=0.3508, lr_gamma=0.4525, gamma_anneal=0.4465): objective 0.1329 +/- 0.0915 with 1 diverged cell (1nW T05, gamma -0.93); the high-EI low-travel pick (travel 0.088) still diverged at the fragile 1nW T05 cell despite a proven-safe gamma schedule, so the low-travel region is not reliably safe",
+      "key_insight": "The low-travel region (~0.088) again produced a 1nW T05 gamma divergence even with lr_gamma=0.453, matching the schedule of safe runs - so that divergence is the persistent hazard of small travel, and the optimum (travel ~0.13) remains both better and safer",
+      "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "gamma_anneal": 0.42179334280882247,
+        "lr_gamma": 0.451868312989029,
+        "lr_mu": 0.16820541389184537,
+        "mu_anneal": 0.3588146163440286
+      },
+      "objective": 0.1120629352543323,
+      "uncertainty": 0.08257349571420124,
+      "summary": "Trial 18 (lr_mu=0.1682, mu_anneal=0.3588, lr_gamma=0.4519, gamma_anneal=0.4218): objective 0.1121 +/- 0.0826 with 0 diverged cells; another optimum sample (travel 0.138) landed fifth-best, so the plateau holds and trial_08 (0.1099) stays best",
+      "key_insight": "The optimum region returns 0.1099-0.1132 for any near-optimal schedule, with no remaining gradient in either mu travel or the gamma knobs; eight sub-0.113 samples now indicate ~0.110 is the practical floor for this schedule family",
+      "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "gamma_anneal": 0.465163394070567,
+        "lr_gamma": 0.4585382156835163,
+        "lr_mu": 0.1525604246991761,
+        "mu_anneal": 0.36053038804378457
+      },
+      "objective": 0.11352027438166691,
+      "uncertainty": 0.08227805609933884,
+      "summary": "Trial 19 (lr_mu=0.1526, mu_anneal=0.3605, lr_gamma=0.4585, gamma_anneal=0.4652): objective 0.1135 +/- 0.0823 with 0 diverged cells; a conservative optimum sample (travel 0.125) matched trial_05 exactly and added to the plateau, so trial_08 (0.1099) stays best",
+      "key_insight": "Choosing the safer of two near-tied EI candidates gave a clean, divergence-free run with excellent gamma (22.0%), but the plateau value is unchanged at ~0.11 - the schedule family has converged and trial_08 remains the best",
+      "notebook": "trial_19.ipynb"
+    },
+    {
+      "trial_id": "trial_20",
+      "config": {
+        "gamma_anneal": 0.46714175226060656,
+        "lr_gamma": 0.46201810277461275,
+        "lr_mu": 0.17542763738166486,
+        "mu_anneal": 0.3548365985231538
+      },
+      "objective": 0.11256822191548077,
+      "uncertainty": 0.08253401831557182,
+      "summary": "Trial 20 (lr_mu=0.1754, mu_anneal=0.3548, lr_gamma=0.4620, gamma_anneal=0.4671): objective 0.1126 +/- 0.0825 with 0 diverged cells; an optimum sample (travel 0.144) matched trial_09 exactly, so the plateau holds and trial_08 (0.1099) stays best",
+      "key_insight": "The optimum region keeps returning 0.1099-0.1135 for any near-optimal schedule; with fifteen divergence-free samples the plateau is definitive and trial_08 remains the best of the campaign",
+      "notebook": "trial_20.ipynb"
+    },
+    {
+      "trial_id": "trial_21",
+      "config": {
+        "gamma_anneal": 0.47227943878293116,
+        "lr_gamma": 0.4716158160640441,
+        "lr_mu": 0.16690567035774542,
+        "mu_anneal": 0.34550376211493733
+      },
+      "objective": 0.10739462538937855,
+      "uncertainty": 0.08245800327308324,
+      "summary": "Trial 21 (lr_mu=0.1669, mu_anneal=0.3455, lr_gamma=0.4716, gamma_anneal=0.4723): objective 0.1074 +/- 0.0825 with 0 diverged cells - a new campaign best, beating trial_08 (0.1099); the optimum travel (0.138) with a balanced gamma schedule gave small but real gains across cells",
+      "key_insight": "At the optimum, a balanced gamma schedule (lr_gamma=0.472, gamma_anneal=0.472, nearly equal) edged past trial_08 by 0.0025, showing the plateau is not perfectly flat and that a mid-range gamma balance is marginally favourable",
+      "notebook": "trial_21.ipynb"
+    },
+    {
+      "trial_id": "trial_22",
+      "config": {
+        "gamma_anneal": 0.4882206519882266,
+        "lr_gamma": 0.4568877930333853,
+        "lr_mu": 0.1658462284704711,
+        "mu_anneal": 0.3487087177212092
+      },
+      "objective": 0.1095454652019385,
+      "uncertainty": 0.08235182642657471,
+      "summary": "Trial 22 (lr_mu=0.1658, mu_anneal=0.3487, lr_gamma=0.4569, gamma_anneal=0.4882): objective 0.1095 +/- 0.0824 with 0 diverged cells; a near-neighbour of the new best (travel 0.137) landed second-best but did not beat trial_21 (0.1074), so trial_21 stays best",
+      "key_insight": "The trial_21 neighbourhood (travel ~0.137, balanced gamma ~0.46-0.49) is confirmed as the campaign's best region - two of the three best runs sit here - but trial_21's exact point remains the lowest at 0.1074",
+      "notebook": "trial_22.ipynb"
+    },
+    {
+      "trial_id": "trial_23",
+      "config": {
+        "gamma_anneal": 0.4683874641710689,
+        "lr_gamma": 0.450862361650929,
+        "lr_mu": 0.16047507458259827,
+        "mu_anneal": 0.35079475045674713
+      },
+      "objective": 0.11271336375808672,
+      "uncertainty": 0.08222536573147822,
+      "summary": "Trial 23 (lr_mu=0.1605, mu_anneal=0.3508, lr_gamma=0.4509, gamma_anneal=0.4684): objective 0.1127 +/- 0.0822 with 0 diverged cells; a near-neighbour of the best (travel 0.132) landed mid-plateau, so trial_21's 0.1074 stands as best",
+      "key_insight": "The best region is narrow: trial_21 (travel 0.138) and trial_22 (0.137) beat trial_23 (0.132), placing the optimum tightly at travel ~0.137-0.138 with balanced gamma knobs (lr_gamma ~ gamma_anneal ~ 0.47)",
+      "notebook": "trial_23.ipynb"
+    },
+    {
+      "trial_id": "trial_24",
+      "config": {
+        "gamma_anneal": 0.4896149694068554,
+        "lr_gamma": 0.46911018471245813,
+        "lr_mu": 0.16147301909286602,
+        "mu_anneal": 0.3512828276733184
+      },
+      "objective": 0.11076443342665757,
+      "uncertainty": 0.08261828203793406,
+      "summary": "Trial 24 (lr_mu=0.1615, mu_anneal=0.3513, lr_gamma=0.4691, gamma_anneal=0.4896): objective 0.1108 +/- 0.0826 with 0 diverged cells; a near-optimal sample (travel 0.133) with a perfect 1nW T60 (mu +0.0%) landed fifth-best, so trial_21 (0.1074) remains best",
+      "key_insight": "Balanced gamma at travel ~0.13 keeps producing sub-0.111 results (now five runs), but trial_21's exact point at travel 0.138 is still the lowest - the optimum is a narrow, high-performing spike",
+      "notebook": "trial_24.ipynb"
+    },
+    {
+      "trial_id": "trial_25",
+      "config": {
+        "gamma_anneal": 0.5242496357697499,
+        "lr_gamma": 0.46649903214266486,
+        "lr_mu": 0.16661102060140487,
+        "mu_anneal": 0.3513506553556998
+      },
+      "objective": 0.11256502668569424,
+      "uncertainty": 0.08234422577403055,
+      "summary": "Trial 25 (lr_mu=0.1666, mu_anneal=0.3514, lr_gamma=0.4665, gamma_anneal=0.5242): objective 0.1126 +/- 0.0823 with 0 diverged cells; a resample right at the best travel (0.137) landed mid-plateau (0.1126) rather than at 0.1074, so trial_21 remains the best",
+      "key_insight": "Resampling trial_22's exact travel (0.137) with slightly different gamma knobs gave 0.1126 instead of 0.1095, so the residual spread within the best band is a small-cell (1nW T20/T60) effect - the best point is narrow and possibly somewhat sensitive",
+      "notebook": "trial_25.ipynb"
+    },
+    {
+      "trial_id": "trial_26",
+      "config": {
+        "gamma_anneal": 0.46487064324721966,
+        "lr_gamma": 0.4711193851666182,
+        "lr_mu": 0.1653026566996843,
+        "mu_anneal": 0.3451342624231235
+      },
+      "objective": 0.13680719181595627,
+      "uncertainty": 0.09676792993097319,
+      "summary": "Trial 26 (lr_mu=0.1653, mu_anneal=0.3451, lr_gamma=0.4711, gamma_anneal=0.4649): objective 0.1368 +/- 0.0968 with 1 diverged cell (1nW T05, gamma 3.0e16); despite being a near-exact copy of the best trial_21, it diverged at the very cell trial_21 survived",
+      "key_insight": "A near-exact resample of the best configuration (all four knobs within ~0.007 of trial_21) diverged at 1nW T05 while trial_21 did not, so the sporadic gamma blow-up is chaotic/unpredictable at this resolution and trial_21's divergence-free best result may be partly luck",
+      "notebook": "trial_26.ipynb"
+    },
+    {
+      "trial_id": "trial_27",
+      "config": {
+        "gamma_anneal": 0.5009664762902103,
+        "lr_gamma": 0.45466806844750135,
+        "lr_mu": 0.23496333044391654,
+        "mu_anneal": 0.35108523499068545
+      },
+      "objective": 0.11489115199687289,
+      "uncertainty": 0.08249802072818277,
+      "summary": "Trial 27 (lr_mu=0.2350, mu_anneal=0.3511, lr_gamma=0.4547, gamma_anneal=0.5010): objective 0.1149 +/- 0.0825 with 0 diverged cells; the large-travel probe (0.194) gave a safe but worse run (mid-T mu overshoots +211%), so no second lower region exists and trial_21 (0.1074) stays best",
+      "key_insight": "Travel 0.194 (between trial_11's 0.159 and trial_02's 0.264) lands at 0.1149 with huge mid-T overshoots, confirming the objective rises monotonically away from the ~0.137 optimum - the larger-travel region offers nothing",
+      "notebook": "trial_27.ipynb"
+    },
+    {
+      "trial_id": "trial_28",
+      "config": {
+        "gamma_anneal": 0.49161656355839223,
+        "lr_gamma": 0.464681927181863,
+        "lr_mu": 0.16806044205966658,
+        "mu_anneal": 0.3456301904184459
+      },
+      "objective": 0.13703657325398458,
+      "uncertainty": 0.09725371575641331,
+      "summary": "Trial 28 (lr_mu=0.1681, mu_anneal=0.3456, lr_gamma=0.4647, gamma_anneal=0.4916): objective 0.1370 +/- 0.0973 with 1 diverged cell (1nW T05, gamma -5.0e13); a third near-optimum run to blow up at 1nW T05, confirming the divergence is frequent and trial_21's 0.1074 is partly a lucky draw",
+      "key_insight": "The optimum travel (~0.138) diverges at 1nW T05 in roughly half of recent attempts (trials 26 and 28 diverged, 21/22/25 survived), so trial_21's divergence-free 0.1074 is not reliably reproducible and the honest expected performance is the typical ~0.110-0.113",
+      "notebook": "trial_28.ipynb"
+    },
+    {
+      "trial_id": "trial_29",
+      "config": {
+        "gamma_anneal": 0.4618202325963348,
+        "lr_gamma": 0.48130054871052286,
+        "lr_mu": 0.15717876317106066,
+        "mu_anneal": 0.3486727611617326
+      },
+      "objective": 0.13310575276425796,
+      "uncertainty": 0.09751291785039737,
+      "summary": "Trial 29 (lr_mu=0.1572, mu_anneal=0.3487, lr_gamma=0.4813, gamma_anneal=0.4618): objective 0.1331 +/- 0.0975 with 1 diverged cell (1nW T05, gamma -1.7e16); a third consecutive near-optimum divergence, so the 1nW T05 blow-up now strikes ~half of runs at the optimum",
+      "key_insight": "Three consecutive near-optimum runs (26, 28, 29) all diverged at 1nW T05 while the earlier three (21, 22, 25) did not, so the low-count gamma divergence is roughly a coin flip at the optimum and the headline best (0.1074) is partly a lucky draw - the honest level is ~0.110-0.113",
+      "notebook": "trial_29.ipynb"
+    },
+    {
+      "trial_id": "trial_30",
+      "config": {
+        "gamma_anneal": 0.4852881795370443,
+        "lr_gamma": 0.45353342719513795,
+        "lr_mu": 0.16308080061550126,
+        "mu_anneal": 0.3502494066711197
+      },
+      "objective": 0.10830632593627558,
+      "uncertainty": 0.0827691605583724,
+      "summary": "Trial 30 (lr_mu=0.1631, mu_anneal=0.3502, lr_gamma=0.4535, gamma_anneal=0.4853): objective 0.1083 +/- 0.0828 with 0 diverged cells; a surviving optimum sample (travel 0.134) landed second-best, breaking the divergence streak and confirming the typical surviving level near 0.108-0.110",
+      "key_insight": "With a divergence-free draw the optimum travel (0.134) gives 0.1083, close to trial_21's 0.1074 - so the typical surviving performance is ~0.108-0.112 and it is the sporadic 1nW T05 divergence, not the schedule, that separates good runs from bad ones",
+      "notebook": "trial_30.ipynb"
+    },
+    {
+      "trial_id": "trial_31",
+      "config": {
+        "gamma_anneal": 0.5157520283350054,
+        "lr_gamma": 0.4131123463772112,
+        "lr_mu": 0.1591098615686672,
+        "mu_anneal": 0.3486480702900511
+      },
+      "objective": 0.11063016682540873,
+      "uncertainty": 0.08251163121128371,
+      "summary": "Trial 31 (lr_mu=0.1591, mu_anneal=0.3486, lr_gamma=0.4131, gamma_anneal=0.5158): objective 0.1106 +/- 0.0825 with 0 diverged cells; another divergence-free optimum sample (travel 0.131) landed sixth-best, consistent with the region's typical ~0.107-0.111",
+      "key_insight": "The optimum keeps delivering 0.107-0.111 when the low-count cell survives (now six sub-0.111 runs), reinforcing that the achievable level with this schedule family is ~0.108 and that all larger objectives come from the sporadic 1nW T05 divergence",
+      "notebook": "trial_31.ipynb"
+    },
+    {
+      "trial_id": "trial_32",
+      "config": {
+        "gamma_anneal": 0.5220754356321338,
+        "lr_gamma": 0.41733921515603717,
+        "lr_mu": 0.1656109291081796,
+        "mu_anneal": 0.3487142119036593
+      },
+      "objective": 0.10972421448159755,
+      "uncertainty": 0.08251629562071122,
+      "summary": "Trial 32 (lr_mu=0.1656, mu_anneal=0.3487, lr_gamma=0.4173, gamma_anneal=0.5221): objective 0.1097 +/- 0.0825 with 0 diverged cells; another survival at the optimum (travel 0.137) landed fourth-best, so the region's typical level stays ~0.108-0.110 and trial_21 (0.1074) remains best",
+      "key_insight": "The optimum region now has seven surviving samples below 0.111 (0.1074-0.1106), so the level is tightly reproducible at ~0.108-0.110 whenever the low-count cell survives - the schedule search is exhausted and the divergence is the only remaining factor",
+      "notebook": "trial_32.ipynb"
+    },
+    {
+      "trial_id": "trial_33",
+      "config": {
+        "gamma_anneal": 0.47787140045816867,
+        "lr_gamma": 0.413811540790883,
+        "lr_mu": 0.173286617071756,
+        "mu_anneal": 0.34981794761951657
+      },
+      "objective": 0.11197938892025694,
+      "uncertainty": 0.08253228677376567,
+      "summary": "Trial 33 (lr_mu=0.1733, mu_anneal=0.3498, lr_gamma=0.4138, gamma_anneal=0.4779): objective 0.1120 +/- 0.0825 with 0 diverged cells; sampling just above the optimum (travel 0.143) landed mid-band, so the spike does not extend upward and trial_21 (0.1074) stays best",
+      "key_insight": "Travel 0.143 gives 0.1120, slightly worse than the 0.137-0.138 optimum, confirming the spike peaks at ~0.137-0.138 and falls off both ways",
+      "notebook": "trial_33.ipynb"
+    },
+    {
+      "trial_id": "trial_34",
+      "config": {
+        "gamma_anneal": 0.5167889193666546,
+        "lr_gamma": 0.4598853415782271,
+        "lr_mu": 0.15872829156666646,
+        "mu_anneal": 0.34923114163867675
+      },
+      "objective": 0.13799386369112035,
+      "uncertainty": 0.09718432601375157,
+      "summary": "Trial 34 (lr_mu=0.1587, mu_anneal=0.3492, lr_gamma=0.4599, gamma_anneal=0.5168): objective 0.1380 +/- 0.0972 with 1 diverged cell (1nW T05, gamma 1.8e14); another optimum-region divergence, keeping the rate at roughly one in three and leaving trial_21 (0.1074) as best",
+      "key_insight": "The optimum band has now produced seven sub-0.111 survivals and four divergences (26, 28, 29, 34) at near-identical schedules, so the 1nW T05 gamma blow-up is confirmed to be a coin-flip hazard and the schedule search itself is exhausted at ~0.108",
+      "notebook": "trial_34.ipynb"
+    },
+    {
+      "trial_id": "trial_35",
+      "config": {
+        "gamma_anneal": 0.4942414384837883,
+        "lr_gamma": 0.4227784347247818,
+        "lr_mu": 0.14745614043069002,
+        "mu_anneal": 0.3509779709635278
+      },
+      "objective": 0.11671509058071337,
+      "uncertainty": 0.08237966953284806,
+      "summary": "Trial 35 (lr_mu=0.1475, mu_anneal=0.3510, lr_gamma=0.4228, gamma_anneal=0.4942): objective 0.1167 +/- 0.0824 with 0 diverged cells; a divergence-free sample at the lower edge of the band (travel 0.122) landed well off the optimum, so the band edge is genuinely worse and trial_21 (0.1074) stays best",
+      "key_insight": "Travel 0.122 gives 0.1167 - notably worse than 0.127-0.138 - confirming the optimum band is narrow and centred at ~0.137, and that the fall-off below it is a real schedule effect rather than a divergence artifact",
+      "notebook": "trial_35.ipynb"
+    },
+    {
+      "trial_id": "trial_36",
+      "config": {
+        "gamma_anneal": 0.46781381390960064,
+        "lr_gamma": 0.4092538193922949,
+        "lr_mu": 0.16252746775100127,
+        "mu_anneal": 0.34873330762113314
+      },
+      "objective": 0.11169137750727574,
+      "uncertainty": 0.08250353238536849,
+      "summary": "Trial 36 (lr_mu=0.1625, mu_anneal=0.3487, lr_gamma=0.4093, gamma_anneal=0.4678): objective 0.1117 +/- 0.0825 with 0 diverged cells; a divergence-free optimum sample (travel 0.134) landed mid-band, keeping the region's typical ~0.108-0.112 and trial_21 (0.1074) as best",
+      "key_insight": "Trial 36 adds an eighth surviving sample at or below 0.112 at the optimum, so the schedule level is fully characterised at ~0.108-0.112 and only the sporadic 1nW T05 divergence remains as a source of variance",
+      "notebook": "trial_36.ipynb"
+    },
+    {
+      "trial_id": "trial_37",
+      "config": {
+        "gamma_anneal": 0.4960236421813321,
+        "lr_gamma": 0.34401631502969865,
+        "lr_mu": 0.1653730506876873,
+        "mu_anneal": 0.35182124068691784
+      },
+      "objective": 0.11341681283875164,
+      "uncertainty": 0.08254103484035753,
+      "summary": "Trial 37 (lr_mu=0.1654, mu_anneal=0.3518, lr_gamma=0.3440, gamma_anneal=0.4960): objective 0.1134 +/- 0.0825 with 0 diverged cells; a divergence-free optimum sample with a lower lr_gamma (0.344) landed at the band edge of the plateau (0.1134), so lower lr_gamma does not help and trial_21 (0.1074) stays best",
+      "key_insight": "Reducing lr_gamma to 0.344 at the optimum gives 0.1134 - slightly worse than the 0.409-0.481 runs (0.1074-0.1106) - so the gamma step should stay in roughly 0.40-0.49 and the schedule level is ~0.108-0.113",
+      "notebook": "trial_37.ipynb"
+    },
+    {
+      "trial_id": "trial_38",
+      "config": {
+        "gamma_anneal": 0.5163876009994693,
+        "lr_gamma": 0.39573960747638715,
+        "lr_mu": 0.15644858773580594,
+        "mu_anneal": 0.34854510936950966
+      },
+      "objective": 0.11280083043997771,
+      "uncertainty": 0.0824942051955076,
+      "summary": "Trial 38 (lr_mu=0.1564, mu_anneal=0.3485, lr_gamma=0.3957, gamma_anneal=0.5164): objective 0.1128 +/- 0.0825 with 0 diverged cells; another divergence-free optimum sample (travel 0.129) landed mid-band, keeping the region's level at ~0.108-0.113 and trial_21 (0.1074) as best",
+      "key_insight": "Trial 38 is the ninth surviving sample at or below 0.113; the optimum's schedule level is fully characterised at ~0.108-0.113 and the sporadic 1nW T05 divergence remains the only significant residual",
+      "notebook": "trial_38.ipynb"
+    },
+    {
+      "trial_id": "trial_39",
+      "config": {
+        "gamma_anneal": 0.5270986888591708,
+        "lr_gamma": 0.45848740690622686,
+        "lr_mu": 0.16373334816693025,
+        "mu_anneal": 0.35114634685466717
+      },
+      "objective": 0.11309464656425597,
+      "uncertainty": 0.08259249781091246,
+      "summary": "Trial 39 (lr_mu=0.1637, mu_anneal=0.3511, lr_gamma=0.4585, gamma_anneal=0.5271): objective 0.1131 +/- 0.0826 with 0 diverged cells; another divergence-free optimum sample (travel 0.135) landed mid-band, so the region's level stays ~0.108-0.113 and trial_21 (0.1074) is best with one trial left",
+      "key_insight": "Trial 39 confirms the plateau at the optimum; the campaign is essentially complete, with trial_21's 0.1074 the best of a tight ~0.108-0.113 band and the sporadic divergence the only residual",
+      "notebook": "trial_39.ipynb"
+    },
+    {
+      "trial_id": "trial_40",
+      "config": {
+        "gamma_anneal": 0.48622798154217073,
+        "lr_gamma": 0.41811323989683746,
+        "lr_mu": 0.16307690798004648,
+        "mu_anneal": 0.3491389002147382
+      },
+      "objective": 0.11117699101636123,
+      "uncertainty": 0.08251861162913596,
+      "summary": "Trial 40 (lr_mu=0.1631, mu_anneal=0.3491, lr_gamma=0.4181, gamma_anneal=0.4862): objective 0.1112 +/- 0.0825 with 0 diverged cells; the final trial closed the campaign with another divergence-free optimum sample at 0.1112, leaving trial_21 (0.1074) as the overall best",
+      "key_insight": "The campaign finishes converged: the best schedule (travel ~0.137-0.138, balanced gamma) yields ~0.108-0.113 whenever the 1nW T05 cell survives, with the sporadic divergence the only residual - final best remains trial_21 at 0.1074",
+      "notebook": "trial_40.ipynb"
+    }
+  ],
+  "protocol": {
+    "model": "series-21 (17g) model on REAL data; mu reward = Anuar's per-run likelihood (MU_REWARD=loglik_mean), mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
+    "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
+    "divergence_guard": {
+      "mu": [
+        0.2,
+        1500.0
+      ],
+      "gamma": [
+        0.02,
+        500.0
+      ],
+      "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band (guards the photon-count blow-up)"
+    },
+    "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
+    "budget": {
+      "n_runs": 100,
+      "n_iter": 30,
+      "benchmark": "8-exp subset (1nW/3nW x Trans05/20/60/100)",
+      "max_trials": 40
+    },
+    "frozen": [
+      "z-form gamma-score (GAMMA_SCALE, H_REF=1)",
+      "LAMBDA_MEAN=0",
+      "Lorentzian fit (2 params)",
+      "Scott bandwidths, 2-D (FWHM, sigma_fit) kernel",
+      "init 0.5x true"
+    ]
+  }
+}

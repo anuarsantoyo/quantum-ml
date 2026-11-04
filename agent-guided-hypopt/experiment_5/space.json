@@ -1,0 +1,9 @@
+{
+  "parameters": {
+    "lr_mu":        {"type": "float", "low": 0.005, "high": 0.5},
+    "mu_anneal":    {"type": "float", "low": 0.0,   "high": 1.0},
+    "lr_gamma":     {"type": "float", "low": 0.05,  "high": 1.0},
+    "gamma_anneal": {"type": "float", "low": 0.0,   "high": 0.9}
+  },
+  "dependencies": {}
+}

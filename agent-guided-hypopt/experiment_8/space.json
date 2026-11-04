@@ -1,0 +1,7 @@
+{
+  "parameters": {
+    "loss_family":  {"type": "choice", "values": ["kde", "w1_2d", "energy_2d", "mmd_2d", "w1_fwhm", "cvm_fwhm"]},
+    "sigma_weight": {"type": "float", "low": 0.0, "high": 1.0}
+  },
+  "dependencies": {}
+}

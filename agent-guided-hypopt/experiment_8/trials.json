@@ -1,0 +1,426 @@
+{
+  "trials": [
+    {
+      "trial_id": "trial_01",
+      "config": {
+        "loss_family": "w1_2d",
+        "sigma_weight": 0.4091991363691613
+      },
+      "objective": 0.08947525460679707,
+      "uncertainty": 0.03251280273254009,
+      "summary": "w1_2d (sigma_weight 0.4092) reaches objective 0.0895, about 0.009 worse than the KDE control 0.0803, with no divergences and error concentrated in the low-count mu channel.",
+      "key_insight": "The bandwidth-free W1 loss is fully stable (no mu runaway, gamma finite) but recovers low-count mu worse than the KDE control, so it has not yet earned its keep.",
+      "notebook": "trial_01.ipynb"
+    },
+    {
+      "trial_id": "trial_02",
+      "config": {
+        "loss_family": "energy_2d",
+        "sigma_weight": 0.4227846732701278
+      },
+      "objective": 0.0996133412858028,
+      "uncertainty": 0.0317811029277488,
+      "summary": "energy_2d (sigma_weight 0.4228) reaches objective 0.0996, worse than trial_01 w1_2d (0.0895) and the KDE control (0.0803), no divergences, with a systematic low-count gamma undershoot.",
+      "key_insight": "The energy distance is stable but undershoots gamma in the low-count cells, making it the weakest loss form tested so far.",
+      "notebook": "trial_02.ipynb"
+    },
+    {
+      "trial_id": "trial_03",
+      "config": {
+        "loss_family": "mmd_2d",
+        "sigma_weight": 0.4331269402364738
+      },
+      "objective": 0.18327426275050443,
+      "uncertainty": 0.061318235263437014,
+      "summary": "mmd_2d (sigma_weight 0.4331) reaches objective 0.1833, far worse than w1_2d (0.0895), energy_2d (0.0996) and the KDE control (0.0803), with mu low almost everywhere and no divergences.",
+      "key_insight": "With the median-heuristic MMD kernel the mu reward is systematically too weak, leaving mu far below truth at every transmission; MMD is the weakest loss form tested.",
+      "notebook": "trial_03.ipynb"
+    },
+    {
+      "trial_id": "trial_04",
+      "config": {
+        "loss_family": "w1_fwhm",
+        "sigma_weight": 0.5113275528143616
+      },
+      "objective": 0.09077055396456549,
+      "uncertainty": 0.03054370380364642,
+      "summary": "w1_fwhm (sigma_weight 0.5113) reaches objective 0.0908, statistically identical to the two-channel w1_2d (0.0895) and still worse than the KDE control (0.0803), with no divergences.",
+      "key_insight": "Dropping the sigma channel from the W1 loss changes the result essentially not at all (0.0908 vs 0.0895), so the W1 shortfall is a property of the FWHM loss itself, not of the sigma link.",
+      "notebook": "trial_04.ipynb"
+    },
+    {
+      "trial_id": "trial_05",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.23451020166982395
+      },
+      "objective": 0.07774377788622108,
+      "uncertainty": 0.020242819546006728,
+      "summary": "cvm_fwhm (sigma_weight 0.2345) reaches objective 0.0777, a new campaign best that edges past the KDE control (0.0803), driven by the best gamma recovery of any trial.",
+      "key_insight": "A FWHM-only Cramer-von Mises loss currently beats the KDE control, with the gain coming from the gamma channel rather than mu, which stays low at high T.",
+      "notebook": "trial_05.ipynb"
+    },
+    {
+      "trial_id": "trial_06",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20743926620697473
+      },
+      "objective": 0.07637870697766329,
+      "uncertainty": 0.02050351475163737,
+      "summary": "cvm_fwhm (sigma_weight 0.2074) improves the campaign best to objective 0.0764, reproducing the family win over the KDE control (0.0803) with the best gamma of the campaign.",
+      "key_insight": "The cvm_fwhm advantage is reproducible across two seeds (0.0777 then 0.0764) and its benefit lives in the gamma channel, while mu stays at the same rel ~33 percent level as every other family.",
+      "notebook": "trial_06.ipynb"
+    },
+    {
+      "trial_id": "trial_07",
+      "config": {
+        "loss_family": "kde",
+        "sigma_weight": 0.2278693029558615
+      },
+      "objective": 0.08297973944137123,
+      "uncertainty": 0.020282492815154558,
+      "summary": "The KDE control at sigma_weight 0.2279 gives objective 0.0830, no better than its own reference (0.0803) and clearly behind cvm_fwhm (0.0764), so the low-sw region does not by itself produce the gain.",
+      "key_insight": "The cvm_fwhm advantage is a genuine loss-FORM effect, not a sigma_weight-region artifact: KDE moved to the same sw stays at control level.",
+      "notebook": "trial_07.ipynb"
+    },
+    {
+      "trial_id": "trial_08",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.1815539373627295
+      },
+      "objective": 0.07909183955002322,
+      "uncertainty": 0.0198542354704726,
+      "summary": "cvm_fwhm at sigma_weight 0.1816 gives objective 0.0791, still under the KDE control but worse than the same family at sw 0.2074 (0.0764), so the sw axis has a shallow minimum near 0.20-0.21.",
+      "key_insight": "cvm_fwhm sigma_weight response is non-monotone with a shallow minimum around sw ~0.20-0.21, so trial_06 setting is near the family optimum.",
+      "notebook": "trial_08.ipynb"
+    },
+    {
+      "trial_id": "trial_09",
+      "config": {
+        "loss_family": "energy_2d",
+        "sigma_weight": 0.22913547212389987
+      },
+      "objective": 0.1020585831113262,
+      "uncertainty": 0.03370755726038321,
+      "summary": "energy_2d at the winning sigma_weight (0.2291) gives objective 0.1021, no better than its high-sw value (0.0996) and clearly behind cvm_fwhm (0.0764), with the worst low-count gamma of the campaign.",
+      "key_insight": "The low-sw gain is specific to the cvm_fwhm loss form; the energy distance does not benefit from it, so the family ranking is not a sigma_weight artifact.",
+      "notebook": "trial_09.ipynb"
+    },
+    {
+      "trial_id": "trial_10",
+      "config": {
+        "loss_family": "w1_2d",
+        "sigma_weight": 0.20915674145175503
+      },
+      "objective": 0.08490314092155826,
+      "uncertainty": 0.030468779684203275,
+      "summary": "w1_2d at sigma_weight 0.2092 gives objective 0.0849, an improvement on its high-sw value (0.0895) but still behind the KDE control (0.0803) and well behind cvm_fwhm (0.0764).",
+      "key_insight": "The low-sw benefit is not exclusive to cvm_fwhm (w1_2d gains ~0.005 too), but cvm_fwhm gains roughly three times as much (0.013), so its lead reflects the loss form rather than sw alone.",
+      "notebook": "trial_10.ipynb"
+    },
+    {
+      "trial_id": "trial_11",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19562117287981917
+      },
+      "objective": 0.07602562716872124,
+      "uncertainty": 0.020026907824343437,
+      "summary": "cvm_fwhm at sigma_weight 0.1956 sets a new campaign best of 0.0760, bracketing the family optimum near sw ~0.20, with the campaign best gamma recovery.",
+      "key_insight": "The cvm_fwhm optimum is a flat basin around sw ~0.20 (0.0760-0.0764); its advantage over the KDE control is driven by better gamma, especially in the low-count cells.",
+      "notebook": "trial_11.ipynb"
+    },
+    {
+      "trial_id": "trial_12",
+      "config": {
+        "loss_family": "w1_fwhm",
+        "sigma_weight": 0.20786179267449936
+      },
+      "objective": 0.09233755826529819,
+      "uncertainty": 0.03141745340761577,
+      "summary": "w1_fwhm at sigma_weight 0.2079 gives objective 0.0923, no better than its high-sw value (0.0908), completing the low-sw map with cvm_fwhm as the sole family under the KDE control.",
+      "key_insight": "The FWHM-only W1 loss gains nothing from the low-sw region (0.0923 vs 0.0908), whereas its two-channel twin w1_2d does (0.0849) - the sigma link only pays off at low sw.",
+      "notebook": "trial_12.ipynb"
+    },
+    {
+      "trial_id": "trial_13",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19102019612807303
+      },
+      "objective": 0.07334557526529649,
+      "uncertainty": 0.020246104754401736,
+      "summary": "cvm_fwhm at sigma_weight 0.1910 sets a new campaign best of 0.0733, deepening the confirmed sw ~0.19 basin and putting the family ~0.007 under the KDE control.",
+      "key_insight": "The cvm_fwhm win is robust and reproducible (four points in 0.073-0.079 across sw 0.18-0.23), so it is the campaign clear winner over the KDE control.",
+      "notebook": "trial_13.ipynb"
+    },
+    {
+      "trial_id": "trial_14",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19499926094772702
+      },
+      "objective": 0.07975324742681515,
+      "uncertainty": 0.02060083287467251,
+      "summary": "cvm_fwhm at sigma_weight 0.1950 gives 0.0798, near-identical sw to trial_11 (0.0760), showing the basin seed scatter is ~0.004; the family sits at ~0.077 on average, just under the KDE control.",
+      "key_insight": "Within the flat cvm_fwhm basin the sw dependence is smaller than the seed scatter, so cvm_fwhm beats the control by a small (~0.003) but consistent margin.",
+      "notebook": "trial_14.ipynb"
+    },
+    {
+      "trial_id": "trial_15",
+      "config": {
+        "loss_family": "kde",
+        "sigma_weight": 0.18945952639848865
+      },
+      "objective": 0.0866483064777724,
+      "uncertainty": 0.021242938971200942,
+      "summary": "The KDE control at sigma_weight 0.1895 gives objective 0.0866, no better than its own reference and well behind cvm_fwhm at the same sw, confirming the campaign winner is the Cramer-von Mises FWHM loss.",
+      "key_insight": "At matched sw KDE is flat/immune to the low-sw region while cvm_fwhm improves, so the ~0.004-0.010 cvm_fwhm advantage is the loss form, not the sigma_weight.",
+      "notebook": "trial_15.ipynb"
+    },
+    {
+      "trial_id": "trial_16",
+      "config": {
+        "loss_family": "mmd_2d",
+        "sigma_weight": 0.20285705384738964
+      },
+      "objective": 0.1754563167166935,
+      "uncertainty": 0.05771662712047195,
+      "summary": "mmd_2d at sigma_weight 0.2029 gives 0.1755, essentially its high-sw value (0.1833), so MMD is sw-insensitive and by far the worst; this closes the family x sw matrix with cvm_fwhm the only family under the control.",
+      "key_insight": "MMD failure is a pure loss-form property (0.1755 low-sw vs 0.1833 high-sw), unaffected by sigma_weight - unlike cvm_fwhm, whose low-sw improvement is what carries the campaign win.",
+      "notebook": "trial_16.ipynb"
+    },
+    {
+      "trial_id": "trial_17",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.2047987172474844
+      },
+      "objective": 0.07814305563245741,
+      "uncertainty": 0.020633198460638897,
+      "summary": "cvm_fwhm at sigma_weight 0.2048 gives 0.0781, a basin replication that brings the family mean to ~0.0772 (n=7) - consistently ~0.003 under the KDE control.",
+      "key_insight": "The cvm_fwhm basin is a stable ~0.0772 +/- 0.002 plateau, so the winner margin over the control is small but reproducible across seven independent draws.",
+      "notebook": "trial_17.ipynb"
+    },
+    {
+      "trial_id": "trial_18",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.3757060727228546
+      },
+      "objective": 0.07896348979611642,
+      "uncertainty": 0.02000849144326753,
+      "summary": "cvm_fwhm at sigma_weight 0.3757 gives 0.0790, still under the KDE control, showing the family advantage is broad in sw (eight points spanning sw 0.18-0.38, all at or under the control).",
+      "key_insight": "cvm_fwhm is robustly competitive across a wide sw range, so its win is a broad loss-form advantage rather than a lucky narrow sw setting.",
+      "notebook": "trial_18.ipynb"
+    },
+    {
+      "trial_id": "trial_19",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20304511874259795
+      },
+      "objective": 0.08399395427814658,
+      "uncertainty": 0.02074475069292965,
+      "summary": "cvm_fwhm at sigma_weight 0.2030 gives 0.0840, its worst draw and the first above the KDE control, showing the basin scatter is larger than first estimated and the mean edge is only ~0.002.",
+      "key_insight": "The cvm_fwhm advantage is real on the mean (~0.078 over nine draws) but small and comparable to seed noise, so held-out validation is decisive.",
+      "notebook": "trial_19.ipynb"
+    },
+    {
+      "trial_id": "trial_20",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20781023901379525
+      },
+      "objective": 0.07781365943688394,
+      "uncertainty": 0.020500307555040096,
+      "summary": "cvm_fwhm at sigma_weight 0.2078 gives 0.0778, another basin replication bringing the family mean to ~0.0781 over ten draws, nine of which are under the KDE control.",
+      "key_insight": "The cvm_fwhm mean (~0.0781) sits ~0.002 under the control, a small but mostly consistent margin; the held-out set will decide its significance.",
+      "notebook": "trial_20.ipynb"
+    },
+    {
+      "trial_id": "trial_21",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20105727843060625
+      },
+      "objective": 0.077287640534488,
+      "uncertainty": 0.020675891408931064,
+      "summary": "cvm_fwhm at sigma_weight 0.2011 gives 0.0773, another basin draw taking the family mean to ~0.0780 over eleven points (ten under the KDE control).",
+      "key_insight": "The cvm_fwhm mean is stable at ~0.078 - a small (~0.002), mostly consistent edge over the KDE control.",
+      "notebook": "trial_21.ipynb"
+    },
+    {
+      "trial_id": "trial_22",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20488344140126102
+      },
+      "objective": 0.07992155362795202,
+      "uncertainty": 0.020559872280882244,
+      "summary": "cvm_fwhm at sigma_weight 0.2049 gives 0.0799, keeping the family mean at ~0.0781 (eleven of twelve under the KDE control).",
+      "key_insight": "The basin holds its ~0.078 mean across twelve draws; the margin over the control remains small (~0.002) and consistent.",
+      "notebook": "trial_22.ipynb"
+    },
+    {
+      "trial_id": "trial_23",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.20063383669421403
+      },
+      "objective": 0.07770305681140378,
+      "uncertainty": 0.02090310295016186,
+      "summary": "cvm_fwhm at sigma_weight 0.2006 gives 0.0777, keeping the family mean at ~0.0780 over thirteen draws (twelve under the KDE control).",
+      "key_insight": "The basin mean stays pinned at ~0.078; the winner edge over the control is a small, consistent ~0.002.",
+      "notebook": "trial_23.ipynb"
+    },
+    {
+      "trial_id": "trial_24",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19968115802094333
+      },
+      "objective": 0.07781323614884011,
+      "uncertainty": 0.02035247929970774,
+      "summary": "cvm_fwhm at sigma_weight 0.1997 gives 0.0778, keeping the family mean at ~0.0780 over fourteen draws.",
+      "key_insight": "The winner basin mean is stable at ~0.078, a small, consistent ~0.002 edge over the KDE control.",
+      "notebook": "trial_24.ipynb"
+    },
+    {
+      "trial_id": "trial_25",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19718164877403788
+      },
+      "objective": 0.07246349460742524,
+      "uncertainty": 0.02009683297753008,
+      "summary": "cvm_fwhm at sigma_weight 0.1972 sets a new campaign best of 0.0725, ~0.008 under the KDE control, further confirming the sw ~0.19-0.20 basin.",
+      "key_insight": "The cvm_fwhm basin floor is ~0.072-0.073 near sw 0.19-0.20, with a stable mean ~0.0776 over fifteen draws - a small but consistent winner over the control.",
+      "notebook": "trial_25.ipynb"
+    },
+    {
+      "trial_id": "trial_26",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19791044396302324
+      },
+      "objective": 0.07273461232722266,
+      "uncertainty": 0.020200556699723805,
+      "summary": "cvm_fwhm at sigma_weight 0.1979 gives 0.0727, reproducing the campaign best (0.0725) and confirming the sw ~0.198 basin floor is ~0.0725-0.073, ~0.008 under the KDE control.",
+      "key_insight": "The winner best region is reproducible across seeds (0.0725 then 0.0727), so the cvm_fwhm edge over the control is genuine at the basin floor.",
+      "notebook": "trial_26.ipynb"
+    },
+    {
+      "trial_id": "trial_27",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19463715708004303
+      },
+      "objective": 0.0832670643452046,
+      "uncertainty": 0.020490177762495454,
+      "summary": "cvm_fwhm at sigma_weight 0.1946 gives 0.0833, above the control, showing the basin scatter (~0.004) makes single-trial comparisons unreliable even at the best sw.",
+      "key_insight": "Only the family mean (~0.077 over seventeen draws) is below the control; individual draws can exceed 0.083, so the winner must be judged on many draws and held-out validation.",
+      "notebook": "trial_27.ipynb"
+    },
+    {
+      "trial_id": "trial_28",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19582508497664575
+      },
+      "objective": 0.07597383236614078,
+      "uncertainty": 0.02002019322743872,
+      "summary": "cvm_fwhm at sigma_weight 0.1958 gives 0.0760, under the control, keeping the family mean at ~0.0773 over eighteen draws (sixteen under the control).",
+      "key_insight": "The winner mean edge over the control is small (~0.003) but holds on sixteen of eighteen draws, while single draws can cross the control.",
+      "notebook": "trial_28.ipynb"
+    },
+    {
+      "trial_id": "trial_29",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19235415119471488
+      },
+      "objective": 0.07986604521432261,
+      "uncertainty": 0.020537623785639184,
+      "summary": "cvm_fwhm at sigma_weight 0.1924 gives 0.0799, under the control, keeping the family mean at ~0.0774 over nineteen draws (seventeen under the control).",
+      "key_insight": "With one trial left the conclusion is stable: cvm_fwhm is the only family whose mean beats the KDE control, by ~0.003.",
+      "notebook": "trial_29.ipynb"
+    },
+    {
+      "trial_id": "trial_30",
+      "config": {
+        "loss_family": "cvm_fwhm",
+        "sigma_weight": 0.19883171823062135
+      },
+      "objective": 0.07941339565515412,
+      "uncertainty": 0.020545229940548953,
+      "summary": "The final trial, cvm_fwhm at sigma_weight 0.1988 -> 0.0794, closes the campaign with the Cramer-von Mises FWHM loss as the only family whose mean (~0.0775 over twenty draws) beats the KDE control.",
+      "key_insight": "Across the whole campaign only cvm_fwhm beat the control, by a small (~0.003) but mostly consistent margin concentrated in the gamma channel.",
+      "notebook": "trial_30.ipynb"
+    }
+  ],
+  "protocol": {
+    "model": "series-21 (17g) model on REAL data; the mu reward and the gamma pathwise channel are both derived from the selected distributional LOSS (loss_family); mu score denominator = per-experiment sigma_prop (MU_SCORE=sigma_prop)",
+    "question": "experiment_8 - loss-FUNCTION campaign: the schedule (exp5 winner), the bandwidth (exp7 winner) and the gamma trust region (exp6 winner) are FROZEN; the campaign tunes the distributional loss (loss_family) and the sigma-channel weight (sigma_weight).",
+    "frozen_schedule": {
+      "lr_mu": 0.1669,
+      "mu_anneal": 0.3455,
+      "lr_gamma": 0.4716,
+      "gamma_anneal": 0.4723,
+      "note": "experiment_5 winning trial (trial_21) - NOT searched"
+    },
+    "frozen_bandwidth": {
+      "bandwidth_rule": "target",
+      "h_f_scale": 4.0,
+      "h_s_scale": 3.674548492934102,
+      "note": "experiment_7 winner (rule=target); NOT searched"
+    },
+    "frozen_gamma_rel_cap": 0.10735617789825944,
+    "no_clipping": "CLIP = inf AND parameter clamps removed (mu/gamma unbounded)",
+    "divergence_guard": {
+      "mu": [
+        0.2,
+        1500.0
+      ],
+      "gamma": [
+        0.02,
+        500.0
+      ],
+      "note": "STOP the experiment and record diverged/diverged_at if a parameter leaves this band"
+    },
+    "objective": "T-weighted mean of CAP-capped per-cell rel-sq errors; err_i = min(rel_sq_i, CAP=1.0); w(T) = 0.25 + 0.75*T/100; objective = sum(w*err)/sum(w)",
+    "budget": {
+      "n_runs": 100,
+      "n_iter": 30,
+      "benchmark": "8-exp subset (1nW/3nW x Trans05/20/60/100)",
+      "held_out": "6 exps (1nW/3nW x Trans10/40/80) - post-campaign validation only",
+      "max_trials": 30
+    },
+    "frozen": [
+      "z-form gamma-score convention (kept for the control)",
+      "Lorentzian fit (2 params)",
+      "init 0.5x true",
+      "sigma_prop score denominator for mu",
+      "h_s_min = 0.05 MHz (sigma-kernel floor)",
+      "bandwidth_rule='target' (exp7), h_f_scale=4.0, h_s_scale=3.6745 (exp6/7 winner)",
+      "gamma_rel_cap = 0.10736 (exp6 winner)",
+      "schedule = exp5 winner"
+    ],
+    "tunable": [
+      "loss_family   choice  kde | w1_2d | energy_2d | mmd_2d | w1_fwhm | cvm_fwhm",
+      "sigma_weight  float   0.0 .. 1.0   (weight of the sigma_fit channel: loss = loss_FWHM + sw*loss_sigma)"
+    ],
+    "families": {
+      "kde": "2-D KDE negative log-likelihood (exp5/6/7 design) - CONTROL, reproduces exp6 0.0803",
+      "w1_2d": "Wasserstein-1 (sorted quantile matching) on FWHM + sigma_fit - bandwidth-free",
+      "energy_2d": "energy distance on FWHM + sigma_fit - bandwidth-free",
+      "mmd_2d": "RBF-kernel MMD^2 over the 2-D cloud, median-heuristic kernel width (per step)",
+      "w1_fwhm": "Wasserstein-1 on FWHM only (drops the sigma link) - control",
+      "cvm_fwhm": "Cramer-von Mises-style squared quantile distance on FWHM only - control"
+    },
+    "family_scale": "each family is multiplied by FAMILY_SCALE so its |d(loss)/dgamma| at the frozen start matches the KDE control (compares the loss FORM, not its scale)",
+    "success_bar": "beat the experiment_6 level (objective ~0.086, best 0.0803) on the same T-weighted capped metric, with gamma finite on all 8 cells; the winner must ALSO hold on the 6 held-out experiments."
+  }
+}
