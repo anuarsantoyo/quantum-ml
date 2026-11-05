@@ -1003,3 +1003,42 @@ The 17-series notebooks ran the full 14-experiment synthetic benchmark (targets 
 An arXiv survey done the same day, at Anuar's request. Decomposed, AG-HYPOPT is three layers: the optimizer (uncertainty-aware TPE, textbook Bergstra plus minor variants, not novel), the LLM's roles (selector over a classical proposal batch, domain-prior injector, scribe, which is the interesting part) and the scaffold (engineering, not science). The prior art covers most of the territory: LLM as proposer (AgentHPO, OPRO), LLM inside BO (LLAMBO, PFNs4BO, SemanticOpt), LLM as the decision/selector (LMABO, LGBO, OptiMindTune), agentic science (Coscientist, AI-Mandel) and physics-domain agentic HPO (NQS-Agent). The exact phrase "agent-guided hyperparameter optimization" returns zero arXiv hits, so the name is free but the territory is dense.
 
 **Verdict: a nice tool, thin and incremental novelty.** Two routes out: the domain-context ablation (does the LLM selector beat the statistical acquisition *because of* the physics context, tested against TPE-only, random search, GP-EI, an LLM proposer and an LLM selector without context), or make the physics itself the paper. The real-data campaign (experiment_4) is a feasibility demo, not the novelty experiment.
+
+---
+
+# 05.11.2026
+
+## Full project recap (I asked for it — here is the result)
+
+After months of agent-assisted development I lost the overview of the project. I asked Pukky to go through the whole repo, the commits and the paper, and to write up what happened at each stage, who did what, and how the notebooks could be better organised. This is the result, written down so I have one place to come back to.
+
+### Where the project stands (one paragraph)
+
+The differentiable Monte Carlo pipeline — gradient descent replacing the paper's grid search — works almost perfectly on synthetic data (μ RMSE 3.7 %, γ RMSE 4.3 %, notebook 17g). On the real PLE data, γ is recovered wherever the Lorentzian line shape holds, but two things stay open: (1) the real scans are fitted with Voigt profiles while our simulator is Lorentzian-only (FM#6, the line-shape gap), and (2) a residual μ bias at high transmission. Best model is 24aa (W_obj 0.0651). Uncertainty is the bias-corrected Fisher / Cramér–Rao bound (12/14 coverage). Next step is series 25, already written in `notebooks/24_realdata_accuracy/SERIES_STATE.md`.
+
+### Stage by stage
+
+| Series | What it did | Author | Verdict |
+|---|---|---|---|
+| 01–06 Foundations | reparameterization, implicit diff through the fit, EDA, MMD²/W1, γ differentiable end-to-end | me + agent (I reviewed line-by-line) | canonical |
+| 07–11 Methods | REINFORCE for μ (the meta-distribution fix), joint μ+γ, the μ/γ degeneracy pairplot | my idea, agent built it | canonical |
+| 12a–12d Joint opt | σ-matching, 2D KDE likelihood + Fisher (12d = the MLE ancestor of everything since) | me | 12d canonical; 12c superseded |
+| 13–14 Real data + uncertainties | first real run (13e best), bootstrap uncertainty dummy | me | instructive |
+| 15–16 Sweeps | real-data sweep (15), closed-loop synthetic (16, "can it recover its own data?") | me | mine |
+| 17 Playground | the synthetic win (σ_ref, z-form γ-score) | me started, agent fixed | canonical (17g) |
+| 18 Failure analysis | λ_mean harmful, FM#4 skew, honest-wide μ | agent | solid |
+| 19 Identifiability | Voigt rejected, μ attractor in the σ channel, FM#8 | agent (my honest-uncertainty goal) | solid |
+| 20–24 Real-data campaigns | agentic/supervised/fisher/accuracy, 30 notebooks in 24 alone | agent, autonomous | exploratory — needs my re-read |
+| AG-HYPOPT | agent-guided hyperparameter optimization | my idea, agent built, mixed runs | exp3_pukky + exp6 canonical |
+
+### Agent vs. me
+
+- 90 commits are mine (Anuar Santoyo); 508 are the agent's (pukky-struki). That ratio alone is why I lost the overview.
+- The agent's autonomous series 20–24 and the ag-hypopt experiments 1/2/4–8 are the "hail mary" territory: many directions explored, several falsified or superseded, and I have not re-verified all of them.
+- This is exactly what I worried about on 21 Aug: the project drifting into directions I don't fully understand. The recap is the fix — from here I re-read the agent series before trusting any of it.
+
+### Proposed organisation
+
+1. A single `NOTEBOOK_INDEX.md` at the repo root: every notebook with author, status (canonical / superseded / exploratory) and a one-line verdict.
+2. Keep the numbered folders (they tell the chronological story) — optionally move the clearly-agent-exploratory runs (20–24, ag-hypopt 1/2/4–8) into an `agent_runs/` tree so the canonical chain stays clean.
+3. Clean up `agent-guided-hypopt` naming (the "copy" folder, the `_pukky` suffix confusion) and add a README stating the canonical baselines.
