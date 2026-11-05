@@ -55,7 +55,7 @@ def voigt_photons(gamma, nbar, sigma_prop, lam, sigma_g, rng, half=75.0):
     return torch.cat([x, b])
 
 def crlb_sigma(theta, photons, reg=1e-4):
-    """Per-scan fit uncertainty: sqrt(dF^T H^-1 dF / N) at the fitted theta (as implicit.py)."""
+    """Per-scan fit uncertainty: sqrt(dF^T H^-1 dF) at the fitted theta (H is the full summed Hessian)."""
     n_params = len(theta)
     t = theta.detach().clone().requires_grad_()
     gt = torch.autograd.grad(
@@ -68,7 +68,7 @@ def crlb_sigma(theta, photons, reg=1e-4):
             H[i, j] = torch.autograd.grad(gi, t, retain_graph=retain, create_graph=False)[0][j].detach()
     H_reg = H + reg * torch.eye(n_params, dtype=torch.float32)
     dF = torch.autograd.grad(fwhm_from_theta(t, model='lorentzian'), t, create_graph=False)[0]
-    sig = torch.sqrt((dF @ torch.linalg.solve(H_reg, dF)) / max(len(photons), 1))
+    sig = torch.sqrt(dF @ torch.linalg.solve(H_reg, dF))
     return float(sig.clamp_min(1e-30))
 
 def scan_features(ph, gamma_ref):

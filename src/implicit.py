@@ -34,7 +34,7 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
         sigma_fwhm: float — uncertainty estimate from Hessian
         df_dgamma: float — dFWHM/dgamma
         ds_dgamma: float — d(sigma_fwhm)/dgamma, EXACT implicit derivative:
-            sigma = sqrt(dF^T H^-1 dF / N) is a smooth function of the fit
+            sigma = sqrt(dF^T H^-1 dF) is a smooth function of the fit
             optimum theta*(gamma), so
                 dsigma/dgamma = (dsigma/dtheta)|_theta*  @  (dtheta*/dgamma)
             with dtheta*/dgamma = -H^-1 H_theta_gamma (same machinery as
@@ -115,10 +115,9 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
     if not math.isfinite(df_dgamma):
         df_dgamma = 2.0
 
-    # Sigma from CRLB: sqrt(dF/dtheta @ H_inv @ dF/dtheta^T / N_data)
+    # Sigma from CRLB: sqrt(dF/dtheta @ H_inv @ dF/dtheta^T)  (H is the FULL summed Hessian)
     sigma_fwhm = torch.sqrt(
-        ((dF_dtheta.unsqueeze(0) @ H_inv @ dF_dtheta.unsqueeze(1)).squeeze().clamp_min(1e-30))
-        / max(len(photons_t), 1)
+        (dF_dtheta.unsqueeze(0) @ H_inv @ dF_dtheta.unsqueeze(1)).squeeze().clamp_min(1e-30)
     ).item()
     if not math.isfinite(sigma_fwhm):
         sigma_fwhm = 0.5 * gamma_val
@@ -150,8 +149,7 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
             torch.eye(n_params, dtype=torch.float32))
         dF_diff = torch.autograd.grad(fwhm_fn(t_sig), t_sig, create_graph=True)[0]
         sigma_expr = torch.sqrt(
-            ((dF_diff.unsqueeze(0) @ H_inv_diff @ dF_diff.unsqueeze(1)).squeeze().clamp_min(1e-30))
-            / max(len(photons_t), 1))
+            (dF_diff.unsqueeze(0) @ H_inv_diff @ dF_diff.unsqueeze(1)).squeeze().clamp_min(1e-30))
         ds_dtheta = torch.autograd.grad(sigma_expr, t_sig, retain_graph=True)[0]
         termA = (ds_dtheta @ dtheta_dgamma.detach()).item()
 
@@ -169,7 +167,7 @@ def compute_fwhm_and_dgamma(gamma_val, u, b, fit_fn, fwhm_fn, nll_fn,
         H_lo = _hessian(theta_star, photons_lo)
         dH_dgamma = (H_hi - H_lo) / (2 * eps_h)
         M_mat = H_inv @ dF_dtheta.unsqueeze(1) @ dF_dtheta.unsqueeze(0) @ H_inv
-        termB = -(1.0 / (2.0 * sigma_fwhm * max(len(photons_t), 1))) * (M_mat * dH_dgamma).sum().item()
+        termB = -(1.0 / (2.0 * sigma_fwhm)) * (M_mat * dH_dgamma).sum().item()
         if not math.isfinite(termB):
             termB = 0.0
 
