@@ -198,6 +198,71 @@ def fisher_gaussian(cloud, n_data):
                 sig_g_data=sig_g_data, skew=skew, kurt=kurt)
 
 
+def gaussian_summary(cloud, target_f, target_s, mu, sigma_prop):
+    """2D Gaussian-summary loss (mean + spread) and its gradients.
+
+    Assumes the summary x = (FWHM, sigma_fit) is ~ N(m(theta), Sigma(theta)) across
+    scans. The per-data-point negative log-likelihood under this Gaussian is
+
+        L = 0.5 [ log|Sigma| + tr(Sigma^-1 S) + (xbar - m)^T Sigma^-1 (xbar - m) ]
+
+    where (xbar, S) are the data's mean/covariance and (m, Sigma) the simulated
+    cloud's. gamma's gradient is PATHWISE (through the per-scan implicit derivatives
+    dFWHM/dgamma, dsigma/dgamma); mu's gradient is the SCORE IDENTITY (count score
+    weighted by 2D-Gaussian responsibilities). No bandwidth anywhere.
+
+    Returns dict(loss, grad_mu, grad_gamma, m, Sigma, xbar, S, ...).
+    """
+    ft, si, nt, dg, ds = [t.float() for t in cloud]
+    M = len(ft)
+    data = torch.stack([target_f.float(), target_s.float()], dim=1)  # (N, 2)
+    N = len(data)
+
+    xbar = data.mean(dim=0)                                  # (2,)
+    dc = data - xbar                                         # (N, 2)
+    S = (dc.t() @ dc) / N + 1e-6 * torch.eye(2)              # biased data covariance
+
+    sim = torch.stack([ft, si], dim=1)                       # (M, 2)
+    m = sim.mean(dim=0)                                      # (2,)
+    sc = sim - m                                             # (M, 2)
+    Sigma = (sc.t() @ sc) / M + 1e-6 * torch.eye(2)          # biased sim covariance
+
+    Sigma_inv = torch.linalg.inv(Sigma)
+    logdet = torch.logdet(Sigma)
+    res = xbar - m
+    loss = 0.5 * (logdet + (Sigma_inv * S).sum() + res @ Sigma_inv @ res)
+
+    # --- gamma gradient (pathwise) ---
+    dl_dm = -(Sigma_inv @ res)                               # (2,)
+    dl_dSigma = 0.5 * (Sigma_inv - Sigma_inv @ S @ Sigma_inv
+                       - Sigma_inv @ torch.outer(res, res) @ Sigma_inv)  # (2,2)
+
+    def _cov(a, b):  # biased covariance (1/M), matching Sigma's normalisation
+        a = a - a.mean(); b = b - b.mean()
+        return (a * b).sum() / M
+
+    dm_dg = torch.stack([dg.mean(), ds.mean()])              # (2,)
+    dSigma_dg = torch.zeros(2, 2)
+    dSigma_dg[0, 0] = 2.0 * _cov(ft, dg)
+    dSigma_dg[1, 1] = 2.0 * _cov(si, ds)
+    dSigma_dg[0, 1] = _cov(ft, ds) + _cov(si, dg)
+    dSigma_dg[1, 0] = dSigma_dg[0, 1]
+    grad_gamma = float((dl_dm @ dm_dg).item() + (dl_dSigma * dSigma_dg).sum().item())
+
+    # --- mu gradient (score identity, 2D Gaussian responsibilities) ---
+    diff = data[:, None, :] - sim[None, :, :]                # (N, M, 2)
+    mahal = ((diff @ Sigma_inv) * diff).sum(dim=-1)          # (N, M) Mahalanobis^2
+    W = torch.exp(-0.5 * mahal)
+    w = W / W.sum(dim=1, keepdim=True).clamp_min(1e-12)      # (N, M) responsibilities
+    score = (nt - mu) / sigma_prop ** 2                      # (M,)
+    grad_mu = -float((w @ score).sum().item())
+
+    return dict(loss=float(loss), grad_mu=grad_mu, grad_gamma=grad_gamma,
+                m=m.detach(), Sigma=Sigma.detach(), xbar=xbar.detach(), S=S.detach(),
+                fwhm_mean=float(m[0]), sf_mean=float(m[1]),
+                fwhm_data_mean=float(xbar[0]), sf_data_mean=float(xbar[1]))
+
+
 # ---------------------------------------------------------------------------
 # Real-data target + experiment truth table (15-series / data_explanation.md)
 # ---------------------------------------------------------------------------
