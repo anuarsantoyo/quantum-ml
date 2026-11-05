@@ -34,7 +34,8 @@ The approach is validated on synthetic data with known ground truth and applied 
 │   ├── losses.py        # MMD², L2, Wasserstein-1 distribution losses
 │   ├── implicit.py      # Implicit differentiation through the L-BFGS fit
 │   └── utils.py         # Data loading helpers
-├── notebooks/           # Numbered chapters (01 → 20), grouped in ordered folders — see below
+├── notebooks/           # Numbered chapters (01 → 24), grouped in ordered folders — see below
+├── agent-guided-hypopt/ # Agent-guided hyperparameter optimization campaigns (experiment_N)
 ├── data/
 │   ├── raw_data/        # Experimental PLE measurements (1 nW & 3 nW) + data description
 │   └── processed/       # Preprocessed linewidth table + bootstrap results
@@ -49,7 +50,7 @@ The approach is validated on synthetic data with known ground truth and applied 
 
 ## Notebooks
 
-The notebooks are organized as numbered chapters, kept in **ordered folders that follow the numbering** so the directory listing reads in the same order as the sequence: `01-06_foundations/`, `07-11_methods/`, `12a-12d_joint-opt/`, `13-14_real-data-diag/`, `15-16_sweeps/`, `17_playground/`, `18_failure-analysis/`, `19_identifiability/`, `20_realdata_agentic_optimization/`. Superseded copies (legacy `-executed`/`-output` twins) live under `archive/notebooks/`. When several notebooks share a number they are variants or experiments of the same idea, so each number gets a single description.
+The notebooks are organized as numbered chapters, kept in **ordered folders that follow the numbering** so the directory listing reads in the same order as the sequence: `01-06_foundations/`, `07-11_methods/`, `12a-12d_joint-opt/`, `13-14_real-data-diag/`, `15-16_sweeps/`, `17_playground/`, `18_failure-analysis/`, `19_identifiability/`, `20_realdata_agentic_optimization/`, `21_realdata_supervised_optimization/`, `22_distribution_dynamics/`, `23_fisher_uncertainties/`, `24_realdata_accuracy/`. Superseded copies (legacy `-executed`/`-output` twins) live under `archive/notebooks/`. When several notebooks share a number they are variants or experiments of the same idea, so each number gets a single description.
 
 ### 01 — MC algorithm
 `notebooks/01-06_foundations/01-mc-algorithm.ipynb`
@@ -151,11 +152,62 @@ Series 19 studies μ identifiability on the real Lorentzian-FWHM data: 19a sweep
 
 Autonomous series: start from the **17g** model (best synthetic performer) and apply it **unchanged** to the real data (**20a** baseline transfer test), then chain **one-change-per-notebook** experiments toward accurate (μ, γ) recovery on the real data, with accuracy graded by transmission (loose at low T, tight at high T). Frozen goal, protocol, metrics and stop rules live in the series' `SERIES_STATE.md`; budget 100 runs × 30 iters per experiment, cap 10 notebooks.
 
+### 21 — Real-data supervised optimization (21a–21k)
+`notebooks/21_realdata_supervised_optimization/21a.ipynb` … `21k.ipynb`
+
+A supervised-optimization continuation of the real-data transfer effort: tuning the optimization toward accurate (μ, γ) recovery on the real data, one change per notebook. Exploratory.
+
+### 22 — Distribution dynamics (22a–22g)
+`notebooks/22_distribution_dynamics/22a-zscore-adaptive-lr.ipynb` … `22g-mc-at-truth-3-estimators.ipynb`
+
+Studies how (μ, γ) recovery behaves across estimators and the loss landscape. 22g — Monte Carlo at the true values under three estimators — produced the σ calibration table that series 24 later reused.
+
+### 23 — Fisher uncertainties (23a–23e)
+`notebooks/23_fisher_uncertainties/23a-fisher-uncertainties-exp6-trial07.ipynb` … `23e-fisher-uncertainties-22a-perexp.ipynb`
+
+Fisher / Cramér-Rao uncertainty analysis of the KDE model (experiment_6 trial_07 and the 22a variant) across the 14 real experiments. Conclusion: the residual is bias, not variance — the raw CRB is too wide and mis-centred, pointing toward the bias-corrected interval.
+
+### 24 — Real-data accuracy campaign (24a–24ad, 30 notebooks)
+`notebooks/24_realdata_accuracy/24a.ipynb` … `24ad.ipynb` (+ `SUMMARY.md`, `SERIES_STATE.md`)
+
+The large accuracy campaign: five phases — μ travel control, the σ channel, uncertainty honesty, the forward model, and combination/verification — one named change per notebook. Baseline 24a = 0.0811 → best **24aa** = 0.0651 (confirmed by 24ab). Closed 2026-09-27 with **FM#6** (the Lorentzian line-shape gap) named as the open problem. Full ladder and final summary in `SUMMARY.md`.
+
+### AG-HYPOPT — agent-guided hyperparameter optimization
+`agent-guided-hypopt/experiment_N/` (one self-contained folder per experiment)
+
+Agent-guided TPE hyperparameter optimization: the TPE proposes candidate configurations, the agent selects among them using physics context. Produced two canonical baselines — `experiment_3_pukky` (synthetic, objective 0.0149) and `experiment_6 trial_07` (the real-data KDE model that became the series-23/24 reference).
+
 ---
 
-## Current state and next steps
+## Current status
 
-The differentiable MC pipeline is complete and validated on synthetic data: 12c recovers (μ, γ) = (48.45, 19.62) against a truth of (50, 20), and 12d reformulates the optimization as an MLE whose Fisher information yields Cramér-Rao uncertainties. Applied to all 14 real experiments (15-series), the method recovers parameters with uncertainties that shrink with transmission, though μ remains weakly identified and biased low at high transmission. The closed-loop 16-series confirms the model is healthy at low/mid transmission but fails at high transmission even on its own data. Series 17 followed as an optimizer playground (λ₀ anchor / scale-free variants), 18 as the failure analysis and real-data γ-scale checks, and 19 as the μ-identifiability study on real data, culminating in the final honest-wide report (19d): the true μ lies within 2σ in 14/14 real experiments. The next steps are to fix the high-transmission failure (12c-style mean-matching anchor, more iterations/restarts, stronger γ gradient), close the Voigt-vs-Lorentzian model gap to match the real FWHM spread, and then fine-tune the optimization on the real data.
+*Updated 2026-11-05.*
+
+**Best real-data model — 24aa** (E1 role-split): a σ-free FWHM kernel + count prior for μ, a calibrated-σ 2-D KDE for γ, with the bias-corrected report.
+`W_obj(all14) = 0.0651 · T≥40 = 0.0341 · T≤20 = 0.1601 · μ 25.7 % · γ 33.3 %`, confirmed by the 3-seed repeat (24ab, `0.0644 ± 0.0026`).
+
+**Open problem — FM#6**: the residual high-transmission μ bias and the low-transmission γ deficit are a line-shape gap — the real scans are fitted with Voigt profiles while the simulator is Lorentzian-only. Series 19 and 24 showed no optimizer change touches it; it needs a forward-model fix.
+
+**Next — series 25** (roadmap in `notebooks/24_realdata_accuracy/SERIES_STATE.md`): fix the D2 σ-surrogate plumbing, attack FM#6 at the simulator level (pseudo-Voigt / per-scan heterogeneity / count model), report bias-corrected intervals by default, and use a random (not transmission-based) held-out split.
+
+### Series index
+
+| Series | What it established | Status | Led by |
+|---|---|---|---|
+| 01–06 | Pipeline foundations (reparameterization, implicit diff, KDE losses) | canonical | Anuar + agent |
+| 07–11 | REINFORCE for μ, joint μ+γ | canonical | Anuar + agent |
+| 12 | 2-D KDE likelihood + Fisher (12d = the current MLE) | 12d canonical; 12c superseded | Anuar |
+| 13–14 | First real-data run; bootstrap uncertainty (superseded by Fisher) | instructive | Anuar |
+| 15–16 | Real-data sweep + closed-loop synthetic | done | Anuar |
+| 17 | Optimizer fixes (σ_ref, z-form γ-score) | canonical (17g) | Anuar + agent |
+| 18 | Failure analysis; honest-wide μ | solid | agent |
+| 19 | μ identifiability; FM#8 diagnosed | solid | agent |
+| 20 | Real-data agentic optimization | exploratory | agent (auto) |
+| 21 | Real-data supervised optimization | exploratory | agent |
+| 22 | Distribution dynamics; 22g σ-calibration | exploratory (22g reused) | agent |
+| 23 | Fisher uncertainties (CRB / sandwich / bootstrap) | solid | agent |
+| 24 | Real-data accuracy campaign → 24aa best | 24aa = current best | agent (auto) |
+| AG-HYPOPT | Agent-guided TPE; baselines exp3_pukky + exp6 trial_07 | canonical baselines | Anuar's idea, mixed |
 
 ---
 
