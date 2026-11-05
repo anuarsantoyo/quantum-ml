@@ -22,7 +22,9 @@ the TRUE log-likelihood score and is what the Fisher uses; the z-form ``1/h``
 """
 
 import math
+import multiprocessing as _mp
 import os
+from concurrent.futures import ProcessPoolExecutor as _PPE
 
 import numpy as np
 import torch
@@ -44,6 +46,37 @@ def _fwhm_fn(th):
 
 def _nll_fn(th, ph):
     return nll(th, ph, model="lorentzian", uniform_bg=False)
+
+
+def _run_one(args):
+    """One simulated scan -> (FWHM, sigma_fit, dFWHM/dgamma, dsigma/dgamma).
+
+    Module-level so ProcessPoolExecutor can pickle it by reference. The frozen
+    noise (u, b) is drawn in the PARENT and shipped in ``args``; only the fit
+    runs here (single-threaded via ``_init_worker``).
+    """
+    gamma_val, u, b = args
+    return compute_fwhm_and_dgamma(gamma_val, u, b, _fit_fn, _fwhm_fn, _nll_fn, n_params=2)
+
+
+def _init_worker():
+    torch.set_num_threads(1)
+
+
+def _parallel_map(pool, tasks):
+    return list(pool.map(_run_one, tasks, chunksize=8))
+
+
+def make_pool(n_workers=None):
+    """fork-based ProcessPoolExecutor (one process per core, each single-threaded).
+
+    Matches the series-24 pattern. Works from a plain script or an nbconvert/papermill
+    driver; do NOT use from an interactive ipykernel (fork livelocks there).
+    """
+    if n_workers is None:
+        n_workers = os.cpu_count() or 4
+    return _PPE(max_workers=n_workers, mp_context=_mp.get_context('fork'),
+                initializer=_init_worker)
 
 
 def kde_scores(sim_f, sim_s, sim_n, sim_df, sim_ds, data_f, data_s,
@@ -80,17 +113,30 @@ def bandwidths(target_f, target_s, h_f_scale=1.0, h_s_scale=1.0, h_s_min=0.05):
     return H_F, H_S
 
 
-def sim_cloud(mu, sigma_prop, lam, gamma, n_runs, seed):
+def sim_cloud(mu, sigma_prop, lam, gamma, n_runs, seed, pool=None):
     """Simulate one cloud of ``(FWHM, sigma_fit, n, dFWHM/dgamma, dsigma/dgamma)``
-    at ``(mu, gamma)`` (frozen noise, seed-controlled)."""
+    at ``(mu, gamma)`` (frozen noise, seed-controlled).
+
+    With ``pool`` (a ProcessPoolExecutor from :func:`make_pool`) the fits run
+    across cores; the frozen noise (u, b) is always drawn in the PARENT so the
+    result is seed-reproducible regardless of worker count.
+    """
     rng = np.random.default_rng(seed)
-    ns, res = [], []
-    for _ in range(n_runs):
-        u, b, n = draw_fixed_noise(mu, sigma_prop, lam, rng)
-        r = compute_fwhm_and_dgamma(gamma, u.numpy(), b.numpy(),
-                                    _fit_fn, _fwhm_fn, _nll_fn, n_params=2)
-        res.append(r)
-        ns.append(n)
+    if pool is not None:
+        tasks, ns = [], []
+        for _ in range(n_runs):
+            u, b, n = draw_fixed_noise(mu, sigma_prop, lam, rng)
+            tasks.append((gamma, u.numpy(), b.numpy()))
+            ns.append(n)
+        res = _parallel_map(pool, tasks)
+    else:
+        ns, res = [], []
+        for _ in range(n_runs):
+            u, b, n = draw_fixed_noise(mu, sigma_prop, lam, rng)
+            r = compute_fwhm_and_dgamma(gamma, u.numpy(), b.numpy(),
+                                        _fit_fn, _fwhm_fn, _nll_fn, n_params=2)
+            res.append(r)
+            ns.append(n)
     return (torch.tensor([r[0] for r in res], dtype=torch.float32),
             torch.tensor([r[1] for r in res], dtype=torch.float32),
             torch.tensor(ns, dtype=torch.float32),
@@ -120,6 +166,36 @@ def fisher_at(cloud, target_f, target_s, h_f, h_s, mu, sigma_prop,
                 sig_mu_data=float(math.sqrt(inv_data[0, 0])),
                 sig_g_data=float(math.sqrt(inv_data[1, 1])),
                 corr_data=float(inv_data[0, 1] / math.sqrt(inv_data[0, 0] * inv_data[1, 1])))
+
+
+def fisher_gaussian(cloud, n_data):
+    """Bandwidth-free Gaussian-summary linewidth (gamma) uncertainty.
+
+    Assumes the fitted FWHM is ~N(m, sigma_fwhm^2) across scans (the CLT
+    approximation for a fitted statistic). The sensitivity of the summary to
+    gamma is dFWHM/dgamma (already computed per scan), so
+
+        sigma_gamma = sigma_fwhm / (mean|dFWHM/dgamma| * sqrt(N_data))
+
+    i.e. the measured scatter divided by the sensitivity. No bandwidth.
+    Returns per-scan and dataset sigma_gamma plus the FWHM cloud's skewness and
+    excess kurtosis, so the Gaussian assumption can be checked directly.
+    """
+    ft, _si, _nt, dg, _ds = cloud
+    f = np.asarray(ft.numpy(), dtype=float)
+    sigma_fwhm = float(f.std())
+    j = float(np.asarray(dg.numpy(), dtype=float).mean())
+    j = j if abs(j) > 1e-9 else 1.0
+    sig_g_single = sigma_fwhm / abs(j)
+    sig_g_data = sig_g_single / math.sqrt(max(int(n_data), 1))
+    c = f - f.mean()
+    m2 = float((c ** 2).mean())
+    m3 = float((c ** 3).mean())
+    m4 = float((c ** 4).mean())
+    skew = m3 / m2 ** 1.5 if m2 > 0 else 0.0
+    kurt = m4 / m2 ** 2 - 3.0 if m2 > 0 else 0.0
+    return dict(sigma_fwhm=sigma_fwhm, j=j, sig_g_single=sig_g_single,
+                sig_g_data=sig_g_data, skew=skew, kurt=kurt)
 
 
 # ---------------------------------------------------------------------------
