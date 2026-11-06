@@ -207,9 +207,10 @@ def gaussian_summary(cloud, target_f, target_s, mu, sigma_prop):
         L = 0.5 [ log|Sigma| + tr(Sigma^-1 S) + (xbar - m)^T Sigma^-1 (xbar - m) ]
 
     where (xbar, S) are the data's mean/covariance and (m, Sigma) the simulated
-    cloud's. gamma's gradient is PATHWISE (through the per-scan implicit derivatives
-    dFWHM/dgamma, dsigma/dgamma); mu's gradient is the SCORE IDENTITY (count score
-    weighted by 2D-Gaussian responsibilities). No bandwidth anywhere.
+    cloud's. BOTH gradients are PATHWISE on this one loss: gamma through the
+    per-scan implicit derivatives (dFWHM/dgamma, dsigma/dgamma); mu through
+    d sigma_fit/dmu = -sigma_fit/(2n) (the 1/sqrt(n) CRLB scaling, dFWHM/dmu ~ 0).
+    No bandwidth anywhere.
 
     Returns dict(loss, grad_mu, grad_gamma, m, Sigma, xbar, S, ...).
     """
@@ -249,18 +250,44 @@ def gaussian_summary(cloud, target_f, target_s, mu, sigma_prop):
     dSigma_dg[1, 0] = dSigma_dg[0, 1]
     grad_gamma = float((dl_dm @ dm_dg).item() + (dl_dSigma * dSigma_dg).sum().item())
 
-    # --- mu gradient (score identity, 2D Gaussian responsibilities) ---
-    diff = data[:, None, :] - sim[None, :, :]                # (N, M, 2)
-    mahal = ((diff @ Sigma_inv) * diff).sum(dim=-1)          # (N, M) Mahalanobis^2
-    W = torch.exp(-0.5 * mahal)
-    w = W / W.sum(dim=1, keepdim=True).clamp_min(1e-12)      # (N, M) responsibilities
-    score = (nt - mu) / sigma_prop ** 2                      # (M,)
-    grad_mu = -float((w @ score).sum().item())
+    # --- mu gradient (pathwise, SAME loss as gamma) ---
+    # d sigma_fit / d mu = -sigma_fit/(2n)  (CRLB 1/sqrt(n)); dFWHM/dmu ~ 0
+    ds_dmu = -si / (2.0 * nt.clamp_min(1.0))                 # (M,)
+    dm_dmu = torch.stack([torch.tensor(0.0), ds_dmu.mean()])  # (2,)
+    dSigma_dmu = torch.zeros(2, 2)
+    dSigma_dmu[1, 1] = 2.0 * _cov(si, ds_dmu)
+    dSigma_dmu[0, 1] = _cov(ft, ds_dmu)
+    dSigma_dmu[1, 0] = dSigma_dmu[0, 1]
+    grad_mu = float((dl_dm @ dm_dmu).item() + (dl_dSigma * dSigma_dmu).sum().item())
 
     return dict(loss=float(loss), grad_mu=grad_mu, grad_gamma=grad_gamma,
                 m=m.detach(), Sigma=Sigma.detach(), xbar=xbar.detach(), S=S.detach(),
                 fwhm_mean=float(m[0]), sf_mean=float(m[1]),
                 fwhm_data_mean=float(xbar[0]), sf_data_mean=float(xbar[1]))
+
+
+def fisher_gaussian_2d(cloud, n_data):
+    """2x2 Gaussian-summary Fisher I = J^T Sigma^-1 J at the current theta.
+
+    J = dm/dtheta is the mean-summary sensitivity (rows FWHM, sigma_fit; cols mu, gamma):
+      dFWHM/dmu ~ 0, dFWHM/dgamma = dg;  dsigma/dmu = -sigma/(2n), dsigma/dgamma = ds.
+    Returns the DATASET sigma_mu and sigma_gamma (sqrt of diag((N*I)^-1)), bandwidth-free.
+    """
+    ft, si, nt, dg, ds = [t.float() for t in cloud]
+    M = len(ft)
+    ds_dmu = -si / (2.0 * nt.clamp_min(1.0))
+    J = torch.stack([
+        torch.stack([torch.tensor(0.0), dg.mean()]),       # FWHM row
+        torch.stack([ds_dmu.mean(), ds.mean()]),           # sigma_fit row
+    ])  # (2, 2)
+    sim = torch.stack([ft, si], dim=1)
+    c = sim - sim.mean(0)
+    Sigma = (c.t() @ c) / M + 1e-6 * torch.eye(2)
+    I = J @ torch.linalg.inv(Sigma) @ J.t()
+    inv = torch.linalg.inv(I + 1e-12 * torch.eye(2))
+    inv_data = inv / max(int(n_data), 1)
+    return dict(sig_mu=float(math.sqrt(inv_data[0, 0])),
+                sig_g=float(math.sqrt(inv_data[1, 1])))
 
 
 # ---------------------------------------------------------------------------
