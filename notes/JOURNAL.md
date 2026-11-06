@@ -1042,3 +1042,27 @@ The differentiable Monte Carlo pipeline — gradient descent replacing the paper
 1. A single `NOTEBOOK_INDEX.md` at the repo root: every notebook with author, status (canonical / superseded / exploratory) and a one-line verdict.
 2. Keep the numbered folders (they tell the chronological story) — optionally move the clearly-agent-exploratory runs (20–24, ag-hypopt 1/2/4–8) into an `agent_runs/` tree so the canonical chain stays clean.
 3. Clean up `agent-guided-hypopt` naming (the "copy" folder, the `_pukky` suffix confusion) and add a README stating the canonical baselines.
+
+# 06.11.2026
+
+## Presentation with Gregor and Clara
+
+We had the presentation with Gregor and Clara — it went great. I gave a presentation on 06.11.2026. Preparing the presentation helped me regain an idea of where we are.
+
+So currently we have a good optimizer that has an approximately good uncertainty (22a). We did some analysis on which fitter best describes the data. I tested several: the Lorentzian, the pseudo-Voigt, and the one that Gregor uses. For the pseudo-Voigt I used a default value. The Lorentzian showed to be the best one, and after discussing with Gregor we realized that at small FWHM we had big fit errors. The Gregor approach showed this better than the Lorentzian, but at higher transmissions the Lorentzian made a better accuracy. The problem is mostly the fit error.
+
+For this reason, the idea came from Gregor to give me the real data after it was fitted by them, so that I can try to optimize directly on it and avoid this fitting error (or calculating the fitting error by myself).
+
+## Fisher uncertainties and the bandwidth
+
+I put a pause on that direction of the research and then decided to start investigating a little bit more into the Fisher uncertainties. I believe that the bandwidth being used by Scott's rule is affecting the uncertainties. So I did a test (series 25) where I tried different bandwidths to see how the uncertainty is affected, and it could clearly be seen that the uncertainty was affected. At transmission 100 the uncertainty rises a little bit, but that has to do with the data that Gregor gave me.
+
+Realizing that the bandwidth decision has a big influence on the uncertainties, and being aware that choosing it in order to fit our data is not a correct approach, I decided to try creating a negative log-likelihood by using a composite Gaussian of our simulated data points. Instead of the current KDE approach that is bandwidth dependent, this other approach doesn't need the assumption of any bandwidth.
+
+Until now, after trying to optimize using this strategy, we haven't got good results. Nevertheless, it was the first try and there might be a lot of things that we can change in order to improve. So this is one idea that is being worked on: optimizing using one composite Gaussian as a negative log-likelihood. The other idea is to try using different features.
+
+## Next steps
+
+As a conclusion, we right now decided that I will wait for Gregor to send me the data, and once I get the original data maybe I can think of better ways of solving this. I am slightly sad because I wanted this data from the beginning, as I thought it was a good approach, and I feel that I might have lost a little bit of time. Nevertheless, all the information and practice that I got is useful, and maybe I can apply it in either way. So now I will wait for the new data and, until that comes, I will analyze it and decide what we can do.
+
+Also, Gregor proposed including into the Monte Carlo simulation a way to also simulate some points that we saw that have low FWHM but high error, especially at lower transparencies. This is just an extra idea that would be solidified once we have the real data.
